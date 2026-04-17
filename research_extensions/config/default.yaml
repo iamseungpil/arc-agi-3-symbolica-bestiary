@@ -1,0 +1,20 @@
+dreamcoder:
+  enabled: false
+  params:
+    max_skills: 16
+    body_preview_items: 32
+    sleep_trajectory_window: 16
+    surprise_match_suffix: 4
+
+world_model:
+  enabled: false
+  params:
+    signature_mode: "full_grid_hash"
+
+meta_harness:
+  enabled: false
+  params:
+    policy: "prompt_overlay"
+    max_overlays: 4
+
+log_dir: "research_logs"

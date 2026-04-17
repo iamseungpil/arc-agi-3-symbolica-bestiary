@@ -1,0 +1,9 @@
+dreamcoder:
+  enabled: true
+  params:
+    max_skills: 32
+world_model:
+  enabled: false
+meta_harness:
+  enabled: false
+log_dir: "research_logs"

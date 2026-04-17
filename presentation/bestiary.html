@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Bestiary of LLM World-Model Cheating Modes</title>
+<style>
+  body {
+    background:#18181b;color:#fafafa;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    margin:0;padding:24px 32px 96px;max-width:1120px;
+  }
+  h1 { margin:0 0 6px;font-size:26px }
+  h2 { margin:32px 0 12px;font-size:18px;color:#a1a1aa;
+        border-bottom:1px solid #3f3f46;padding-bottom:6px }
+  .banner {
+    background:linear-gradient(90deg,#166534 0%,#7f1d1d 100%);
+    padding:18px 20px;border-radius:10px;margin-bottom:18px;
+  }
+  .banner small { color:#e4e4e7 }
+  details { background:#27272a;border-radius:8px;padding:10px 14px;margin:12px 0 }
+  details summary { cursor:pointer;color:#22c55e;font-family:monospace }
+  details pre {
+    background:#000;color:#22c55e;padding:12px;border-radius:6px;
+    overflow-x:auto;font-size:12px;line-height:1.5;
+    border:1px solid #166534;margin:10px 0 0
+  }
+  .grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px }
+  .card {
+    background:#27272a;border-radius:8px;padding:14px 16px;
+    border-left:4px solid #ef4444;
+  }
+  .card.pending { border-left-color:#71717a }
+  .card-title { font-size:15px;font-weight:bold;margin-bottom:4px }
+  .card-ns { font-family:monospace;font-size:11px;color:#a1a1aa;margin-bottom:10px }
+  .card-table { width:100%;border-collapse:collapse;font-size:12px }
+  .card-table td { padding:4px 6px;vertical-align:top;border-bottom:1px solid #3f3f46 }
+  .card-table td:first-child { color:#a1a1aa;width:38% }
+  .badge {
+    font-size:10px;padding:2px 8px;border-radius:10px;font-weight:bold;
+    margin-left:6px;font-family:monospace;text-transform:uppercase
+  }
+  .badge-cheat { background:#7f1d1d;color:#ef4444 }
+  .badge-live { background:#166534;color:#22c55e }
+  .badge-pending { background:#3f3f46;color:#a1a1aa }
+  .trace-link { color:#22c55e;text-decoration:none;font-family:monospace }
+  .trace-link:hover { text-decoration:underline }
+  ul { line-height:1.8 }
+  ul a { color:#22c55e;text-decoration:none;font-family:monospace;font-size:13px }
+  ul a:hover { text-decoration:underline }
+  code { font-family:ui-monospace,'SF Mono',monospace;font-size:12px }
+</style></head><body>
+  <div class="banner">
+    <h1>Bestiary of LLM World-Model Cheating Modes</h1>
+    <small>ls20 autoresearch — agents that game the transition-accuracy metric
+    instead of learning the world. One card per failure mode, with the fix
+    that closed it.</small>
+  </div>
+
+  <h2>1. The world-coder contract</h2>
+  <details>
+    <summary>▸ Show the live CWM contract prompt (from <code>world_model.py::prompt_overlay</code>)</summary>
+    <pre>REAL WORLD MODEL contract (CWM state transition, v3.12): 
+`def predict_effect(action, observation) -&gt; dict` receives `observation[&#x27;grid&#x27;]` 
+(FULL 2D list, typically 64x64). Compute the NEXT grid from scratch and return it. 
+**MANDATORY fields**: `expect_change: True|False`, `expected_diff_band: &#x27;zero&#x27;|&#x27;small&#x27;|&#x27;large&#x27;`, 
+`expected_diff_cells: int`, `expected_next_grid: List[List[int]]` (full next grid ≥95% accurate). 
+Delta-only predictions now FAIL — the scorer requires the whole board. 
+Strict scoring: `&#x27;unknown&#x27;` or `None` = WRONG. 
+Template (DATA-DRIVEN, adapt to your hypothesis):
+
+```python
+
+def predict_effect(action, observation):
+
+    g = observation[&#x27;grid&#x27;]
+
+    H, W = len(g), len(g[0])
+
+    new = [row[:] for row in g]
+
+    # Use empirical delta hints — avoids guessing 1-cell predictions.
+
+    hints = observation.get(&#x27;per_action_delta_hints&#x27;, {}).get(action, {})
+
+    samples = hints.get(&#x27;sample_changes&#x27;, [])  # [[x,y,v], ...]
+
+    # HYPOTHESIS: replay the most common past change locations.
+
+    # Replace this with your inferred rule once you see a pattern.
+
+    if samples:
+
+        for change_list in samples[:1]:  # use first sample
+
+            for x, y, new_val in change_list:
+
+                if 0 &lt;= y &lt; H and 0 &lt;= x &lt; W:
+
+                    new[y][x] = new_val
+
+    n_changed = sum(1 for y in range(H) for x in range(W) if g[y][x] != new[y][x])
+
+    return {
+
+        &#x27;expect_change&#x27;: n_changed &gt; 0,
+
+        &#x27;expected_diff_band&#x27;: &#x27;zero&#x27; if n_changed==0 else (&#x27;small&#x27; if n_changed&lt;=4 else &#x27;large&#x27;),
+
+        &#x27;expected_diff_cells&#x27;: n_changed,
+
+        &#x27;expected_next_grid&#x27;: new,
+
+    }
+
+```
+
+`per_action_delta_hints[action]` now contains `{n, mean_diff_cells, sample_changes}` 
+from the last 32 real transitions. Use them instead of guessing. 
+ANTI-CHEAT: returning `expected_next_grid == observation[&#x27;grid&#x27;]` (identity) 
+while diff_band != &#x27;zero&#x27; now scores as WRONG. The scorer compares against 
+the real next grid — a do-nothing prediction is no longer safe.&quot;,</pre>
+  </details>
+
+  <h2>2. The loop</h2>
+  <div style="color:#a1a1aa;font-size:13px;margin-bottom:8px">
+    IMAGINE (MCTS over <code>predict_effect</code>) → ACT (real env) →
+    WAKE (rewrite on surprise) → SLEEP (DreamCoder refactor). The arrows are
+    labelled with the function that actually fires the transition.
+  </div>
+  <svg viewBox="0 0 620 360" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;max-width:720px;height:auto;background:#0b0b0f;border-radius:8px">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/>
+    </marker>
+  </defs>
+  <!-- nodes -->
+  <g font-family="ui-monospace,monospace" font-size="13" fill="#fafafa">
+    <rect x="40"  y="40"  width="180" height="70" rx="8" fill="#27272a" stroke="#22c55e"/>
+    <text x="130" y="68" text-anchor="middle" font-weight="bold">IMAGINE</text>
+    <text x="130" y="92" text-anchor="middle" fill="#a1a1aa">MCTS on predict_effect</text>
+
+    <rect x="400" y="40"  width="180" height="70" rx="8" fill="#27272a" stroke="#22c55e"/>
+    <text x="490" y="68" text-anchor="middle" font-weight="bold">ACT</text>
+    <text x="490" y="92" text-anchor="middle" fill="#a1a1aa">skill body on real env</text>
+
+    <rect x="400" y="250" width="180" height="70" rx="8" fill="#27272a" stroke="#ef4444"/>
+    <text x="490" y="278" text-anchor="middle" font-weight="bold">WAKE</text>
+    <text x="490" y="302" text-anchor="middle" fill="#a1a1aa">rewrite on surprise</text>
+
+    <rect x="40"  y="250" width="180" height="70" rx="8" fill="#27272a" stroke="#60a5fa"/>
+    <text x="130" y="278" text-anchor="middle" font-weight="bold">SLEEP</text>
+    <text x="130" y="302" text-anchor="middle" fill="#a1a1aa">DC refactors library</text>
+  </g>
+  <!-- arrows (clockwise) -->
+  <g stroke="#22c55e" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M 220,75 L 400,75"/>
+    <path d="M 490,110 L 490,250"/>
+    <path d="M 400,285 L 220,285"/>
+    <path d="M 130,250 L 130,110"/>
+  </g>
+  <!-- arrow labels -->
+  <g font-family="ui-monospace,monospace" font-size="11" fill="#22c55e">
+    <text x="310" y="68"  text-anchor="middle">imagine_and_maybe_commit</text>
+    <text x="505" y="185" text-anchor="start">on_skill_step</text>
+    <text x="310" y="278" text-anchor="middle">wake_prompt_section</text>
+    <text x="118" y="185" text-anchor="end">sleep_refactor</text>
+  </g>
+</svg>
+
+  <h2>3. The bestiary</h2>
+  <div class="grid">
+    <div class="card">
+  <div class="card-title">
+    Wildcard cheat
+    <span class="badge badge-cheat">cheat</span>
+  </div>
+  <div class="card-ns">namespace: <code>arcgentica_v3_6_sym_prompt_20260416_2338</code></div>
+  <table class="card-table">
+    <tr><td>Scored as (gamed)</td><td>transition_accuracy = 1.000 (reported)</td></tr>
+    <tr><td>Actual behaviour</td><td>Every prediction returned `&#x27;unknown&#x27;` for diff_band / `None` for expect_change → matcher (pre-v3.9) accepted these as wildcards and awarded a pass.</td></tr>
+    <tr><td>Reported accuracy</td><td><code>1.000</code></td></tr>
+    <tr><td>Honest accuracy <span style="color:#a1a1aa">(strict+identity)</span></td>
+        <td><code>0.000</code> <span style="color:#a1a1aa">
+        = 0/80
+        </span></td></tr>
+    <tr><td>Fix</td><td>v3.9 strict matcher: `unknown`/`None` now FAIL.</td></tr>
+  </table>
+  
+  <div style="margin-top:10px"><span style="color:#71717a;font-style:italic">(per-step trace not yet built for this namespace)</span></div>
+</div><div class="card">
+  <div class="card-title">
+    1-cell delta cheat
+    <span class="badge badge-cheat">cheat</span>
+  </div>
+  <div class="card-ns">namespace: <code>arcgentica_v3_11_strict_penalty_20260417_0234</code></div>
+  <table class="card-table">
+    <tr><td>Scored as (gamed)</td><td>passes (pre-v3.12) by emitting tiny `expected_grid_delta`</td></tr>
+    <tr><td>Actual behaviour</td><td>0 `expected_next_grid` emits across 160 tests — agent returned 1-cell deltas that maximised precision while ignoring the rest of the 64×64 board.</td></tr>
+    <tr><td>Reported accuracy</td><td><code>0.000</code></td></tr>
+    <tr><td>Honest accuracy <span style="color:#a1a1aa">(strict+identity)</span></td>
+        <td><code>0.000</code> <span style="color:#a1a1aa">
+        = 0/160
+        </span></td></tr>
+    <tr><td>Fix</td><td>v3.12 full_grid mandatory: delta-only → FAIL.</td></tr>
+  </table>
+  
+  <div style="margin-top:10px"><a href="trace_viewer_arcgentica_v3_11_strict_penalty_20260417_0234.html" class="trace-link">→ open per-step trace</a></div>
+</div><div class="card">
+  <div class="card-title">
+    Identity cheat
+    <span class="badge badge-cheat">cheat</span>
+  </div>
+  <div class="card-ns">namespace: <code>arcgentica_v3_14_wake_fix_20260417_0356</code></div>
+  <table class="card-table">
+    <tr><td>Scored as (gamed)</td><td>passes pixel check by returning `new = [row[:] for row in g]`</td></tr>
+    <tr><td>Actual behaviour</td><td>Predicted grid == observation[&#x27;grid&#x27;]; the do-nothing branch trivially matches when the env is quiescent and dominates the evaluation window.</td></tr>
+    <tr><td>Reported accuracy</td><td><code>0.000</code></td></tr>
+    <tr><td>Honest accuracy <span style="color:#a1a1aa">(strict+identity)</span></td>
+        <td><code>0.000</code> <span style="color:#a1a1aa">
+        = 0/160
+        </span></td></tr>
+    <tr><td>Fix</td><td>v3.15 identity guard: predicted == before AND diff_band != &#x27;zero&#x27; → FAIL.</td></tr>
+  </table>
+  
+  <div style="margin-top:10px"><span style="color:#71717a;font-style:italic">(per-step trace not yet built for this namespace)</span></div>
+</div><div class="card">
+  <div class="card-title">
+    v3.15+ current run
+    <span class="badge badge-live">live</span>
+  </div>
+  <div class="card-ns">namespace: <code>arcgentica_v3_15_anti_cheat_20260417_0429</code></div>
+  <table class="card-table">
+    <tr><td>Scored as (gamed)</td><td>strict + identity guard active</td></tr>
+    <tr><td>Actual behaviour</td><td>Most recent v3.15* run — status live, no free lunch.</td></tr>
+    <tr><td>Reported accuracy</td><td><code>0.016</code></td></tr>
+    <tr><td>Honest accuracy <span style="color:#a1a1aa">(strict+identity)</span></td>
+        <td><code>0.006</code> <span style="color:#a1a1aa">
+        = 1/160
+        </span></td></tr>
+    <tr><td>Fix</td><td>next: v3.16 calibrated-confidence scoring.</td></tr>
+  </table>
+  
+  <div style="margin-top:10px"><span style="color:#71717a;font-style:italic">(per-step trace not yet built for this namespace)</span></div>
+</div>
+  </div>
+
+  <h2>4. Progression — honest transition_accuracy across versions</h2>
+  <div style="color:#a1a1aa;font-size:13px;margin-bottom:8px">
+    Each run's <code>world_drafts[0].body</code> re-scored against its own
+    <code>unit_tests</code> using <code>WorldModelModule._unit_test_matches</code>
+    (v3.15 strict + identity-guard matcher). Dashed grey = what the run itself
+    reported; solid green = what the current matcher accepts.
+  </div>
+  <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;height:auto;background:#0b0b0f;border-radius:8px"><rect x="0" y="0" width="640" height="260" fill="#0b0b0f" rx="8"/><line x1="50" y1="24" x2="50" y2="208" stroke="#3f3f46"/><line x1="50" y1="208" x2="620" y2="208" stroke="#3f3f46"/><line x1="46" y1="208.0" x2="620" y2="208.0" stroke="#27272a" stroke-dasharray="2,4"/><text x="42" y="212.0" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa">0.0</text><line x1="46" y1="116.0" x2="620" y2="116.0" stroke="#27272a" stroke-dasharray="2,4"/><text x="42" y="120.0" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa">0.5</text><line x1="46" y1="24.0" x2="620" y2="24.0" stroke="#27272a" stroke-dasharray="2,4"/><text x="42" y="28.0" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa">1.0</text><circle cx="50.0" cy="208.0" r="5" fill="#22c55e"/><text x="50.0" y="198.0" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#22c55e">0.00</text><circle cx="50.0" cy="24.0" r="3" fill="#a1a1aa"/><circle cx="240.0" cy="208.0" r="5" fill="#22c55e"/><text x="240.0" y="198.0" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#22c55e">0.00</text><circle cx="240.0" cy="208.0" r="3" fill="#a1a1aa"/><circle cx="430.0" cy="208.0" r="5" fill="#22c55e"/><text x="430.0" y="198.0" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#22c55e">0.00</text><circle cx="430.0" cy="208.0" r="3" fill="#a1a1aa"/><circle cx="620.0" cy="206.85" r="5" fill="#22c55e"/><text x="620.0" y="196.85" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#22c55e">0.01</text><circle cx="620.0" cy="205.125" r="3" fill="#a1a1aa"/><polyline points="50.0,208.0 240.0,208.0 430.0,208.0 620.0,206.85" fill="none" stroke="#22c55e" stroke-width="2"/><polyline points="50.0,24.0 240.0,208.0 430.0,208.0 620.0,205.125" fill="none" stroke="#71717a" stroke-width="1" stroke-dasharray="4,3"/><g font-family="ui-monospace,monospace" font-size="11"><circle cx="440" cy="16" r="4" fill="#22c55e"/><text x="450" y="20" fill="#fafafa">honest (strict+identity guard)</text><circle cx="560" cy="16" r="3" fill="#a1a1aa"/><text x="568" y="20" fill="#fafafa">reported</text></g><text x="50.0" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa" transform="rotate(-18 50.0 226)">v3.6</text><text x="240.0" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa" transform="rotate(-18 240.0 226)">v3.11</text><text x="430.0" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa" transform="rotate(-18 430.0 226)">v3.14</text><text x="620.0" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#a1a1aa" transform="rotate(-18 620.0 226)">v3.15</text></svg>
+
+  <h2>5. Per-namespace trace viewers</h2>
+  <ul>
+    <li><a href="trace_viewer_arcgentica_v3_11_strict_penalty_20260417_0234.html">trace_viewer_arcgentica_v3_11_strict_penalty_20260417_0234.html</a></li><li><a href="trace_viewer_arcgentica_v3_15_1_builtins_20260417_0430.html">trace_viewer_arcgentica_v3_15_1_builtins_20260417_0430.html</a></li><li><a href="trace_viewer_arcgentica_v3_full_20260416_2239.html">trace_viewer_arcgentica_v3_full_20260416_2239.html</a></li>
+  </ul>
+
+  <div style="color:#52525b;font-size:11px;margin-top:40px">
+    Generated by <code>scripts/build_trace_viewer.py --bestiary</code>.
+    Source: <code>research_logs/shared/ls20-cb3b57cc/&lt;ns&gt;/world_model.json</code>.
+  </div>
+</body></html>

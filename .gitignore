@@ -1,0 +1,15 @@
+# Large binaries / logs
+logs.log
+*.log
+recordings/
+research_logs/
+experiment_logs/launches/
+experiment_logs/reports/
+actions_log/
+plots/
+__pycache__/
+*.pyc
+.pytest_cache/
+/scratch/
+# Keep TSV + summary jsons
+!experiment_logs/autoresearch_results.tsv

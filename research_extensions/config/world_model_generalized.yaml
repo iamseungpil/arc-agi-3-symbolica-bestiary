@@ -1,0 +1,20 @@
+dreamcoder:
+  enabled: false
+  params: {}
+
+world_model:
+  enabled: true
+  params:
+    signature_mode: "observable_generalized"
+    generalize_max_distance: 0.18
+    generalize_max_neighbors: 6
+    override_min_count: 1.5
+    override_min_value: 1.0
+    exploration_override_enabled: true
+    exploration_stall_window: 4
+
+meta_harness:
+  enabled: false
+  params: {}
+
+log_dir: "research_logs"

@@ -1,0 +1,23 @@
+dreamcoder:
+  enabled: true
+  params:
+    max_skills: 64
+    body_preview_items: 32
+    sleep_trajectory_window: 16
+    surprise_match_suffix: 4
+    proposal_cadence: 2
+    routing_min_score: 0.75
+    routing_max_skills: 6
+    reset_intercept_enabled: true
+    route_on_stall_enabled: false
+    stall_window: 4
+
+world_model:
+  enabled: false
+  params: {}
+
+meta_harness:
+  enabled: false
+  params: {}
+
+log_dir: "research_logs"

@@ -1,0 +1,71 @@
+dreamcoder:
+  enabled: true
+  params:
+    max_skills: 64
+    body_preview_items: 32
+    sleep_trajectory_window: 16
+    surprise_match_suffix: 4
+    proposal_cadence: 2
+    routing_min_score: 0.75
+    routing_max_skills: 6
+    reset_intercept_enabled: true
+    route_on_stall_enabled: false
+    stall_window: 4
+    # Seed the library with abstract primitives (BFS, per-button
+    # semantic discovery, rival-discriminator, opening wrapper) so the
+    # agent inherits a composable vocabulary instead of re-deriving it
+    # every run. See modules/seed_library.py.
+    seed_abstract_primitives: true
+
+world_model:
+  enabled: true
+  params:
+    signature_mode: "observable_generalized"
+    generalize_max_distance: 0.18
+    generalize_max_neighbors: 6
+    override_min_count: 1.5
+    override_min_value: 1.0
+    exploration_override_enabled: true
+    exploration_stall_window: 4
+    # CWM (Lehrach et al. 2025) unit-test refinement. Each observed
+    # transition is stored; the best simulator draft is replayed
+    # against the recent window every step and transition_accuracy is
+    # surfaced to the agent.
+    unit_test_capacity: 200
+    unit_test_eval_window: 64
+
+meta_harness:
+  enabled: true
+  params:
+    policy: "prompt_overlay"
+    max_overlays: 4
+
+planner:
+  # Plan v3 §4 P0: MCTS on world_model.simulate_step (imagination only).
+  enabled: true
+  params:
+    max_depth: 4
+    n_simulations: 64
+    ucb_c: 1.4
+    time_budget_seconds: 10.0
+    mcts_gate_threshold: 0.4   # plan H5b lowest in ablation range; raise if spurious MCTS hurts
+    bfs_rollouts_per_call: 4
+    reward_weights:
+      # v3.1 tuning (v3 full showed new_family_count=1/80, branch_escape=0,
+      # repeat_penalty/action=24.8 vs v2 baseline 9.5). Boost novelty,
+      # increase repeat penalty, to push MCTS out of the opening family.
+      new_family: 8.0
+      branch_escape: 5.0
+      accuracy: 1.0
+      repeat_penalty: -3.0
+      exception: -2.0
+      expect_change_match: 0.25
+      band_large: 0.1
+      unseen_signature_bonus: 2.0
+    # Exploration-first gate: MCTS stays off until enough real-env data.
+    # v3.13: longer exploration (30 vs 15) so WM has more data before
+    # MCTS starts relying on predict_effect. Also min_families=2 ok for ls20.
+    exploration_min_transitions: 30
+    exploration_min_families: 2
+
+log_dir: "research_logs"

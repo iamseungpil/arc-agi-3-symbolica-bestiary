@@ -1,0 +1,10 @@
+dreamcoder:
+  enabled: false
+world_model:
+  enabled: false
+meta_harness:
+  enabled: true
+  params:
+    max_overlays: 3
+    keep_top_k: 4
+log_dir: "research_logs"

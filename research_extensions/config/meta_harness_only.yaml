@@ -1,0 +1,15 @@
+dreamcoder:
+  enabled: false
+  params: {}
+
+world_model:
+  enabled: false
+  params: {}
+
+meta_harness:
+  enabled: true
+  params:
+    policy: "prompt_overlay"
+    max_overlays: 4
+
+log_dir: "research_logs"

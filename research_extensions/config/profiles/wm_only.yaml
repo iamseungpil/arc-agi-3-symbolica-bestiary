@@ -1,0 +1,7 @@
+dreamcoder:
+  enabled: false
+world_model:
+  enabled: true
+meta_harness:
+  enabled: false
+log_dir: "research_logs"

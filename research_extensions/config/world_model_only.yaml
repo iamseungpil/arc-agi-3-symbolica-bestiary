@@ -1,0 +1,14 @@
+dreamcoder:
+  enabled: false
+  params: {}
+
+world_model:
+  enabled: true
+  params:
+    signature_mode: "full_grid_hash"
+
+meta_harness:
+  enabled: false
+  params: {}
+
+log_dir: "research_logs"
