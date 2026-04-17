@@ -35,7 +35,7 @@
 % ============================================================
 \section{Part 1: Overview}
 
-\begin{frame}{One turn, four branches}
+\begin{frame}{One turn: decide $\rightarrow$ act $\rightarrow$ compare $\rightarrow$ wake/sleep}
 \centering
 \resizebox{!}{0.82\textheight}{%
 \begin{tikzpicture}[node distance=0.35cm and 1.1cm,
@@ -65,6 +65,9 @@
   \node[decision,below=0.35cm of rec]                    (dS)     {surprise?};
   \node[box,fill=orange!15,left=1.1cm of dS]             (wq)     {queue wake};
   \node[box,below=0.35cm of dS]                          (done)   {turn N end};
+  % sleep tick and wake overlay prep (both happen at turn end)
+  \node[box,fill=green!10,right=1.1cm of done]           (slp)    {sleep-consolidate\\\scriptsize every 10 turns};
+  \node[box,fill=orange!15,below=0.35cm of done,xshift=-2.2cm] (wn){wake overlay $\to$ turn N+1};
   % decision wiring
   \draw[arr] (start) -- (dA);
   \draw[arr] (dA) -- node[above,font=\tiny]{y} (A);
@@ -89,6 +92,8 @@
   \draw[arr] (dS) -- node[above,font=\tiny]{y} (wq);
   \draw[arr] (dS) -- node[left,font=\tiny]{n} (done);
   \draw[arrd] (wq) |- (done.west);
+  \draw[arr] (done.east) -- (slp.west);
+  \draw[arrd] (wq.south) |- (wn.east);
 \end{tikzpicture}}
 \end{frame}
 
@@ -158,7 +163,9 @@ Sleep-refactor & right after MCTS commit & \texttt{dc.sleep\_refactor} \\
 \begin{Verbatim}[fontsize=\tiny,frame=single]
 class WorldModelModule:   # research_extensions/modules/world_model.py
   world_drafts: [WorldDraft]    # current best draft + history
-  unit_tests:   [transition]    # 200 most recent (before,action,after,diff)
+  unit_tests:   [transition]    # ring buffer, capacity 200; each entry is
+                                # (before_grid, action, after_grid, diff_band,
+                                #  new_family, branch_escape, observation)
   transitions:  dict[sig][action] -> stats
 
   # API used by others
@@ -186,45 +193,56 @@ unit_tests_passed / seen   1 / 64     transition_accuracy 0.016
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{DreamCoder — five skill kinds}
+\begin{frame}[fragile]{DreamCoder skill kinds (actual counts across v3 runs)}
 \centering
 \resizebox{0.98\textwidth}{!}{%
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}llr@{}}
 \toprule
-\texttt{kind} & source function & role \\
+\texttt{kind} & source function & instances \\
 \midrule
-\texttt{abstract\_primitive} & \texttt{seed\_library.py} & seeded BFS / button semantics (10) \\
-\texttt{observed\_law} & \texttt{consolidate\_experience} & per-action empirical stats \\
-\texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & one MCTS top path \\
-\texttt{wrapper} & \texttt{sleep\_refactor} & N-gram prefix merge \\
-(free) & agent \texttt{propose\_skill} & free-form LLM proposal \\
+\texttt{abstract\_primitive} & \texttt{seed\_library.py} & 160 \\
+(free) & agent \texttt{propose\_skill} & 70 \\
+\texttt{observed\_law} & \texttt{consolidate\_experience} & 44 \\
+\texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & 40 \\
+\texttt{wrapper} & \texttt{sleep\_refactor} & 16 \\
 \bottomrule
 \end{tabular}}
 \end{frame}
 
-\begin{frame}[fragile]{DreamCoder — one real skill per kind}
+\begin{frame}[fragile]{Free skill example (v3.11, agent-proposed)}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-abstract_primitive:
-  name "bfs-explore-grid"; controller [A1,A2,A3,A4];
-  expected_effect "reach unseen family"
+{
+  "name": "Direction-lock falsifier",
+  "precondition": "Recent step had a directional no-op (diff_cells=0)
+                   after prior nonzero rewrites.",
+  "controller": ["ACTION3", "ACTION2", "ACTION1"],
+  "expected_effect": "At least one alternate direction should re-enter
+                      the ~52-cell rewrite family; if all no-op, infer
+                      global lock/terminal substate and branch strategy.",
+  "revises": "Arrow-equivalence falsifier"
+}
+\end{Verbatim}
+\vspace{0.3em}
+{\scriptsize Natural-language precondition, expected\_effect, and revision
+  link, plus a short action controller. Not just an action sequence.}
+\end{frame}
 
-observed_law:
-  name "observed-law:ACTION1";
-  summary {n:22, mean_diff:48.5, new_family_rate:0.04}
-  implication "lands in same family; try unused action or RESET-probe"
+\begin{frame}[fragile]{Observed-law + MCTS-proposal + wrapper samples}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+observed_law (v3.15.1):
+  name "observed-law:ACTION1"
+  summary      {n: 22, mean_diff: 48.5, new_family_rate: 0.04}
+  implication  "lands in same family; try unused action or RESET-probe"
 
-mcts_proposal:
+mcts_proposal (v3-full):
   name "mcts:a81ec3:ACTION3-ACTION1-ACTION4-ACTION2"
   body [A3,A1,A4,A2]; mcts_simulator_reward 4.33; visits 12
 
-wrapper:
-  name "wrapper:ACTION3-ACTION1"; body [A3,A1];
+wrapper (v3-full sleep refactor):
+  name "wrapper:ACTION3-ACTION1"
+  body [A3,A1]
   subskills [skill:mcts:...A3-A1-A4-A2, skill:mcts:...A3-A1-A2-A4]
-
-free:
-  name "Zero-down -> orthogonal novelty probe"
-  precondition "last ACTION2 produced 0 change";
-  controller [A3,A1,A4]
+  description "shared prefix over 2 MCTS proposals"
 \end{Verbatim}
 \end{frame}
 
@@ -365,23 +383,61 @@ side channels on submit   predict, world_update, propose_skill, env_note
 % ============================================================
 \section{Part 4: Example responses}
 
-\begin{frame}[fragile]{Real turn I/O}
+\begin{frame}[fragile]{Real turn I/O — IN (user\_msg, v3.15.1 turn 16)}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-IN (user_msg, v3.15.1 run, turn 16):
-  Game ls20 | Level 0/6 | budget 15/160 | Available {1..4,RESET}
-  <64x64 grid>
-  [Wake]  ACTION3 expected 'small' observed diff=52
-  [Observed Law]  ACTION1: n=4 mean_diff=48.5 new_family=0%
-  ...
+Game ls20 | Level 0/6 | budget 15/160
+State NOT_FINISHED | Available {ACTION1(Up), ACTION2(Down),
+                                 ACTION3(Left), ACTION4(Right), RESET}
+Last action: ACTION3 -> grid changed 52 cells
 
-OUT (submit_action):
-  action_name = "ACTION1"
-  predict = {expect_change: True, band: 'large',
-             expected_diff_cells: 50,
-             expected_next_grid: observation['grid']}   # identity cheat
-  world_update = "```python\ndef predict_effect(...): ...```"
-  propose_skill = None
-  env_note = ""
+grid (64x64):   <y_ticks + x_ticks Symbolica Frame.render>
+     0 1 2 ... 63
+  0: 9 9 9 9 ...
+  ...
+ 63: 9 9 9 9 ...
+
+[Wake] Real surprise occurred. Rewrite predict_effect so the failing
+  transition replays correctly.
+  - action=ACTION3 expected 'EXPECT_CHANGE: small local shift'
+    observed diff=52 new_family=False branch_escape=False
+
+[Observed-Law Details]
+  ACTION1: n=4  mean_diff=48.5  new_family=0%  branch_escape=0%
+  ACTION3: n=4  mean_diff=49.0  new_family=0%  branch_escape=0%
+
+[Skill Library] bfs-explore-grid, probe-rival-discriminator, ...
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Real turn I/O — OUT (submit\_action, turn 16)}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+action_name = "ACTION1"
+
+predict = {
+  "expect_change":  True,
+  "expected_diff_band": "large",
+  "expected_diff_cells": 50,
+  "expected_next_grid": observation['grid']    # <-- IDENTITY CHEAT
+}
+
+world_update = """
+  # focus: terminal-inert short-circuit precedence
+  def predict_effect(action, observation):
+      g = observation['grid']
+      state = observation.get('state')
+      avail = set(observation.get('available_actions', []))
+      if state == 'GAME_OVER' and avail.issubset({A1..A4}):
+          return {expect_change: False, expected_next_grid: g}
+      return {expect_change: False, expected_next_grid: g}   # fallback
+"""
+
+propose_skill = {
+  "name": "Least-used direction loop-break probe",
+  "precondition": "recent 2-3 arrows all caused similar ~52-cell remaps",
+  "controller": ["least-used arrow", "then probe for block"],
+  "expected_effect": "reveal directional escape, else confirm loop-lock"
+}
+env_note = "grid not changing family; try non-directional action next"
 \end{Verbatim}
 \end{frame}
 
