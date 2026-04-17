@@ -72,6 +72,64 @@
   reads off this bridge; fixes target the bridge signal, not the model.
 \end{frame}
 
+\begin{frame}[fragile]{The DreamCoder framework (v3 variant)}
+  \textbf{Purpose.} Show what DC actually contains — five skill kinds, each
+  with a distinct role in the wake-sleep loop.
+  \vspace{0.2em}
+  \begin{center}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \texttt{kind} & source & role \\
+    \midrule
+    \texttt{abstract\_primitive} & \texttt{seed\_library.py} & BFS, button semantics seeds (10 entries) \\
+    \texttt{observed\_law}  & \texttt{consolidate\_experience} & per-action empirical stats \\
+    \texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & top path from MCTS imagination \\
+    \texttt{wrapper}        & \texttt{sleep\_refactor}     & N-gram merge over shared prefix \\
+    (free)                  & agent \texttt{propose\_skill} & free-form LLM proposal \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.3em}
+  \textbf{Key methods} (all in \texttt{research\_extensions/modules/dreamcoder.py}):
+  \begin{itemize}
+    \item \texttt{commit\_skill(record)} --- start option execution
+    \item \texttt{next\_skill\_action()} --- returns body action; LLM bypassed
+    \item \texttt{on\_skill\_step(pred, obs)} --- surprise $\Rightarrow$ abort + queue wake
+    \item \texttt{sleep\_refactor()} --- prefix wrappers + demote + prune
+    \item \texttt{consolidate\_experience(wm)} --- observed\_law emission every 10 steps
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{SharedBridge interface (the one bus all modules read/write)}
+  \textbf{Purpose.} Anchor every later slide in concrete function calls.
+  \vspace{0.2em}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+class SharedBridge:
+    # core ring buffers
+    surprises:              list[SurpriseEvent]
+    proposed_skills:        list[ProposedSkill]
+    recent_actions:         list[str]
+    recent_families:        list[str]
+    # predictions + observations
+    current_prediction:     Prediction | None
+    last_observation:       Observation | None
+    # v3 option execution + control
+    current_skill_in_execution: SkillExecutionState | None
+    scientist_state:        ScientistControlState
+    pending_wake_triggers:  list[SurpriseEvent]   # drained by wake_overlay
+    pending_mcts_proposals: list[dict]            # drained by DC.propose_from_mcts
+    shared_hints:           dict[str, Any]        # e.g. "wake_events_log"
+    # methods
+    record_prediction / record_observation (emits SurpriseEvent)
+    commit_skill / clear_committed_skill
+    queue_wake_trigger / drain_wake_triggers
+    queue_mcts_proposal / drain_mcts_proposals
+    update_hint / read_hint
+\end{Verbatim}
+  \textbf{Implication.} Wake triggers, MCTS proposals, scientist state are
+  all first-class fields on this object — any cheat has to traverse it.
+\end{frame}
+
 \begin{frame}{The wake-sleep view in one picture}
   \textbf{Purpose.} Fix the vocabulary (imagine, act, wake, sleep) used
   throughout.
@@ -225,6 +283,48 @@ def predict_effect(action, observation):
   \textbf{Implication.} Wake only fires when a surprise reaches the bridge.
   Cheat~5 will show the agent producing 97 surprises but \emph{zero} wake
   memories --- the loop was broken at the bridge level.
+\end{frame}
+
+\begin{frame}[fragile]{MCTS internals — UCB1 on the code simulator}
+  \textbf{Purpose.} Show that MCTS really runs Python, not LLM calls.
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+class MCTSPlanner:   # research_extensions/modules/planner.py
+    max_depth = 4;  n_simulations = 64;  ucb_c = 1.4
+    def plan(world_model, root_signature, available_actions):
+        if world_model._best_draft().transition_accuracy < 0.4:
+            return {"gate_ok": False}   # H5b gate
+        # 64 rollouts, each calls simulate_step (pure Python predict_effect)
+        # UCB1 selection + random rollout reward = new_family*3 +
+        # branch_escape*2 + accuracy*1 + repeat_penalty*(-1)
+        return {"mcts_top_paths": [...], "bfs_top_paths": [...],
+                "advantage": mcts_top_reward - bfs_mean_reward}
+\end{Verbatim}
+  MCTS is \emph{off} until the simulator is reliable. This is CWM's
+  Thompson-sampling slot (REx) on a synthesised game.
+\end{frame}
+
+\begin{frame}[fragile]{Agent-facing interface (Symbolica-unified tools)}
+  \textbf{Purpose.} Make the information channel explicit.
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+Tools exposed to the LLM (agents/templates/arcgentica_research/agent.py):
+  history(n, wins_only)                    # frame history
+  memories_summaries / get / add / query   # shared memory
+  frame_render(keys, gap, y_ticks, crop)   # Symbolica Frame.render
+  frame_diff(margin) / frame_change_summary(margin)
+  frame_render_diff(keys, gap, crop='auto')
+  frame_find(values) / frame_bounding_box(values) / frame_color_counts()
+  submit_action(action_name, predict?, world_update?,
+                propose_skill?, env_note?)   # SIDE CHANNELS
+
+Each turn the user_msg contains:
+  * game_id / Level i/j / action budget
+  * full 64x64 grid (Frame.render with y_ticks+x_ticks)
+  * last-action change summary ("ACTION3 -> 52 cells changed")
+  * [Wake] overlay (if surprise queued)
+  * [Observed-Law Details] (mean_diff_cells per action)
+  * [Skill Library] (top-8 by score)
+  * [Persistent Notes] (category-balanced memory)
+\end{Verbatim}
 \end{frame}
 
 % =========================================================================
