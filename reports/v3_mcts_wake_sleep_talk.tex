@@ -73,61 +73,62 @@
 \end{frame}
 
 \begin{frame}[fragile]{The DreamCoder framework (v3 variant)}
-  \textbf{Purpose.} Show what DC actually contains — five skill kinds, each
-  with a distinct role in the wake-sleep loop.
-  \vspace{0.2em}
-  \begin{center}
-  \begin{tabular}{@{}lll@{}}
-    \toprule
-    \texttt{kind} & source & role \\
-    \midrule
-    \texttt{abstract\_primitive} & \texttt{seed\_library.py} & BFS, button semantics seeds (10 entries) \\
-    \texttt{observed\_law}  & \texttt{consolidate\_experience} & per-action empirical stats \\
-    \texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & top path from MCTS imagination \\
-    \texttt{wrapper}        & \texttt{sleep\_refactor}     & N-gram merge over shared prefix \\
-    (free)                  & agent \texttt{propose\_skill} & free-form LLM proposal \\
-    \bottomrule
-  \end{tabular}
-  \end{center}
-  \vspace{0.3em}
-  \textbf{Key methods} (all in \texttt{research\_extensions/modules/dreamcoder.py}):
-  \begin{itemize}
-    \item \texttt{commit\_skill(record)} --- start option execution
-    \item \texttt{next\_skill\_action()} --- returns body action; LLM bypassed
-    \item \texttt{on\_skill\_step(pred, obs)} --- surprise $\Rightarrow$ abort + queue wake
+  \textbf{Purpose.} Five skill kinds, each with a distinct role in the
+  wake-sleep loop.
+\vspace{-0.2em}
+{\footnotesize
+\begin{tabular}{@{}lll@{}}
+  \toprule
+  \texttt{kind} & source & role \\
+  \midrule
+  \texttt{abstract\_primitive} & \texttt{seed\_library.py} & BFS, button semantics (10 seeds) \\
+  \texttt{observed\_law}  & \texttt{consolidate\_experience} & per-action empirical stats \\
+  \texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & top path from MCTS imagination \\
+  \texttt{wrapper}        & \texttt{sleep\_refactor}     & N-gram merge over shared prefix \\
+  (free)                  & agent \texttt{propose\_skill} & free-form LLM proposal \\
+  \bottomrule
+\end{tabular}}
+\vspace{0.3em}
+
+  \textbf{Key methods} (\texttt{research\_extensions/modules/dreamcoder.py}):
+  \begin{itemize}\setlength\itemsep{0pt}\small
+    \item \texttt{commit\_skill(record)} / \texttt{next\_skill\_action()}
+          --- start + step an option (LLM bypassed)
+    \item \texttt{on\_skill\_step(pred, obs)} --- surprise $\Rightarrow$
+          abort + queue wake
     \item \texttt{sleep\_refactor()} --- prefix wrappers + demote + prune
-    \item \texttt{consolidate\_experience(wm)} --- observed\_law emission every 10 steps
+    \item \texttt{consolidate\_experience(wm)} ---
+          \texttt{observed\_law} emission every 10 steps
   \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{SharedBridge interface (the one bus all modules read/write)}
   \textbf{Purpose.} Anchor every later slide in concrete function calls.
-  \vspace{0.2em}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+\begin{Verbatim}[fontsize=\tiny,frame=single]
 class SharedBridge:
     # core ring buffers
-    surprises:              list[SurpriseEvent]
-    proposed_skills:        list[ProposedSkill]
-    recent_actions:         list[str]
-    recent_families:        list[str]
+    surprises              : list[SurpriseEvent]
+    proposed_skills        : list[ProposedSkill]
+    recent_actions         : list[str]
+    recent_families        : list[str]
     # predictions + observations
-    current_prediction:     Prediction | None
-    last_observation:       Observation | None
+    current_prediction     : Prediction | None
+    last_observation       : Observation | None
     # v3 option execution + control
-    current_skill_in_execution: SkillExecutionState | None
-    scientist_state:        ScientistControlState
-    pending_wake_triggers:  list[SurpriseEvent]   # drained by wake_overlay
-    pending_mcts_proposals: list[dict]            # drained by DC.propose_from_mcts
-    shared_hints:           dict[str, Any]        # e.g. "wake_events_log"
+    current_skill_in_execution : SkillExecutionState | None
+    scientist_state        : ScientistControlState
+    pending_wake_triggers  : list[SurpriseEvent]  # drained by wake_overlay
+    pending_mcts_proposals : list[dict]           # drained by DC.propose_from_mcts
+    shared_hints           : dict[str, Any]       # e.g. "wake_events_log"
     # methods
-    record_prediction / record_observation (emits SurpriseEvent)
+    record_prediction / record_observation    (emits SurpriseEvent)
     commit_skill / clear_committed_skill
     queue_wake_trigger / drain_wake_triggers
     queue_mcts_proposal / drain_mcts_proposals
     update_hint / read_hint
 \end{Verbatim}
   \textbf{Implication.} Wake triggers, MCTS proposals, scientist state are
-  all first-class fields on this object — any cheat has to traverse it.
+  first-class fields --- any cheat traverses this bus.
 \end{frame}
 
 \begin{frame}{The wake-sleep view in one picture}
@@ -184,9 +185,8 @@ ANTI-CHEAT: returning expected_next_grid == observation['grid']
 \end{frame}
 
 \begin{frame}[fragile]{The data-driven template we paste in}
-  \textbf{Purpose.} Show the Python skeleton the LLM sees, so the later
-  cheats are legible.
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+  \textbf{Purpose.} Python skeleton the LLM sees.
+\begin{Verbatim}[fontsize=\tiny,frame=single]
 def predict_effect(action, observation):
     g = observation['grid']
     H, W = len(g), len(g[0])
@@ -198,19 +198,15 @@ def predict_effect(action, observation):
             for x, y, new_val in change_list:
                 if 0 <= y < H and 0 <= x < W:
                     new[y][x] = new_val
-    n_changed = sum(1 for y in range(H) for x in range(W)
-                    if g[y][x] != new[y][x])
-    return {
-        'expect_change': n_changed > 0,
-        'expected_diff_band': 'zero' if n_changed==0
-            else ('small' if n_changed<=4 else 'large'),
-        'expected_diff_cells': n_changed,
-        'expected_next_grid': new,
-    }
+    n_changed = sum(1 for y in range(H) for x in range(W) if g[y][x] != new[y][x])
+    return {'expect_change': n_changed > 0,
+            'expected_diff_band': 'zero' if n_changed==0
+                else ('small' if n_changed<=4 else 'large'),
+            'expected_diff_cells': n_changed,
+            'expected_next_grid': new}
 \end{Verbatim}
-  \textbf{Implication.} The template itself is a trap: if left unedited it
-  replays only the most recent sample and produces a 1-cell delta. Cheat~2
-  will exploit exactly this default.
+  \textbf{Implication.} The template is a trap: unedited it replays only
+  the most recent sample and produces a 1-cell delta --- exactly Cheat~2.
 \end{frame}
 
 \begin{frame}{Per-turn information fed to the LLM}
@@ -257,32 +253,25 @@ def predict_effect(action, observation):
   corrupts downstream planning.
 \end{frame}
 
-\begin{frame}{Physical, wake, sleep}
+\begin{frame}[fragile]{Physical, wake, sleep (linear flow)}
   \textbf{Purpose.} Close the loop from action back to library.
-  \vspace{0.3em}
-  \begin{center}
-  \begin{tikzpicture}[
-      node distance=0.7cm and 1.1cm,
-      box/.style={draw,rounded corners,minimum height=0.8cm,minimum width=2.8cm,align=center,font=\scriptsize},
-      arrow/.style={-{Latex[length=1.8mm]},thick}
-    ]
-    \node[box] (skill) {skill.commit\\(action-by-action)};
-    \node[box,right=of skill] (sur)   {surprise?};
-    \node[box,above right=of sur] (abort) {abort option +\\queue wake trigger};
-    \node[box,below right=of sur] (ok)    {continue skill};
-    \node[box,right=3cm of abort] (wake)  {wake: LLM rewrites\\\texttt{predict\_effect} branch};
-    \node[box,below=of wake] (slp)        {sleep: refactor\\(N-gram + demote)\\ + consolidate\_experience};
-    \draw[arrow] (skill) -- (sur);
-    \draw[arrow] (sur) -- (abort);
-    \draw[arrow] (sur) -- (ok);
-    \draw[arrow] (abort) -- (wake);
-    \draw[arrow] (wake) -- (slp);
-    \draw[arrow] (slp.west) to[out=180,in=-90] (skill.south);
-  \end{tikzpicture}
-  \end{center}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+skill.commit -> submit ACTION -> compute surprise?
+                                     |
+       +-- yes --> abort option + queue wake trigger
+       |                |
+       |                v
+       |          WAKE: LLM rewrites predict_effect branch
+       |                |
+       |                v
+       |          SLEEP: sleep_refactor (N-gram wrappers +
+       |                  demote) + consolidate_experience
+       |                |
+       +-- no ----------+---> back to skill.commit (next step)
+\end{Verbatim}
   \textbf{Implication.} Wake only fires when a surprise reaches the bridge.
-  Cheat~5 will show the agent producing 97 surprises but \emph{zero} wake
-  memories --- the loop was broken at the bridge level.
+  Cheat~5 will show 97 surprises but \emph{zero} wake memories --- the
+  loop was broken at the bridge level.
 \end{frame}
 
 \begin{frame}[fragile]{MCTS internals — UCB1 on the code simulator}
