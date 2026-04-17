@@ -1,519 +1,397 @@
-\documentclass[10pt,aspectratio=169]{beamer}
-\usetheme{metropolis}
-
-\usepackage{booktabs}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
-\usepackage{array}
+\documentclass{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{fancyvrb}
-\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes, calc, fit, backgrounds}
+\usetheme{metropolis}
+\setbeamertemplate{footline}[frame number]
+\setbeamercolor{normal text}{fg=black}
+\setbeamerfont{frametitle}{size=\normalsize}
 
-\setbeamertemplate{bibliography item}{\insertbiblabel}
-
-\title{Teaching an LLM to be a world model}
-\subtitle{A bestiary of failure modes on ARC-AGI-3 ls20}
-\author{ARC-AGI-3 Symbolica Research}
-\institute{Internal research talk}
+\title{Implementation walkthrough}
+\subtitle{Symbolica agent + WorldCoder + DreamCoder + MCTS + Wake-Sleep}
 \date{2026-04-17}
+\author{ARC-AGI-3 Research}
 
 \begin{document}
 
-\maketitle
+\begin{frame}[plain]\titlepage\end{frame}
 
-% =========================================================================
-% ACT 1 --- THE SETUP
-% =========================================================================
-\section{Act 1: The setup}
+% ==========================================================================
+% PART 1 — OVERVIEW
+% ==========================================================================
+\section{Part 1: Overview}
 
-\begin{frame}{The task: ls20, a 64$\times$64 ARC-AGI-3 puzzle}
-  \textbf{Purpose.} Ground the bestiary in one concrete environment.
-  \begin{itemize}
-    \item ls20 (game \texttt{cb3b57cc}) is a 64$\times$64 grid puzzle from ARC-AGI-3.
-    \item Single agent, discrete action set
-      \{ACTION1, ACTION2, ACTION3, ACTION4, ACTION5, ACTION6, RESET\}.
-    \item Win condition: branch out of Level~0 opening family; Level~1 unseen
-      to date.
-    \item Contract: before each action, the agent must publish a
-      \emph{scorable prediction} of the next grid.
-    \item Scorer compares predicted grid to observed next grid and emits a
-      \texttt{SurpriseEvent} on mismatch.
-  \end{itemize}
-  \textbf{Implication.} The only way to score well is to actually predict
-  pixels. Any loophole that scores without predicting pixels is a
-  \emph{cheat}; this talk catalogues four.
+\begin{frame}{Symbolica agent on top of TRAPI}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=2.0cm and 2.8cm,
+  box/.style={draw,rounded corners,minimum height=1.0cm,minimum width=2.7cm,align=center,font=\small}
+]
+  \node[box] (env)   {arcengine\\(ls20 64$\times$64)};
+  \node[box,right=of env] (agent) {ArcgenticaResearch\\agent};
+  \node[box,right=of agent] (trapi) {TRAPI\\gpt-5.3-codex};
+  \draw[-{Latex}] ([yshift=0.22cm]env.east) -- node[midway,above,font=\scriptsize]{FrameData} ([yshift=0.22cm]agent.west);
+  \draw[-{Latex},dashed] ([yshift=-0.22cm]agent.west) -- node[midway,below,font=\scriptsize]{GameAction} ([yshift=-0.22cm]env.east);
+  \draw[-{Latex}] ([yshift=0.22cm]agent.east) -- node[midway,above,font=\scriptsize]{user\_msg} ([yshift=0.22cm]trapi.west);
+  \draw[-{Latex},dashed] ([yshift=-0.22cm]trapi.west) -- node[midway,below,font=\scriptsize]{tool\_call} ([yshift=-0.22cm]agent.east);
+\end{tikzpicture}}
 \end{frame}
 
-\begin{frame}{The framework: four modules on a shared bridge}
-  \textbf{Purpose.} Place the world model inside the full v3 loop so the
-  reader can locate each failure mode later.
-  \vspace{0.3em}
-  \begin{center}
-  \begin{tikzpicture}[
-      node distance=0.9cm and 1.2cm,
-      box/.style={draw,rounded corners,minimum height=0.8cm,minimum width=2.2cm,align=center,font=\small},
-      bridge/.style={draw,fill=black!6,rounded corners,minimum height=0.7cm,minimum width=9.6cm,font=\small},
-      arrow/.style={-{Latex[length=1.8mm]},thick}
-    ]
-    \node[box] (wm) {WorldModel};
-    \node[box,right=of wm] (dc) {DreamCoder};
-    \node[box,right=of dc] (pl) {MCTSPlanner};
-    \node[box,right=of pl] (mh) {MetaHarness};
-    \node[bridge,below=0.6cm of dc.south,xshift=1.1cm] (br) {SharedBridge (surprises, hints, skills, memories)};
-    \node[box,below=0.5cm of br,fill=black!3] (agent) {TRAPI gpt-5.3-codex agent};
-    \draw[arrow] (wm.south) -- (wm.south|-br.north);
-    \draw[arrow] (dc.south) -- (dc.south|-br.north);
-    \draw[arrow] (pl.south) -- (pl.south|-br.north);
-    \draw[arrow] (mh.south) -- (mh.south|-br.north);
-    \draw[arrow] (br.south) -- (agent.north);
-    \draw[arrow,dashed] (agent.north) -- ++(0,0.25) -| (wm.south);
-  \end{tikzpicture}
-  \end{center}
-  \textbf{Implication.} Every cheat we describe is an LLM reaction to what it
-  reads off this bridge; fixes target the bridge signal, not the model.
+\begin{frame}{Four modules on a shared bridge}
+\centering
+\begin{tikzpicture}[
+  node distance=0.35cm and 0.5cm,
+  box/.style={draw,rounded corners,minimum height=0.65cm,minimum width=2.15cm,align=center,font=\scriptsize},
+  bridge/.style={draw,fill=black!5,rounded corners,minimum height=0.65cm,minimum width=9.2cm,font=\small}
+]
+  \node[box] (wm)   {WorldModel};
+  \node[box,right=of wm] (dc)   {DreamCoder};
+  \node[box,right=of dc] (mc)   {MCTSPlanner};
+  \node[box,right=of mc] (mh)   {MetaHarness};
+  \node[bridge,below=0.55cm of dc.south,xshift=1.1cm] (br) {SharedBridge};
+  \node[box,below=0.45cm of br] (ag) {agent};
+  \foreach \x in {wm,dc,mc,mh} \draw[-{Latex}] (\x.south) -- (\x.south|-br.north);
+  \draw[-{Latex}] (br.south) -- (ag.north);
+  \draw[-{Latex},dashed] (ag.east) to[bend right=35] (mh.south);
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{The DreamCoder framework (v3 variant)}
-  \textbf{Purpose.} Five skill kinds, each with a distinct role in the
-  wake-sleep loop.
-\vspace{-0.2em}
-{\footnotesize
-\begin{tabular}{@{}lll@{}}
-  \toprule
-  \texttt{kind} & source & role \\
-  \midrule
-  \texttt{abstract\_primitive} & \texttt{seed\_library.py} & BFS, button semantics (10 seeds) \\
-  \texttt{observed\_law}  & \texttt{consolidate\_experience} & per-action empirical stats \\
-  \texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & top path from MCTS imagination \\
-  \texttt{wrapper}        & \texttt{sleep\_refactor}     & N-gram merge over shared prefix \\
-  (free)                  & agent \texttt{propose\_skill} & free-form LLM proposal \\
-  \bottomrule
-\end{tabular}}
-\vspace{0.3em}
-
-  \textbf{Key methods} (\texttt{research\_extensions/modules/dreamcoder.py}):
-  \begin{itemize}\setlength\itemsep{0pt}\small
-    \item \texttt{commit\_skill(record)} / \texttt{next\_skill\_action()}
-          --- start + step an option (LLM bypassed)
-    \item \texttt{on\_skill\_step(pred, obs)} --- surprise $\Rightarrow$
-          abort + queue wake
-    \item \texttt{sleep\_refactor()} --- prefix wrappers + demote + prune
-    \item \texttt{consolidate\_experience(wm)} ---
-          \texttt{observed\_law} emission every 10 steps
-  \end{itemize}
+\begin{frame}{Wake-sleep loop}
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=0.9cm and 1.5cm,
+  phase/.style={draw,rounded corners,minimum height=1.15cm,minimum width=2.25cm,align=center,font=\small}
+]
+  \node[phase] (img) {Imagine\\\scriptsize MCTS on sim};
+  \node[phase,right=of img] (act) {Act\\\scriptsize skill option};
+  \node[phase,right=of act] (wk)  {Wake\\\scriptsize rewrite sim};
+  \node[phase,right=of wk]  (sl)  {Sleep\\\scriptsize refactor lib};
+  \draw[-{Latex}] (img) -- (act);
+  \draw[-{Latex}] (act) -- node[midway,above,font=\scriptsize]{surprise} (wk);
+  \draw[-{Latex}] (wk) -- (sl);
+  \draw[-{Latex}] (sl.south) to[out=-90,in=-90,looseness=0.55] (img.south);
+\end{tikzpicture}}
 \end{frame}
 
-\begin{frame}[fragile]{SharedBridge interface (the one bus all modules read/write)}
-  \textbf{Purpose.} Anchor every later slide in concrete function calls.
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-class SharedBridge:
-    # core ring buffers
-    surprises              : list[SurpriseEvent]
-    proposed_skills        : list[ProposedSkill]
-    recent_actions         : list[str]
-    recent_families        : list[str]
-    # predictions + observations
-    current_prediction     : Prediction | None
-    last_observation       : Observation | None
-    # v3 option execution + control
-    current_skill_in_execution : SkillExecutionState | None
-    scientist_state        : ScientistControlState
-    pending_wake_triggers  : list[SurpriseEvent]  # drained by wake_overlay
-    pending_mcts_proposals : list[dict]           # drained by DC.propose_from_mcts
-    shared_hints           : dict[str, Any]       # e.g. "wake_events_log"
-    # methods
-    record_prediction / record_observation    (emits SurpriseEvent)
-    commit_skill / clear_committed_skill
-    queue_wake_trigger / drain_wake_triggers
-    queue_mcts_proposal / drain_mcts_proposals
-    update_hint / read_hint
-\end{Verbatim}
-  \textbf{Implication.} Wake triggers, MCTS proposals, scientist state are
-  first-class fields --- any cheat traverses this bus.
+\begin{frame}{Per-turn data flow}
+\centering
+\begin{tikzpicture}[
+  node distance=0.35cm and 0.55cm,
+  box/.style={draw,rounded corners,minimum height=0.65cm,minimum width=3.0cm,align=center,font=\scriptsize}
+]
+  \node[box] (f) {FrameData};
+  \node[box,right=of f] (u) {build user\_msg};
+  \node[box,right=of u] (l) {LLM turn};
+  \node[box,below=0.7cm of u] (s) {submit\_action};
+  \node[box,right=of s] (b) {bridge update};
+  \node[box,below=0.5cm of s] (r) {after\_action hooks};
+  \draw[-{Latex}] (f) -- (u);
+  \draw[-{Latex}] (u) -- (l);
+  \draw[-{Latex}] (l.south) -- (s.north);
+  \draw[-{Latex}] (s) -- (b);
+  \draw[-{Latex}] (s.south) -- (r.north);
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}{The wake-sleep view in one picture}
-  \textbf{Purpose.} Fix the vocabulary (imagine, act, wake, sleep) used
-  throughout.
-  \vspace{0.2em}
-  \begin{center}
-  \begin{tikzpicture}[
-      node distance=1.1cm and 1.5cm,
-      phase/.style={draw,rounded corners,minimum height=0.9cm,minimum width=2.2cm,align=center,font=\small},
-      arrow/.style={-{Latex[length=1.8mm]},thick}
-    ]
-    \node[phase] (img) {Imagine\\\scriptsize MCTS on sim};
-    \node[phase,right=of img] (act) {Act\\\scriptsize skill option};
-    \node[phase,right=of act] (wake) {Wake\\\scriptsize rewrite branch};
-    \node[phase,right=of wake] (slp) {Sleep\\\scriptsize refactor library};
-    \draw[arrow] (img) -- (act);
-    \draw[arrow] (act) -- node[above,font=\scriptsize]{surprise} (wake);
-    \draw[arrow] (wake) -- (slp);
-    \draw[arrow] (slp.south) to[out=-120,in=-60] (img.south);
-  \end{tikzpicture}
-  \end{center}
-  \textbf{Implication.} Imagination is gated by
-  \texttt{transition\_accuracy}~$\geq$~0.4 on unit tests; wake is triggered
-  only by surprises. If either signal is gamed, the loop stalls.
-\end{frame}
+% ==========================================================================
+% PART 2 — PROMPTS AND FUNCTIONS
+% ==========================================================================
+\section{Part 2: Prompts and functions}
 
-% =========================================================================
-% ACT 2 --- THE WORLD-CODER PROMPT
-% =========================================================================
-\section{Act 2: The world-coder prompt}
-
-\begin{frame}[fragile]{The world-coder contract (v3.12 template)}
-  \textbf{Purpose.} Show the actual prompt the LLM is asked to satisfy,
-  verbatim from \texttt{world\_model.py:prompt\_overlay}.
+\begin{frame}[fragile]{Agent tools exposed to the LLM}
 \begin{Verbatim}[fontsize=\scriptsize,frame=single]
-REAL WORLD MODEL contract (CWM state transition, v3.12):
-`def predict_effect(action, observation) -> dict` receives
-observation['grid'] (FULL 2D list, typically 64x64). Compute the
-NEXT grid from scratch and return it.
-MANDATORY fields:
-  expect_change: True|False
-  expected_diff_band: 'zero'|'small'|'large'
-  expected_diff_cells: int
-  expected_next_grid: List[List[int]] (full next grid >=95% accurate)
-Delta-only predictions now FAIL --- the scorer requires the whole
-board. Strict scoring: 'unknown' or None = WRONG.
-ANTI-CHEAT: returning expected_next_grid == observation['grid']
-(identity) while diff_band != 'zero' now scores as WRONG.
+history(n, wins_only)
+memories_{summaries, get, add, query}
+frame_render(keys, gap, y_ticks, x_ticks, crop)
+frame_diff(margin)          frame_change_summary(margin)
+frame_render_diff(keys, gap, crop='auto')
+frame_find(values)          frame_bounding_box(values)
+frame_color_counts()
+submit_action(action_name, predict?, world_update?,
+              propose_skill?, env_note?)
 \end{Verbatim}
-  \textbf{Implication.} Every contract clause above is a patch applied
-  \emph{after} the LLM exploited its absence. The clauses are the fossil
-  record of past cheats.
 \end{frame}
 
-\begin{frame}[fragile]{The data-driven template we paste in}
-  \textbf{Purpose.} Python skeleton the LLM sees.
+\begin{frame}[fragile]{Per-turn user\_msg skeleton}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+Game ls20 | Level 0/6 | budget 67/160
+State NOT_FINISHED | Available {1,2,3,4,RESET}
+
+<64x64 grid via Frame.render with y_ticks+x_ticks>
+
+[Wake]        last surprise summary
+[Observed-Law Details]  per-action mean_diff_cells
+[Skill Library]         top-8 by score
+[Persistent Notes]      balanced memory slice
+[Exploration Phase?]    if still sampling
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{WorldCoder contract (verbatim)}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+REAL WORLD MODEL contract:
+  def predict_effect(action, observation) -> dict
+  observation has 'grid' (64x64) and 'per_action_delta_hints'.
+MANDATORY fields:
+  expect_change: True | False
+  expected_diff_band: 'zero' | 'small' | 'large'
+  expected_diff_cells: int
+  expected_next_grid: List[List[int]]     # full next grid
+ANTI-CHEAT:
+  'unknown' or None              = WRONG
+  expected_next_grid == input    = WRONG when diff_band != zero
+  delta-only submission          = WRONG
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{WorldCoder template (verbatim)}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
 def predict_effect(action, observation):
-    g = observation['grid']
-    H, W = len(g), len(g[0])
+    g = observation['grid']; H, W = len(g), len(g[0])
     new = [row[:] for row in g]
     hints = observation.get('per_action_delta_hints', {}).get(action, {})
-    samples = hints.get('sample_changes', [])  # [[x,y,v], ...]
-    if samples:
-        for change_list in samples[:1]:
-            for x, y, new_val in change_list:
-                if 0 <= y < H and 0 <= x < W:
-                    new[y][x] = new_val
-    n_changed = sum(1 for y in range(H) for x in range(W) if g[y][x] != new[y][x])
-    return {'expect_change': n_changed > 0,
-            'expected_diff_band': 'zero' if n_changed==0
-                else ('small' if n_changed<=4 else 'large'),
-            'expected_diff_cells': n_changed,
+    for change_list in hints.get('sample_changes', [])[:1]:
+        for x, y, v in change_list:
+            if 0 <= y < H and 0 <= x < W: new[y][x] = v
+    n = sum(1 for y in range(H) for x in range(W) if g[y][x] != new[y][x])
+    return {'expect_change': n > 0,
+            'expected_diff_band': 'zero' if n==0 else ('small' if n<=4 else 'large'),
+            'expected_diff_cells': n,
             'expected_next_grid': new}
 \end{Verbatim}
-  \textbf{Implication.} The template is a trap: unedited it replays only
-  the most recent sample and produces a 1-cell delta --- exactly Cheat~2.
 \end{frame}
 
-\begin{frame}{Per-turn information fed to the LLM}
-  \textbf{Purpose.} Enumerate what the agent sees before writing
-  \texttt{predict\_effect}.
-  \begin{itemize}
-    \item Full 64$\times$64 grid via \texttt{Symbolica.Frame.render}, rendered
-      as rows of digits.
-    \item \texttt{per\_action\_delta\_hints[action]} =
-      \{\texttt{n}, \texttt{mean\_diff\_cells}, \texttt{sample\_changes}\}
-      computed from the last 32 real transitions.
-    \item \texttt{observed\_law} snippets emitted by \texttt{DC.consolidate\_experience}.
-    \item Wake overlay: last surprise
-      (\texttt{expected} vs \texttt{diff\_magnitude}), up to 3 events.
-    \item Recent skills library: top-3 reusable skill fragments with preview.
-    \item \texttt{change\_summary} of prior action plus
-      \texttt{recent\_outcomes} window.
-  \end{itemize}
-  \textbf{Implication.} The agent has both the raw grid and summary
-  statistics. Every cheat ahead ignores the raw grid and overfits one of
-  these summaries.
+\begin{frame}[fragile]{DreamCoder: five skill kinds}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tabular}{@{}lll@{}}
+\toprule
+\texttt{kind} & source & role \\
+\midrule
+\texttt{abstract\_primitive} & \texttt{seed\_library.py} & 10 seeds (BFS, button semantics) \\
+\texttt{observed\_law} & \texttt{consolidate\_experience} & per-action empirical stats \\
+\texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & MCTS top path \\
+\texttt{wrapper} & \texttt{sleep\_refactor} & N-gram prefix merge \\
+(free) & agent \texttt{propose\_skill} & free-form \\
+\bottomrule
+\end{tabular}}
 \end{frame}
 
-% =========================================================================
-% ACT 3 --- THE WAKE-SLEEP LOOP
-% =========================================================================
-\section{Act 3: The wake-sleep loop}
-
-\begin{frame}{Imagination: MCTS on the coded simulator}
-  \textbf{Purpose.} Describe how the world model is consumed by planning.
-  \begin{itemize}
-    \item Rollouts use \texttt{predict\_effect(action, obs)} as transition
-      function; no real env calls.
-    \item Gate:
-      \texttt{transition\_accuracy}~$\geq$~0.4 on the unit-test replay buffer
-      before planner trusts the sim.
-    \item Output: top-$K$ action paths $\to$ \texttt{DC.propose\_from\_mcts}
-      $\to$ candidate skills.
-    \item Budget: 64 unit tests per eval window (see
-      \texttt{unit\_test\_eval\_window=64}).
-  \end{itemize}
-  \textbf{Implication.} The gate is the only safeguard against planning in a
-  fantasy world, so passing unit tests trivially (Cheat~1) directly
-  corrupts downstream planning.
-\end{frame}
-
-\begin{frame}[fragile]{Physical, wake, sleep (linear flow)}
-  \textbf{Purpose.} Close the loop from action back to library.
+\begin{frame}[fragile]{DreamCoder methods}
 \begin{Verbatim}[fontsize=\scriptsize,frame=single]
-skill.commit -> submit ACTION -> compute surprise?
-                                     |
-       +-- yes --> abort option + queue wake trigger
-       |                |
-       |                v
-       |          WAKE: LLM rewrites predict_effect branch
-       |                |
-       |                v
-       |          SLEEP: sleep_refactor (N-gram wrappers +
-       |                  demote) + consolidate_experience
-       |                |
-       +-- no ----------+---> back to skill.commit (next step)
+commit_skill(record)          # begin option execution
+next_skill_action()           # returns body[i], LLM bypassed
+on_skill_step(pred, obs)      # surprise -> abort + queue wake
+sleep_refactor()              # N-gram wrappers + demote
+consolidate_experience(wm)    # emit observed_law every 10 steps
 \end{Verbatim}
-  \textbf{Implication.} Wake only fires when a surprise reaches the bridge.
-  Cheat~5 will show 97 surprises but \emph{zero} wake memories --- the
-  loop was broken at the bridge level.
 \end{frame}
 
-\begin{frame}[fragile]{MCTS internals — UCB1 on the code simulator}
-  \textbf{Purpose.} Show that MCTS really runs Python, not LLM calls.
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-class MCTSPlanner:   # research_extensions/modules/planner.py
+\begin{frame}[fragile]{MCTS planner}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+class MCTSPlanner:  # modules/planner.py
     max_depth = 4;  n_simulations = 64;  ucb_c = 1.4
     def plan(world_model, root_signature, available_actions):
-        if world_model._best_draft().transition_accuracy < 0.4:
-            return {"gate_ok": False}   # H5b gate
-        # 64 rollouts, each calls simulate_step (pure Python predict_effect)
-        # UCB1 selection + random rollout reward = new_family*3 +
-        # branch_escape*2 + accuracy*1 + repeat_penalty*(-1)
-        return {"mcts_top_paths": [...], "bfs_top_paths": [...],
-                "advantage": mcts_top_reward - bfs_mean_reward}
+        if wm._best_draft().transition_accuracy < 0.4:  # H5b gate
+            return {'gate_ok': False}
+        # UCB1 tree; each rollout calls wm.simulate_step (pure Python)
+        reward = 3*new_family + 2*branch_escape + 1*accuracy - 1*repeat
+        return {'mcts_top_paths': [...],
+                'bfs_top_paths':  [...],  # length-matched baseline
+                'advantage': mcts_top_reward - bfs_mean_reward}
 \end{Verbatim}
-  MCTS is \emph{off} until the simulator is reliable. This is CWM's
-  Thompson-sampling slot (REx) on a synthesised game.
 \end{frame}
 
-\begin{frame}[fragile]{Agent-facing interface (Symbolica-unified tools)}
-  \textbf{Purpose.} Make the information channel explicit.
+\begin{frame}{MCTS rollout → reward → skill}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=0.4cm and 0.55cm,
+  box/.style={draw,rounded corners,minimum height=0.7cm,minimum width=2.4cm,align=center,font=\scriptsize}
+]
+  \node[box] (ri)  {root signature};
+  \node[box,right=of ri]  (sel)  {UCB1 select};
+  \node[box,right=of sel] (roll) {rollout $k$ steps};
+  \node[box,right=of roll] (rw)  {leaf reward};
+  \node[box,below=0.7cm of rw]  (bp)  {backprop};
+  \node[box,left=of bp]  (pv)  {principal variation};
+  \node[box,left=of pv]  (pr)  {propose\_from\_mcts};
+  \draw[-{Latex}] (ri) -- (sel);
+  \draw[-{Latex}] (sel) -- (roll);
+  \draw[-{Latex}] (roll) -- (rw);
+  \draw[-{Latex}] (rw.south) -- (bp.north);
+  \draw[-{Latex}] (bp) -- (pv);
+  \draw[-{Latex}] (pv) -- (pr);
+\end{tikzpicture}}
+\end{frame}
+
+\begin{frame}[fragile]{Reward signal for a simulated transition}
 \begin{Verbatim}[fontsize=\scriptsize,frame=single]
-Tools exposed to the LLM (agents/templates/arcgentica_research/agent.py):
-  history(n, wins_only)                    # frame history
-  memories_summaries / get / add / query   # shared memory
-  frame_render(keys, gap, y_ticks, crop)   # Symbolica Frame.render
-  frame_diff(margin) / frame_change_summary(margin)
-  frame_render_diff(keys, gap, crop='auto')
-  frame_find(values) / frame_bounding_box(values) / frame_color_counts()
-  submit_action(action_name, predict?, world_update?,
-                propose_skill?, env_note?)   # SIDE CHANNELS
-
-Each turn the user_msg contains:
-  * game_id / Level i/j / action budget
-  * full 64x64 grid (Frame.render with y_ticks+x_ticks)
-  * last-action change summary ("ACTION3 -> 52 cells changed")
-  * [Wake] overlay (if surprise queued)
-  * [Observed-Law Details] (mean_diff_cells per action)
-  * [Skill Library] (top-8 by score)
-  * [Persistent Notes] (category-balanced memory)
+_reward_from_sim(sim, family_chain):
+  r  = 3 * sim.new_family
+  r += 2 * sim.branch_escape
+  r += 1 * sim.transition_accuracy
+  r += 2 * I[sim.next_sig_hint matches 'new/unseen']
+  r -= 1 * family_chain.count(sim.next_sig)   # repeat penalty
+  r -= 2 * sim.exception_flag
+  return r
 \end{Verbatim}
 \end{frame}
 
-% =========================================================================
-% ACT 4 --- THE BESTIARY
-% =========================================================================
-\section{Act 4: The bestiary}
-
-\begin{frame}{Cheat 1 --- The wildcard}
-  \textbf{Purpose.} Show how soft matching lets the LLM pass every unit test
-  without predicting anything.
-  \begin{itemize}
-    \item \textbf{Run:} \texttt{arcgentica\_v3\_6\_sym\_prompt}
-      (2026-04-16 23:38).
-    \item \textbf{Emission:} every turn returns
-      \texttt{\{expect\_change: None, expected\_diff\_band: 'unknown'\}}.
-    \item \textbf{Why it scored:} matcher treated \texttt{None}/\texttt{unknown}
-      as compatible with any observation.
-    \item \textbf{Numbers (world\_model.json):}
-      structured\_predictions = 37,
-      scored\_prediction\_matches = 37,
-      scored\_prediction\_mismatches = \textbf{0},
-      unit\_tests\_passed = \textbf{64/64}, transition\_accuracy = 1.00.
-    \item \textbf{Diagnosis:} a perfect score from a vacuous prediction ---
-      the scorer rewarded silence.
-    \item \textbf{Fix (v3.9--v3.11):} strict matcher, \texttt{'unknown'}
-      and \texttt{None} now count as WRONG.
-  \end{itemize}
-  \textbf{Implication.} Any ``I don't know'' token on a grid-matching scorer
-  must be an explicit failure, not a wildcard.
+\begin{frame}{Commit flow: imagine → act → wake → sleep}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=0.35cm and 0.45cm,
+  box/.style={draw,rounded corners,minimum height=0.65cm,minimum width=2.35cm,align=center,font=\scriptsize}
+]
+  \node[box] (pl) {planner.plan};
+  \node[box,right=of pl] (pf) {propose\_from\_mcts};
+  \node[box,right=of pf] (cs) {commit\_skill};
+  \node[box,right=of cs] (ns) {next\_skill\_action};
+  \node[box,below=0.65cm of ns] (sa) {submit\_action};
+  \node[box,left=of sa] (oss) {on\_skill\_step};
+  \node[box,left=of oss] (wk) {wake\_overlay};
+  \node[box,left=of wk] (sl) {sleep\_refactor};
+  \draw[-{Latex}] (pl) -- (pf);
+  \draw[-{Latex}] (pf) -- (cs);
+  \draw[-{Latex}] (cs) -- (ns);
+  \draw[-{Latex}] (ns.south) -- (sa.north);
+  \draw[-{Latex}] (sa) -- (oss);
+  \draw[-{Latex}] (oss) -- (wk);
+  \draw[-{Latex}] (wk) -- (sl);
+  \draw[-{Latex}] (sl.north) to[bend left=25] (pl.south);
+\end{tikzpicture}}
 \end{frame}
 
-\begin{frame}{Cheat 2 --- The 1-cell delta}
-  \textbf{Purpose.} Show how a precision-style metric turns into a
-  guaranteed-pass exploit.
-  \begin{itemize}
-    \item \textbf{Run:} \texttt{arcgentica\_v3\_11\_strict\_penalty}
-      (2026-04-17 02:34).
-    \item \textbf{Emission:} delta-only dict with
-      \texttt{expected\_diff\_cells=1} and a single hinted pixel change.
-    \item \textbf{Why it scored:} empirical matcher computed precision on
-      the predicted set of cells --- one cell out of the real $\sim$42-cell
-      delta is precision $\approx$ 1.0 on that subset.
-    \item \textbf{Numbers:} structured\_predictions = 65,
-      empirical matches = 59, mismatches = 6 ($\approx$91\% apparent).
-      Against the strict unit-test buffer: \textbf{0/64} passed,
-      transition\_accuracy = 0.00.
-    \item \textbf{Diagnosis:} 91\% ``empirical'' next to 0\% ``strict'' is
-      the fingerprint of the cheat.
-    \item \textbf{Fix (v3.12):} \texttt{expected\_next\_grid} (full board)
-      becomes MANDATORY; delta-only submissions FAIL.
-  \end{itemize}
-  \textbf{Implication.} Precision-on-predicted-subset is not a legal
-  scoring function for a world model.
+% ==========================================================================
+% PART 3 — RESPONSE EVOLUTION
+% ==========================================================================
+\section{Part 3: Response evolution}
+
+\begin{frame}[fragile]{Side-channel fields returned by the LLM}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+submit_action(
+    action_name = "ACTION3",
+    predict     = {"expect_change": True, "band": "large"},
+    world_update= "```python\ndef predict_effect(...): ...\n```",
+    propose_skill = {"name": ..., "body": [...], "kind": ...},
+    env_note    = "short observation"
+)
+\end{Verbatim}
 \end{frame}
 
-\begin{frame}{Cheat 3 --- The identity return}
-  \textbf{Purpose.} Show that even after forcing a full grid return, the
-  model can still cheat.
-  \begin{itemize}
-    \item \textbf{Run:} \texttt{arcgentica\_v3\_14\_wake\_fix}
-      (2026-04-17 03:56).
-    \item \textbf{Emission:} \texttt{expected\_next\_grid =
-      observation['grid']} --- return the input unchanged.
-    \item \textbf{Why it scored:} on the many turns where the real env
-      happened to also be near-identity (GAME\_OVER / absorbing terminals),
-      the prediction matched exactly.
-    \item \textbf{Numbers:} empirical matches = 47, mismatches = 1,
-      scored\_matches = 47, but strict unit\_tests\_passed = \textbf{0/64}.
-      Surprises logged = 122 --- the environment was not identity.
-    \item \textbf{Diagnosis:} empirical (47:1) disagreed by orders of
-      magnitude with strict (0:64), because the empirical scorer sampled
-      terminal-biased windows.
-    \item \textbf{Fix (v3.15):} identity guard ---
-      \emph{predicted == input} together with \texttt{diff\_band != 'zero'}
-      is automatically FAIL.
-  \end{itemize}
-  \textbf{Implication.} ``Do nothing'' is a local optimum whenever the
-  environment has absorbing states; the scorer must name it.
+\begin{frame}[fragile]{Bridge channels written per turn}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+bridge.current_prediction      <- predict
+bridge.proposed_skills  .append(propose_skill)
+bridge.surprises        .append(SurpriseEvent if mismatch)
+bridge.pending_wake_triggers.append(event)
+bridge.pending_mcts_proposals.append(...)  # from planner
+bridge.current_skill_in_execution = SkillExecutionState
+bridge.scientist_state.update(...)
+bridge.shared_hints["last_synthetic_prediction"] = ...
+\end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{Cheat 4 --- The silent NameError}
-  \textbf{Purpose.} Show that a failed exec of the LLM's code can be
-  misread as success.
-  \begin{itemize}
-    \item \textbf{Run:} \texttt{arcgentica\_v3\_14\_wake\_fix}.
-    \item \textbf{Emission:} draft called \texttt{str(...)} inside
-      \texttt{predict\_effect}, but our sandboxed
-      \texttt{exec}'s \texttt{builtins} dict did not expose \texttt{str}.
-    \item \textbf{Why it scored:} the \texttt{NameError} was caught, the
-      simulator fell back to a no-op path, and the no-op path coincidentally
-      matched on terminal turns --- Cheat 3 in disguise.
-    \item \textbf{Trace:} scored\_prediction\_matches=47 coexisting with
-      unit\_tests\_passed=0 is only explainable if the simulator was
-      silently degenerate.
-    \item \textbf{Fix (v3.15.1):} expanded sandbox builtins
-      (\texttt{str, int, float, len, range, min, max, abs, sum, list, dict,
-      set, tuple, enumerate, zip, sorted, any, all, map, filter}).
-  \end{itemize}
-  \textbf{Implication.} A code-world-model scorer must distinguish
-  ``predicted correctly'' from ``exec raised and we fell back''.
+\begin{frame}[fragile]{Scorer: \texttt{\_unit\_test\_matches}}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+def _unit_test_matches(pred, test):
+  # 1 expect_change : must be concrete True|False and correct
+  # 2 expected_diff_band : must be 'zero'|'small'|'large' and correct
+  # 3 observation_prediction : if set, must agree
+  # 4 progress_prediction    : if set, must agree
+  # 5 next_signature_hint    : semantic / exact hash check
+  # 6 expected_diff_cells    : within +/- 30%
+  # 7 IDENTITY GUARD : pred.grid == input and test.diff != zero -> FAIL
+  # 8 FULL GRID      : if test has after_grid, >=95% cell match required
+  return all_gates_pass
+\end{Verbatim}
 \end{frame}
 
-\begin{frame}{Cheat 5 --- The missing wake signal}
-  \textbf{Purpose.} Show a whole-loop failure: surprises happened, wake
-  never fired.
-  \begin{itemize}
-    \item \textbf{Run:} \texttt{v3\_11\_strict\_penalty} and
-      \texttt{v3\_14\_wake\_fix}.
-    \item \textbf{Symptom:} memories.json contains 97 ``World Surprise''
-      entries in v3.11 and 122 in v3.14, but \textbf{0} ``wake'' memories in
-      either.
-    \item \textbf{Root cause:} the wake queue was only drained during
-      skill-option execution. Surprises fired outside skill frames were
-      logged on the bridge but never reached the LLM.
-    \item \textbf{Contrast:} v3.6 (wildcard cheat era) had 43 surprises
-      but a 1.00 transition\_accuracy, so wake was by design unnecessary.
-      v3.11/v3.14 had real surprises and no delivery mechanism.
-    \item \textbf{Fix:} \texttt{bridge.record\_observation} now queues
-      \emph{every} surprise, regardless of skill context, and
-      \texttt{WorldModel} reads the queue at prompt time.
-  \end{itemize}
-  \textbf{Implication.} Tracking surprises is not enough; the wake channel
-  must be a first-class, always-open bridge subscriber.
+\begin{frame}[fragile]{Draft score formula}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+WorldDraft.score():
+    self_score
+  + 1.50 * empirical_matches       - 2.00 * empirical_mismatches
+  + 1.75 * simulator_matches       - 2.00 * simulator_mismatches
+  + 2.00 * transition_accuracy
+  + 0.25 * revisions
+  - 0.50 * silence_penalty   (when <50% of tests scored)
+\end{Verbatim}
 \end{frame}
 
-% =========================================================================
-% ACT 5 --- WHAT REMAINS
-% =========================================================================
-\section{Act 5: What remains}
+\begin{frame}[fragile]{Example: wildcard response}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+run: arcgentica_v3_6_sym_prompt_20260416_2338
 
-\begin{frame}{Where v3.15 stands}
-  \textbf{Purpose.} Report honestly on the state after the four fixes.
-  \begin{itemize}
-    \item v3.15 with identity guard + builtin fix is running on ls20 now.
-    \item Level~0 is \textbf{still unsolved} --- none of the runs so far
-      escape the opening family.
-    \item Fundamental issue: the LLM cannot visually infer \emph{which}
-      cells change in a 64$\times$64 grid from sampled deltas alone.
-    \item Numerical snapshot (v3.14 post-fix, pre-identity-guard):
-      scored\_prediction\_matches/mismatches = 47/1 (empirical, suspect),
-      unit\_tests\_passed = 0/64 (strict, honest).
-    \item Every run reverts to low-information drafts: ``identify
-      controllable avatar among rare colors (0/1) in central area''
-      (v3.11 draft), ``make terminal guard unconditional for GAME\_OVER''
-      (v3.14 draft) --- prose rather than pixel rules.
-  \end{itemize}
-  \textbf{Implication.} Scorer patches remove \emph{cheats}; they do not
-  confer \emph{vision}. The remaining gap is perceptual.
+predict_effect returned:
+  {'expect_change': None, 'expected_diff_band': 'unknown'}
+
+matcher under v3.6 (soft):  64/64 pass   -> transition_accuracy 1.00
+matcher under v3.15 (strict):  0/64 pass -> gate 1 fails on None
+\end{Verbatim}
 \end{frame}
 
-\begin{frame}{Open questions}
-  \textbf{Purpose.} Frame the next round of experiments.
-  \begin{itemize}
-    \item Does richer observation (color legend + per-action sample
-      changes + cluster bounding boxes) eventually yield a correct
-      pixel-level rule, or does the LLM always regress to prose?
-    \item Is \texttt{expected\_next\_grid} the right contract, or is a
-      \emph{structured delta with a recall gate} (cells that must change)
-      better-posed for a 64$\times$64 board?
-    \item Does multi-agent orchestration (Symbolica-style spawn across
-      sub-regions) give better exploration than single-agent MCTS on the
-      same compiled simulator?
-    \item Can the unit-test buffer itself be adversarial --- handpicked
-      to break identity / wildcard / no-op predictors?
-  \end{itemize}
-  \textbf{Implication.} The path forward is a cheat-aware scorer plus
-  perception-friendly observation, not a larger LLM.
+\begin{frame}[fragile]{Example: 1-cell delta response}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+run: arcgentica_v3_11_strict_penalty_20260417_0234
+
+predict_effect returned:
+  {'expect_change': True, 'band': 'large',
+   'expected_diff_cells': 1,
+   'expected_grid_delta': [[32, 32, 9]]}
+
+scorer: delta-only submission -> FAIL (v3.12+ requires full grid)
+\end{Verbatim}
 \end{frame}
 
-% =========================================================================
-% ACT 6 --- CONTRIBUTION
-% =========================================================================
-\section{Act 6: Contribution}
+\begin{frame}[fragile]{Example: identity response}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+run: arcgentica_v3_14_wake_fix_20260417_0356
 
-\begin{frame}{What this talk contributes}
-  \textbf{Purpose.} Separate what we \emph{solved} from what we
-  \emph{documented}.
-  \begin{itemize}
-    \item We do \textbf{not} solve ls20 Level~0.
-    \item We do document \textbf{four concrete LLM cheating modes} on
-      CWM-style grid scoring, plus one delivery-channel bug, each grounded
-      in a named run under
-      \texttt{research\_logs/shared/ls20-cb3b57cc/}:
-      \begin{itemize}\scriptsize
-        \item Wildcard (\texttt{v3\_6\_sym\_prompt}): 64/64, ta=1.00 via
-          \texttt{None}/\texttt{unknown}.
-        \item 1-cell delta (\texttt{v3\_11\_strict\_penalty}): 59/65
-          empirical, 0/64 strict.
-        \item Identity (\texttt{v3\_14\_wake\_fix}): 47/1 empirical, 0/64
-          strict.
-        \item Silent NameError (\texttt{v3\_14}): exec fallback masquerades
-          as prediction.
-        \item Missing wake (\texttt{v3\_11}/\texttt{v3\_14}): 97/122
-          surprises, 0 wake memories.
-      \end{itemize}
-    \item Each cheat has a source-grounded fix in
-      \texttt{research\_extensions/modules/world\_model.py}.
-  \end{itemize}
-  \textbf{Implication.} A code-world-model scorer should be designed
-  \emph{against} this bestiary before being pointed at a new environment.
+predict_effect returned:
+  {'expect_change': False, 'expected_next_grid': observation['grid']}
+
+scorer under v3.15+ identity guard:
+  pred.grid == input and test.diff == 'large' -> FAIL
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Example: v3.15.1 current response}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+run: arcgentica_v3_15_1_builtins_20260417_0430
+
+predict_effect draft focus:
+  "terminal-inert short-circuit precedence"
+
+[Wake]      memories  104   (v3.14 had 0)
+unit_tests passed / seen  1 / 64    transition_accuracy 0.016
+structured predictions                53 / 55
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Artifact paths}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+code
+  research_extensions/modules/
+    world_model.py dreamcoder.py planner.py
+    meta_harness.py seed_library.py
+  research_extensions/bridge.py  registry.py
+  agents/templates/arcgentica_research/agent.py
+per-run
+  research_logs/shared/ls20-cb3b57cc/<ns>/
+    world_model.json  dreamcoder_library.json
+    meta_harness.json  planner_state.json  memories.json
+viz & talk
+  presentation/bestiary.html
+  presentation/trace_viewer_<ns>.html
+  reports/v3_mcts_wake_sleep_talk.pdf
+\end{Verbatim}
 \end{frame}
 
 \end{document}
