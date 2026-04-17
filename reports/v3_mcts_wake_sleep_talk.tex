@@ -10,11 +10,10 @@
 \setbeamerfont{frametitle}{size=\normalsize}
 
 \title{Implementation walkthrough}
-\subtitle{Symbolica + WorldCoder + DreamCoder + MCTS + Wake-Sleep}
+\subtitle{WorldCoder + DreamCoder + MCTS on ARC-AGI-3 ls20}
 \date{2026-04-17}
 \author{ARC-AGI-3 Research}
 
-% Reusable node styles
 \tikzset{
   box/.style={draw, rounded corners, align=center, font=\scriptsize,
               minimum height=0.75cm, minimum width=2.3cm},
@@ -22,8 +21,6 @@
                    minimum height=0.6cm, inner sep=1pt},
   arr/.style={-{Latex[length=1.6mm]}, thick},
   arrd/.style={-{Latex[length=1.6mm]}, thick, dashed},
-  yes/.style={font=\tiny, inner sep=1pt},
-  no/.style={font=\tiny, inner sep=1pt},
 }
 
 \begin{document}
@@ -31,394 +28,291 @@
 \begin{frame}[plain]\titlepage\end{frame}
 
 % ============================================================
-% PART 1 — OVERVIEW (1-turn flowchart + module map + triggers)
+% PART 1 — OVERVIEW (the big loop + module map)
 % ============================================================
-\section{Part 1: Overview}
+\section{Part 1: The big loop}
 
-\begin{frame}{One turn: decide $\rightarrow$ act $\rightarrow$ compare $\rightarrow$ wake/sleep}
-\centering
-\resizebox{!}{0.82\textheight}{%
-\begin{tikzpicture}[node distance=0.35cm and 1.1cm,
-   box/.style={draw, rounded corners, align=center, font=\tiny,
-               minimum height=0.55cm, minimum width=1.9cm},
-   act/.style={draw, rounded corners, align=center, font=\tiny,
-               minimum height=0.55cm, minimum width=1.9cm, fill=blue!8},
-   decision/.style={draw, diamond, aspect=2.4, align=center, font=\tiny,
-                    minimum height=0.5cm, inner sep=0pt}]
-  % === DECIDE column (left) ===
-  \node[box,fill=black!5]                 (start) {turn N start};
-  \node[decision,below=of start]          (dA) {skill running?};
-  \node[decision,below=0.35cm of dA]      (dB) {explore phase?};
-  \node[decision,below=0.35cm of dB]      (dC) {MCTS gate ok?};
-  \node[act,below=0.35cm of dC]           (D)  {\textbf{(d)} LLM turn};
-  % === BRANCH column (right of decisions) ===
-  \node[act,right=of dA] (A) {\textbf{(a)} skill.next};
-  \node[act,right=of dB] (B) {\textbf{(b)} least-tried};
-  \node[act,right=of dC] (C) {\textbf{(c)} MCTS.plan};
-  % === MERGE column (a shared vertical spine to the right of A/B/C) ===
-  \node[coordinate] (mA) at ($ (A.east) + (0.8,0) $) {};
-  \node[coordinate] (mB) at ($ (B.east) + (0.8,0) $) {};
-  \node[coordinate] (mC) at ($ (C.east) + (0.8,0) $) {};
-  % === ACT / OBS / SURPRISE (below, right-aligned to spine) ===
-  \node[box,fill=black!5,below=1.2cm of mC,anchor=north] (action) {env.step};
-  \node[box,fill=black!5,below=0.35cm of action]         (rec)    {record\_observation};
-  \node[decision,below=0.35cm of rec]                    (dS)     {surprise?};
-  \node[box,fill=orange!15,left=1.1cm of dS]             (wq)     {queue wake};
-  \node[box,below=0.35cm of dS]                          (done)   {turn N end};
-  % sleep tick and wake overlay prep (both happen at turn end)
-  \node[box,fill=green!10,right=1.1cm of done]           (slp)    {sleep-consolidate\\\scriptsize every 10 turns};
-  \node[box,fill=orange!15,below=0.35cm of done,xshift=-2.2cm] (wn){wake overlay $\to$ turn N+1};
-  % decision wiring
-  \draw[arr] (start) -- (dA);
-  \draw[arr] (dA) -- node[above,font=\tiny]{y} (A);
-  \draw[arr] (dA) -- node[left,font=\tiny]{n} (dB);
-  \draw[arr] (dB) -- node[above,font=\tiny]{y} (B);
-  \draw[arr] (dB) -- node[left,font=\tiny]{n} (dC);
-  \draw[arr] (dC) -- node[above,font=\tiny]{y} (C);
-  \draw[arr] (dC) -- node[left,font=\tiny]{n} (D);
-  % join into spine (horizontal lines from each branch into a shared vertical spine)
-  \draw[arr] (A.east) -- (mA);
-  \draw[arr] (B.east) -- (mB);
-  \draw[arr] (C.east) -- (mC);
-  % (d) LLM turn joins the spine by going right then up to mC
-  \draw[arr] (D.east) -| (mC);
-  % visible spine connecting the merge points
-  \draw (mA) -- (mC);
-  % spine -> env.step
-  \draw[arr] (mC) -- (action.north);
-  % act chain
-  \draw[arr] (action) -- (rec);
-  \draw[arr] (rec) -- (dS);
-  \draw[arr] (dS) -- node[above,font=\tiny]{y} (wq);
-  \draw[arr] (dS) -- node[left,font=\tiny]{n} (done);
-  \draw[arrd] (wq) |- (done.west);
-  \draw[arr] (done.east) -- (slp.west);
-  \draw[arrd] (wq.south) |- (wn.east);
-\end{tikzpicture}}
-\end{frame}
-
-\begin{frame}{Module map}
+\begin{frame}{The big loop}
 \centering
 \resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.6cm and 1.0cm,
+\begin{tikzpicture}[node distance=1.1cm and 1.8cm,
+  phase/.style={draw, rounded corners, align=center, font=\small,
+                minimum height=1.5cm, minimum width=3.0cm}]
+  \node[phase,fill=blue!8]  (wm) {\textbf{WorldCoder}\\\scriptsize imagines the next grid\\\scriptsize (Python \texttt{predict\_effect})};
+  \node[phase,fill=green!8,right=of wm] (dc) {\textbf{DreamCoder}\\\scriptsize plans on that sim\\\scriptsize (MCTS $\to$ skill)};
+  \node[phase,fill=black!5,right=of dc] (env){\textbf{Env}\\\scriptsize real ls20\\\scriptsize (arcengine)};
+  \node[phase,fill=orange!15,below=1.6cm of dc] (sur){surprise? predicted $\neq$ observed};
+  \draw[arr] (wm.east) -- node[above,font=\scriptsize]{simulator} (dc.west);
+  \draw[arr] (dc.east) -- node[above,font=\scriptsize]{commit action} (env.west);
+  \draw[arr] (env.south) |- node[right,font=\scriptsize,pos=0.3]{observation} (sur.east);
+  \draw[arr] (sur.west) -| node[below,font=\scriptsize,pos=0.25]{Wake: rewrite sim} (wm.south);
+  \draw[arrd] ([xshift=-0.3cm]sur.north) -- node[right,font=\scriptsize,align=left,pos=0.4]{Sleep (every 10):\\rebuild skills} ([xshift=-0.3cm]dc.south);
+\end{tikzpicture}}
+\vspace{0.3em}
+
+{\scriptsize
+WorldCoder imagines. DreamCoder plans on that imagination using MCTS
+and stores the winning plan as a skill. We commit to the real env.
+On surprise, \textbf{Wake} rewrites the imagination; every 10 turns
+\textbf{Sleep} rebuilds the skill library.}
+\end{frame}
+
+\begin{frame}{Module map (no MetaHarness in drawing)}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.7cm and 1.1cm,
   box/.style={draw, rounded corners, align=center, font=\scriptsize,
-              minimum height=0.85cm, minimum width=2.4cm},
+              minimum height=0.85cm, minimum width=2.5cm},
   bus/.style={draw, rounded corners, align=center, font=\small,
-              minimum height=0.7cm, minimum width=11cm, fill=black!10},
-  mlbl/.style={font=\tiny, midway}]
+              minimum height=0.7cm, minimum width=10cm, fill=black!10}]
   \node[box,fill=black!5] (agent) {agent\\\scriptsize arcgentica\_research};
-  \node[box,fill=black!5,left=1.9cm of agent] (env)   {env\\\scriptsize arcengine ls20};
-  \node[box,fill=black!5,right=1.9cm of agent] (trapi){TRAPI\\\scriptsize gpt-5.3-codex};
-  \node[bus,below=1.1cm of agent] (br) {SharedBridge};
-  % modules in their own row, wider gaps
-  \node[box,below=1.2cm of br,xshift=-4.2cm] (wm) {WorldModel};
-  \node[box,below=1.2cm of br,xshift=-1.4cm] (dc) {DreamCoder};
-  \node[box,below=1.2cm of br,xshift=1.4cm]  (pl) {MCTSPlanner};
-  \node[box,below=1.2cm of br,xshift=4.2cm]  (mh) {MetaHarness};
-  % env <-> agent <-> trapi
+  \node[box,fill=black!5,left=1.8cm of agent]  (env)  {env\\\scriptsize arcengine ls20};
+  \node[box,fill=black!5,right=1.8cm of agent] (trapi){TRAPI\\\scriptsize gpt-5.3-codex};
+  \node[bus,below=1.1cm of agent] (br){SharedBridge};
+  \node[box,fill=blue!8,below=1.2cm of br,xshift=-3.5cm]   (wm) {WorldCoder\\\scriptsize (WorldModel)};
+  \node[box,fill=green!8,below=1.2cm of br,xshift=0cm]     (dc) {DreamCoder};
+  \node[box,below=1.2cm of br,xshift=3.5cm]  (pl) {MCTSPlanner};
   \draw[arr]  (env)   -- node[above,font=\tiny]{FrameData} (agent);
   \draw[arrd] (agent) -- node[below,font=\tiny]{GameAction} (env);
   \draw[arr]  (agent) -- node[above,font=\tiny]{user\_msg}  (trapi);
   \draw[arrd] (trapi) -- node[below,font=\tiny]{tool\_call} (agent);
-  % agent -> bridge, and each module <-> bridge with a label to the LEFT of arrow
   \draw[arr] (agent.south) -- (br.north);
   \draw[arrd] (wm.north) -- node[right,font=\tiny]{unit\_tests} (wm.north|-br.south);
   \draw[arrd] (dc.north) -- node[right,font=\tiny]{skills}     (dc.north|-br.south);
   \draw[arrd] (pl.north) -- node[right,font=\tiny]{proposals}  (pl.north|-br.south);
-  \draw[arrd] (mh.north) -- node[right,font=\tiny]{metrics}    (mh.north|-br.south);
-  % cross-module links — route BELOW via an explicit via-point so labels
-  % don't land on top of the module boxes.
-  \node[coordinate,below=1.6cm of wm] (vw) {};
-  \node[coordinate,below=1.6cm of pl] (vp) {};
-  \node[coordinate,below=0.9cm of dc] (vd) {};
-  \node[coordinate,below=0.9cm of pl] (vd2) {};
+  % inter-module (below the modules)
+  \node[coordinate,below=1.4cm of wm] (vw) {};
+  \node[coordinate,below=1.4cm of pl] (vp) {};
+  \node[coordinate,below=0.8cm of dc] (vd) {};
+  \node[coordinate,below=0.8cm of pl] (vd2) {};
   \draw[arr,<->] (wm.south) |- node[pos=0.8,above,font=\tiny]{simulate\_step} (vw) -- (vp) -| (pl.south);
   \draw[arr,<->] (dc.south) |- node[pos=0.8,above,font=\tiny]{commit} (vd) -- (vd2) -| (pl.south);
 \end{tikzpicture}}
 \end{frame}
 
-\begin{frame}{When does each phase fire?}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tabular}{@{}lll@{}}
-\toprule
-phase & trigger & function \\
-\midrule
-Imagine & MCTS gate open & \texttt{planner.plan} \\
-Act & every turn & \texttt{env.step} \\
-Surprise & predicted $\neq$ observed & \texttt{bridge.record\_observation} \\
-Wake & queued surprise, next turn & \texttt{wm.wake\_prompt\_section} \\
-Sleep-consolidate & every 10 non-reset actions & \texttt{dc.consolidate\_experience} \\
-Sleep-refactor & right after MCTS commit & \texttt{dc.sleep\_refactor} \\
-\bottomrule
-\end{tabular}}
-\end{frame}
-
 % ============================================================
-% PART 2 — MODULE DETAILS
+% PART 2 — Each piece
 % ============================================================
-\section{Part 2: Module internals}
+\section{Part 2: What each piece does}
 
-\begin{frame}[fragile]{WorldModel — what it is}
+\begin{frame}[fragile]{WorldCoder — the simulator the LLM writes}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-class WorldModelModule:   # research_extensions/modules/world_model.py
-  world_drafts: [WorldDraft]    # current best draft + history
-  unit_tests:   [transition]    # ring buffer, capacity 200; each entry is
-                                # (before_grid, action, after_grid, diff_band,
-                                #  new_family, branch_escape, observation)
-  transitions:  dict[sig][action] -> stats
+A Python function the LLM emits in its world_update side channel:
 
-  # API used by others
-  simulate_step(state_sig, action, obs) -> pred_dict    # for MCTSPlanner
-  record_agent_world_update(python_body)                # LLM rewrites draft
-  record_agent_prediction(action, predict_dict)         # LLM bet per turn
-  wake_prompt_section() -> str                          # overlay injector
+  def predict_effect(action, observation) -> dict:
+      # observation carries the current 64x64 grid
+      # return predicted next grid + headline fields
+
+The world coder is RE-SCORED every turn against a ring buffer of the
+last 200 real transitions (unit_tests). The fraction that pass is the
+transition_accuracy; when it crosses 0.4 MCTS is allowed to run on it.
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{WorldModel — WorldDraft shape (v3.15.1 sample)}
+\begin{frame}[fragile]{DreamCoder — the skill library}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-focus: "terminal-inert short-circuit precedence"
-body: |
-  def predict_effect(action, observation):
-      g = observation['grid']
-      state = observation.get('state')
-      avail = set(observation.get('available_actions', []))
-      if state == 'GAME_OVER' and avail.issubset({A1..A4}) \
-         and action in {A1..A4}:
-          return {expect_change: False, expected_next_grid: g}
-      return {expect_change: False, expected_next_grid: g}   # fallback
-empirical 53 / 2     simulator 41 / 32     revisions 160
-unit_tests_passed / seen   1 / 64     transition_accuracy 0.016
+A list of skill records. Each skill is a dict:
+  { "name":            natural-language label,
+    "precondition":    free-form sentence,
+    "controller":      short action sequence (or free-form step list),
+    "expected_effect": free-form sentence,
+    "revises":         optional name of skill it supersedes }
+
+The skills enter the library from three places:
+  (i)   the agent's propose_skill side channel on a turn
+  (ii)  MCTS top path after an imagination call
+  (iii) consolidation every 10 real turns from transition stats
+
+Sleep refactor merges skills that share a 2-action prefix.
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{DreamCoder skill kinds (actual counts across v3 runs)}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tabular}{@{}llr@{}}
-\toprule
-\texttt{kind} & source function & instances \\
-\midrule
-\texttt{abstract\_primitive} & \texttt{seed\_library.py} & 160 \\
-(free) & agent \texttt{propose\_skill} & 70 \\
-\texttt{observed\_law} & \texttt{consolidate\_experience} & 44 \\
-\texttt{mcts\_proposal} & \texttt{propose\_from\_mcts} & 40 \\
-\texttt{wrapper} & \texttt{sleep\_refactor} & 16 \\
-\bottomrule
-\end{tabular}}
-\end{frame}
-
-\begin{frame}[fragile]{Free skill example (v3.11, agent-proposed)}
+\begin{frame}[fragile]{MCTS — planning on the simulator}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-{
-  "name": "Direction-lock falsifier",
-  "precondition": "Recent step had a directional no-op (diff_cells=0)
-                   after prior nonzero rewrites.",
-  "controller": ["ACTION3", "ACTION2", "ACTION1"],
-  "expected_effect": "At least one alternate direction should re-enter
-                      the ~52-cell rewrite family; if all no-op, infer
-                      global lock/terminal substate and branch strategy.",
-  "revises": "Arrow-equivalence falsifier"
-}
-\end{Verbatim}
-\vspace{0.3em}
-{\scriptsize Natural-language precondition, expected\_effect, and revision
-  link, plus a short action controller. Not just an action sequence.}
-\end{frame}
+class MCTSPlanner:                 # modules/planner.py
+    max_depth = 4
+    n_simulations = 64
+    ucb_c = 1.4
+    mcts_gate_threshold = 0.4      # only plan if sim is good enough
 
-\begin{frame}[fragile]{Observed-law + MCTS-proposal + wrapper samples}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-observed_law (v3.15.1):
-  name "observed-law:ACTION1"
-  summary      {n: 22, mean_diff: 48.5, new_family_rate: 0.04}
-  implication  "lands in same family; try unused action or RESET-probe"
-
-mcts_proposal (v3-full):
-  name "mcts:a81ec3:ACTION3-ACTION1-ACTION4-ACTION2"
-  body [A3,A1,A4,A2]; mcts_simulator_reward 4.33; visits 12
-
-wrapper (v3-full sleep refactor):
-  name "wrapper:ACTION3-ACTION1"
-  body [A3,A1]
-  subskills [skill:mcts:...A3-A1-A4-A2, skill:mcts:...A3-A1-A2-A4]
-  description "shared prefix over 2 MCTS proposals"
+    def plan(world_model, root_signature, available_actions):
+        # UCB1 tree. Each rollout calls
+        # world_model.simulate_step(sig, action, obs) -- pure Python.
+        # Leaf reward:
+        #     3 * new_family + 2 * branch_escape + 1 * accuracy
+        #   - 1 * repeat_penalty - 2 * exception
+        # Also runs a length-matched random-BFS for a baseline.
+        return {top_paths, advantage = mcts_top - bfs_mean}
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{MCTSPlanner — internals}
+\begin{frame}[fragile]{Wake — on surprise, rewrite the simulator}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-class MCTSPlanner:        # research_extensions/modules/planner.py
-  max_depth=4; n_simulations=64; ucb_c=1.4
-  mcts_gate_threshold=0.4                      # only plan if sim is good
-  reward_weights: new_family=3, branch_escape=2,
-                  accuracy=1, repeat_penalty=-1, exception=-2
+Trigger:      predicted != observed transition (any turn)
+Recorded in:  bridge.pending_wake_triggers + memories [Wake]
 
-  plan(wm, root_sig, available_actions) -> {
-     gate_ok,
-     mcts_top_paths  : [(action_seq, reward, visits), ...]
-     bfs_top_paths   : [(action_seq, reward), ...]   # length-matched baseline
-     advantage       : mcts_top_reward - bfs_mean_reward
-  }
-  # each rollout calls wm.simulate_step (pure Python, NO LLM)
+Next turn's user_msg includes:
+  [Wake] action=ACTIONk expected='...' observed diff=NN
+         Per-action aggregate: A1 mean_diff=48.5 ...
+         Current best draft excerpt: <first 600 chars of predict_effect>
+         Goal: minimal edit — tighten one branch so the surprise above
+         would not fire again.
+
+The LLM responds with a new predict_effect in world_update, which
+becomes the new best WorldDraft. Unit tests are re-scored.
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}{MCTSPlanner — rollout diagram}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.5cm and 0.6cm]
-  \node[box] (ri)  {root signature};
-  \node[box,right=of ri] (sel) {UCB1 select};
-  \node[box,right=of sel] (sim) {simulate\_step};
-  \node[box,right=of sim] (leaf) {leaf reward};
-  \node[box,below=of leaf] (bp) {backprop};
-  \node[box,left=of bp] (pv) {principal variation};
-  \node[box,left=of pv] (prop) {propose\_from\_mcts};
-  \node[box,left=of prop] (cs) {DC.commit\_skill};
-  \draw[arr] (ri) -- (sel);  \draw[arr] (sel) -- (sim);
-  \draw[arr] (sim) -- (leaf); \draw[arr] (leaf) -- (bp);
-  \draw[arr] (bp) -- (pv); \draw[arr] (pv) -- (prop); \draw[arr] (prop) -- (cs);
-\end{tikzpicture}}
-\vspace{0.2em}
-{\scriptsize simulate\_step runs \texttt{wm.predict\_effect} — no real env, no LLM.}
-\end{frame}
-
-\begin{frame}[fragile]{Bridge — who writes, who reads}
+\begin{frame}[fragile]{Sleep — every 10 turns, rebuild skills}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
-class SharedBridge:           # research_extensions/bridge.py
-  # ring buffers
-  surprises             : list[SurpriseEvent]   W agent        R DC
-  proposed_skills       : list[ProposedSkill]   W agent        R DC
-  recent_actions        : list[str]             W after_action R all
-  # per-turn
-  current_prediction    : Prediction | None     W agent/WM     R WM
-  last_observation      : Observation | None    W after_action R all
-  current_skill_in_execution : SkillExec|None   W DC           R registry
-  # queues
-  pending_wake_triggers : list[SurpriseEvent]   W bridge       R WM
-  pending_mcts_proposals: list[dict]            W planner      R DC
-  # structured state
-  scientist_state       : ScientistControlState W all          R overlay
-  shared_hints          : dict[str, Any]        W all          R overlay
+Trigger 1: periodic, every 10 non-reset actions
+  -> dc.consolidate_experience(wm)
+     Aggregate per-action stats from transitions into
+     "observed law" skill records (mean_diff, new_family rate, etc.)
+
+Trigger 2: right after MCTS commits a skill
+  -> dc.sleep_refactor()
+     - N-gram prefix merge: two skills sharing a length-2 prefix are
+       wrapped into a new parent skill
+     - demote skills whose simulator reward is negative
+     - prune down to max_skills
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{Env \& agent}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-env                       arcengine ls20 (cb3b57cc, 64x64 grid)
-agent                     ArcgenticaResearch (extends Arcgentica)
-backend                   TRAPI Azure OpenAI / gpt-5.3-codex
-budget                    MAX_ACTIONS = 160 non-reset actions per run
-tool set (Symbolica)      history, memories_*, frame_render,
-                          frame_diff, frame_render_diff,
-                          frame_change_summary, frame_find,
-                          frame_bounding_box, frame_color_counts,
-                          submit_action (w/ side channels)
-side channels on submit   predict, world_update, propose_skill, env_note
+\begin{frame}[fragile]{What the agent can actively call (tools)}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+history(n, wins_only)                   # last n (action, frame) pairs
+memories_summaries / get / add / query  # persistent notes
+
+frame_render(keys, gap, y_ticks, x_ticks, crop)
+frame_diff(margin)       frame_change_summary(margin)
+frame_render_diff(keys, gap, crop='auto')
+frame_find(values)       frame_bounding_box(values)
+frame_color_counts()
+
+submit_action(action_name,
+              predict?, world_update?,
+              propose_skill?, env_note?)
 \end{Verbatim}
 \end{frame}
 
-% ============================================================
-% PART 3 — PHASE FLOWS
-% ============================================================
-\section{Part 3: Phase flows}
-
-\begin{frame}{Imagine: MCTS $\rightarrow$ propose $\rightarrow$ commit}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.4cm and 0.55cm]
-  \node[box] (gate) {gate: accuracy $\geq$ 0.4};
-  \node[box,right=of gate] (plan) {planner.plan};
-  \node[box,right=of plan] (prop) {propose\_from\_mcts};
-  \node[box,right=of prop] (cs) {commit\_skill};
-  \node[box,below=of cs] (sr) {sleep\_refactor};
-  \node[box,left=of sr] (ns) {next\_skill\_action};
-  \node[box,left=of ns] (sa) {submit\_action};
-  \draw[arr] (gate) -- (plan); \draw[arr] (plan) -- (prop);
-  \draw[arr] (prop) -- (cs);   \draw[arr] (cs) -- (sr);
-  \draw[arr] (sr)   -- (ns);   \draw[arr] (ns) -- (sa);
-\end{tikzpicture}}
-\end{frame}
-
-\begin{frame}{Wake: surprise $\rightarrow$ overlay $\rightarrow$ rewrite}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.4cm and 0.55cm]
-  \node[box] (e)  {env.step};
-  \node[box,right=of e] (ro) {record\_observation};
-  \node[box,right=of ro] (se) {SurpriseEvent};
-  \node[box,right=of se] (q)  {queue\_wake\_trigger};
-  \node[box,below=of q]  (ov) {wake\_prompt\_section};
-  \node[box,left=of ov]  (usr){user\_msg inject};
-  \node[box,left=of usr] (wu) {world\_update rewrite};
-  \draw[arr] (e) -- (ro); \draw[arr] (ro) -- (se);
-  \draw[arr] (se) -- (q); \draw[arr] (q) -- (ov);
-  \draw[arr] (ov) -- (usr); \draw[arr] (usr) -- (wu);
-\end{tikzpicture}}
-\vspace{0.2em}
-{\scriptsize Wake fires on the \emph{next} turn, not the current one.}
-\end{frame}
-
-\begin{frame}{Sleep: consolidate + refactor}
-\centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.4cm and 0.55cm]
-  \node[box] (t)  {trigger};
-  \node[box,right=of t] (ce) {consolidate\_experience};
-  \node[box,right=of ce] (ol) {observed\_law};
-  \node[box,right=of ol] (sr) {sleep\_refactor};
-  \node[box,below=of sr] (wr) {wrapper};
-  \node[box,left=of wr] (dm) {demote negative};
-  \node[box,left=of dm] (pr) {prune to max\_skills};
-  \draw[arr] (t) -- (ce); \draw[arr] (ce) -- (ol); \draw[arr] (ol) -- (sr);
-  \draw[arr] (sr) -- (wr); \draw[arr] (wr) -- (dm); \draw[arr] (dm) -- (pr);
-\end{tikzpicture}}
-\vspace{0.2em}
-{\scriptsize triggers: every 10 non-reset actions, or right after MCTS commit.}
-\end{frame}
-
-% ============================================================
-% PART 4 — EXAMPLE RESPONSES (from real runs)
-% ============================================================
-\section{Part 4: Example responses}
-
-\begin{frame}[fragile]{Real turn I/O — IN (user\_msg, v3.15.1 turn 16)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-Game ls20 | Level 0/6 | budget 15/160
-State NOT_FINISHED | Available {ACTION1(Up), ACTION2(Down),
-                                 ACTION3(Left), ACTION4(Right), RESET}
+\begin{frame}[fragile]{What goes into the user\_msg}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+Game ls20 | Level i/j | budget k/160
+State NOT_FINISHED | Available {A1..A4, RESET}
 Last action: ACTION3 -> grid changed 52 cells
 
-grid (64x64):   <y_ticks + x_ticks Symbolica Frame.render>
-     0 1 2 ... 63
-  0: 9 9 9 9 ...
-  ...
- 63: 9 9 9 9 ...
+grid (64x64):         Symbolica Frame.render
+ 0  1  2 ... 63
+0: <hex digit per cell, rows separated by \n>
+...
+63: ...
 
-[Wake] Real surprise occurred. Rewrite predict_effect so the failing
-  transition replays correctly.
-  - action=ACTION3 expected 'EXPECT_CHANGE: small local shift'
-    observed diff=52 new_family=False branch_escape=False
+[Wake]               last surprise detail
+[Observed-Law ...]   per-action mean_diff_cells from last 32 transitions
+[Skill Library]      top-8 skills by score with body preview
+[Persistent Notes]   category-balanced slice of memories
+\end{Verbatim}
+\end{frame}
+
+% ============================================================
+% PART 3 — real skills the agent wrote
+% ============================================================
+\section{Part 3: Real skills the agent wrote}
+
+\begin{frame}[fragile]{"Blocked-ACTION2 escape via ACTION4"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     Last ACTION2 produced 0 changed cells (local stall)
+controller       ACTION4 -> ACTION1
+expected_effect  Leave blocked ACTION2 state and resume large
+                 deterministic transition family.
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{"blocked-repeat-breaker"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     Most recent directional action had zero cell changes
+                 (local blocked boundary).
+controller       Do not repeat the same blocked action immediately.
+                 Use a different directional key (priority:
+                 least-used among ACTION1-4).
+expected_effect  Restores nonzero transitions after local no-op
+                 collisions and reduces repeated-family loops.
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{"Least-used directional discriminator"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     stuck in same family with all arrows,
+                 no interact action available
+controller       ACTION3 -> ACTION4 -> ACTION1 -> ACTION2
+expected_effect  at least one step may deviate from the dominant loop;
+                 if not, confirms hard lock under movement-only controls
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{"right-stall vertical discriminator"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     last move into a horizontal boundary gives 0-cell change
+                 or repeated same-family remaps
+controller       ACTION1 -> ACTION2 -> ACTION3
+expected_effect  tests whether vertical-first breaks the remap loop;
+                 if not, performs lateral contrast to falsify
+                 boundary-lock hypothesis
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{"Triad-advance with ACTION2 as state-check"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     Directional-only loop is repeating and no branch
+                 escape yet.
+controller       ACTION1 -> ACTION3 -> ACTION4 -> ACTION2
+expected_effect  Maintains progress while explicitly testing the mixed
+                 ACTION2 branch without collapsing it into triad
+                 behavior.
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{"GAME\_OVER directional inertness short-circuit"}
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+precondition     state == GAME_OVER and available actions are
+                 only ACTION1-4
+controller       ACTION1 -> ACTION2 -> ACTION3 -> ACTION4
+expected_effect  No grid change for any directional action; use as a
+                 stop-condition to avoid wasting remaining actions.
+\end{Verbatim}
+\end{frame}
+
+% ============================================================
+% PART 4 — a real turn
+% ============================================================
+\section{Part 4: A real turn}
+
+\begin{frame}[fragile]{Real turn IN (user\_msg, v3.15.1, turn 16)}
+\begin{Verbatim}[fontsize=\tiny,frame=single]
+Game ls20 | Level 0/6 | budget 15/160
+State NOT_FINISHED | Available {ACTION1..ACTION4, RESET}
+Last action: ACTION3 -> grid changed 52 cells
+
+grid (64x64):        <Symbolica Frame.render with y_ticks+x_ticks>
+
+[Wake]
+  action=ACTION3 expected 'EXPECT_CHANGE: small local shift'
+  observed diff=52  new_family=False  branch_escape=False
 
 [Observed-Law Details]
   ACTION1: n=4  mean_diff=48.5  new_family=0%  branch_escape=0%
   ACTION3: n=4  mean_diff=49.0  new_family=0%  branch_escape=0%
 
-[Skill Library] bfs-explore-grid, probe-rival-discriminator, ...
+[Skill Library]  (top-8 by score)
+  Blocked-repeat-breaker (score 2.5) ...
+  Least-used directional discriminator (score 2.1) ...
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{Real turn I/O — OUT (submit\_action, turn 16)}
+\begin{frame}[fragile]{Real turn OUT (submit\_action, turn 16)}
 \begin{Verbatim}[fontsize=\tiny,frame=single]
 action_name = "ACTION1"
-
-predict = {
-  "expect_change":  True,
-  "expected_diff_band": "large",
-  "expected_diff_cells": 50,
-  "expected_next_grid": observation['grid']    # <-- IDENTITY CHEAT
-}
 
 world_update = """
   # focus: terminal-inert short-circuit precedence
@@ -428,7 +322,7 @@ world_update = """
       avail = set(observation.get('available_actions', []))
       if state == 'GAME_OVER' and avail.issubset({A1..A4}):
           return {expect_change: False, expected_next_grid: g}
-      return {expect_change: False, expected_next_grid: g}   # fallback
+      return {expect_change: False, expected_next_grid: g}  # fallback
 """
 
 propose_skill = {
@@ -437,50 +331,8 @@ propose_skill = {
   "controller": ["least-used arrow", "then probe for block"],
   "expected_effect": "reveal directional escape, else confirm loop-lock"
 }
+
 env_note = "grid not changing family; try non-directional action next"
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Cheat 1 — wildcard (v3.6)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-predict_effect returned:
-  {'expect_change': None, 'expected_diff_band': 'unknown'}
-
-matcher v3.6 (soft):  64/64 pass   -> transition_accuracy 1.00
-matcher v3.15 (strict): 0/64 pass  -> gate 1 fails on None
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Cheat 2 — 1-cell delta (v3.11)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-predict_effect returned:
-  {'expect_change': True, 'band': 'large',
-   'expected_diff_cells': 1,
-   'expected_grid_delta': [[32, 32, 9]]}
-
-scorer: delta-only -> FAIL (v3.12+ requires full expected_next_grid)
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Cheat 3 — identity (v3.14)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-predict_effect returned:
-  {'expect_change': False, 'expected_next_grid': observation['grid']}
-
-scorer v3.15+ identity guard:
-  pred.grid == input  AND  test.diff == 'large'  -> FAIL
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{v3.15.1 current state}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-run              arcgentica_v3_15_1_builtins_20260417_0430
-draft focus      "terminal-inert short-circuit precedence"
-[Wake] memories  104            (v3.14 had 0)
-unit_tests       1 / 64         transition_accuracy 0.016
-empirical        53 / 2         simulator 41 / 32
-MCTS calls       fired but  advantage ~ 0.00
-level 0          still unsolved
 \end{Verbatim}
 \end{frame}
 
@@ -489,12 +341,14 @@ level 0          still unsolved
 code:
   research_extensions/
     modules/  world_model.py  dreamcoder.py  planner.py
-              meta_harness.py  seed_library.py
+              seed_library.py
     bridge.py  registry.py
   agents/templates/arcgentica_research/agent.py
+
 per-run (research_logs/shared/ls20-cb3b57cc/<ns>/):
   world_model.json  dreamcoder_library.json
-  meta_harness.json  planner_state.json  memories.json
+  planner_state.json  memories.json
+
 viz & talk:
   presentation/bestiary.html
   presentation/trace_viewer_<ns>.html
