@@ -1,0 +1,61 @@
+{
+  "schemas": [
+    {
+      "id": "constraint_satisfaction",
+      "description": "Win when each constraint marker's local 3x3 mask is satisfied by neighbor target colors. Markers (typically distinctive small fixed sprites) define the constraint; targets (typically larger interactive sprites) hold variable color. Solved when every marker check passes.",
+      "diagnostic_signals": [
+        "multiple small fixed sprites distributed across the play area",
+        "larger interactive sprites in a tight cluster",
+        "palette has exactly 2 main colors",
+        "click toggles confirmed but level_delta stays 0",
+        "some regions never respond to clicks (markers); others do (targets)"
+      ],
+      "win_state_form": "for_each marker: neighbors_pattern satisfies marker.local_mask",
+      "action_pattern": "phase A: click each region to label marker vs target; phase B: toggle target colors so each marker's neighbors match its mask"
+    },
+    {
+      "id": "indicator_match",
+      "description": "Win when play-area cells adopt the color sequence shown by upper-row indicator strips. Indicators are tiny regions in row<15 with distinct dominant colors. Each indicator maps positionally to a sub-block of the play area.",
+      "diagnostic_signals": [
+        "small (<200 cells) regions in upper row",
+        "indicator regions have differing dominant_colors",
+        "play area is one large region"
+      ],
+      "win_state_form": "for_each i: play_area.subblock[i].dominant_color == indicator[i].dominant_color",
+      "action_pattern": "click each play-area sub-block to cycle/set its color to match the indicator at the matching x position"
+    },
+    {
+      "id": "lights_out",
+      "description": "Toggle binary cells to reach a uniform target state. Each click flips itself and possibly neighbors. Solved when all cells in the play region share one color.",
+      "diagnostic_signals": [
+        "binary palette",
+        "each click toggles one or more cells",
+        "no upper indicator strip",
+        "win condition is uniformity"
+      ],
+      "win_state_form": "all play_area.cells == target_color",
+      "action_pattern": "systematic coverage of distinct sub-quadrants while tracking parity"
+    },
+    {
+      "id": "color_cycle",
+      "description": "Each click on a sprite cycles its color through a fixed sequence (A->B->C->A). Win when sprite colors form a target permutation/pattern.",
+      "diagnostic_signals": [
+        "click on same coord produces different transitions across attempts",
+        "more than 2 distinct colors observed in target region"
+      ],
+      "win_state_form": "for_each i: sprite[i].color == target_pattern[i]",
+      "action_pattern": "count clicks per sprite; modular arithmetic on cycle length"
+    },
+    {
+      "id": "marker_constraint",
+      "description": "Some sprites are CONSTRAINT markers (fixed; their internal pattern dictates the rule) and others are TARGETS (variable; their color can change on click). Identify which is which by clicking each region and observing whether it responds.",
+      "diagnostic_signals": [
+        "clicking some regions changes nothing despite many attempts",
+        "clicking other regions toggles colors immediately",
+        "win condition depends on relationship between marker and target"
+      ],
+      "win_state_form": "target_value satisfies relationship(marker_value)",
+      "action_pattern": "phase A: click each region once to label it (marker vs target); phase B: solve relationship across labeled set"
+    }
+  ]
+}

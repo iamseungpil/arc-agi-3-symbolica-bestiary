@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FT09 Runtime Flow v5</title>
+  <style>
+    @page {
+      size: 16in 9in;
+      margin: 0;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #f4f2ea;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-labelledby="title desc">
+  <title id="title">FT09 runtime flow v5</title>
+  <desc id="desc">Runtime flow from main.py through Swarm, ArcgenticaSimple, SemanticPackets, Reflexion, M1, M2, environment stepping, observation, GoalBoard, DiffMemory, and persisted artifacts.</desc>
+  <defs>
+    <linearGradient id="bgWash" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7F3EA"/>
+      <stop offset="55%" stop-color="#F4F1E8"/>
+      <stop offset="100%" stop-color="#EEF4F3"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E99B3F"/>
+      <stop offset="45%" stop-color="#F2C768"/>
+      <stop offset="100%" stop-color="#6FB0B4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#1B3940" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .ink {{ fill: #184751; }}
+      .soft {{ fill: #5D767B; }}
+      .title {{ font: 600 44px 'Iowan Old Style', 'Palatino Linotype', serif; letter-spacing: 0.01em; fill: #163F48; }}
+      .subtitle {{ font: 500 18px 'Avenir Next', 'Segoe UI', sans-serif; fill: #5D767B; }}
+      .footer {{ font: 500 14px 'Avenir Next', 'Segoe UI', sans-serif; fill: #60797E; }}
+      .phase-kicker {{ font: 700 11px 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 0.22em; text-transform: uppercase; fill: #7A8F92; }}
+      .node-title {{ font: 700 22px 'Avenir Next', 'Segoe UI', sans-serif; fill: #163F48; }}
+      .node-copy {{ font: 500 15px 'Avenir Next', 'Segoe UI', sans-serif; fill: #36565C; }}
+      .small-copy {{ font: 500 13px 'Avenir Next', 'Segoe UI', sans-serif; fill: #50676D; }}
+      .artifact-title {{ font: 700 18px 'Avenir Next', 'Segoe UI', sans-serif; fill: #163F48; }}
+      .artifact-copy {{ font: 500 13px 'Avenir Next', 'Segoe UI', sans-serif; fill: #4F666B; }}
+      .node-box {{ filter: url(#shadow); }}
+      .pipe {{ stroke: #1A6C72; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }}
+      .pipe-accent {{ stroke: #E99B3F; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }}
+      .pipe-soft {{ stroke: #7B9396; stroke-width: 3; fill: none; stroke-dasharray: 10 10; stroke-linecap: round; stroke-linejoin: round; }}
+      .loop-label {{ font: 700 12px 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }}
+    </style>
+    <marker id="arrowTeal" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" refX="6.2" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#1A6C72"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" refX="6.2" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#E99B3F"/>
+    </marker>
+    <marker id="arrowSoft" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" refX="6.2" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#7B9396"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bgWash)"/>
+  <rect x="0" y="0" width="1600" height="10" fill="url(#accentLine)"/>
+
+  <text x="80" y="84" class="phase-kicker">FT09 runtime story</text>
+  <text x="80" y="136" class="title">main.py to persisted trace, with the real feedback loops highlighted</text>
+  <text x="80" y="172" class="subtitle">The viewer is built from what this runtime actually stores: recording frames, GoalBoard summaries, and run-log reflexion lines.</text>
+
+  <g class="node-box">
+    <rect x="88" y="234" rx="28" ry="28" width="228" height="118" fill="#FFFFFF" stroke="#DCE6E5"/>
+    <text x="116" y="270" class="phase-kicker">Entrypoint</text>
+    <text x="116" y="304" class="node-title">main.py</text>
+    <text x="116" y="332" class="node-copy">load env, choose agent,</text>
+    <text x="116" y="354" class="node-copy">pick local/API game list</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="354" y="234" rx="28" ry="28" width="232" height="118" fill="#F8FCFB" stroke="#D1E5E3"/>
+    <text x="382" y="270" class="phase-kicker">Orchestration</text>
+    <text x="382" y="304" class="node-title">Swarm.main()</text>
+    <text x="382" y="332" class="node-copy">build ArcgenticaSimple</text>
+    <text x="382" y="354" class="node-copy">and attach ARC environment</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="626" y="214" rx="32" ry="32" width="332" height="164" fill="#FFFFFF" stroke="#DCE6E5"/>
+    <text x="656" y="252" class="phase-kicker">Per-turn loop</text>
+    <text x="656" y="292" class="node-title">ArcgenticaSimple._run()</text>
+    <text x="656" y="322" class="node-copy">RESET, SemanticPackets.current(),</text>
+    <text x="656" y="346" class="node-copy">spawn Reflexion / M1 / M2,</text>
+    <text x="656" y="370" class="node-copy">submit_action_raw(), update memory</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="1018" y="234" rx="28" ry="28" width="218" height="118" fill="#F7FCFC" stroke="#D1E6E7"/>
+    <text x="1046" y="270" class="phase-kicker">Sense</text>
+    <text x="1046" y="304" class="node-title">SemanticPackets</text>
+    <text x="1046" y="332" class="node-copy">visible regions, render rows,</text>
+    <text x="1046" y="354" class="node-copy">joint-neighbor state</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="1268" y="214" rx="28" ry="28" width="252" height="164" fill="#FFF8EF" stroke="#F0D4AD"/>
+    <text x="1298" y="252" class="phase-kicker">Decide</text>
+    <text x="1298" y="290" class="node-title">Reflexion -> M1 -> M2</text>
+    <text x="1298" y="320" class="node-copy">corrective sentence,</text>
+    <text x="1298" y="344" class="node-copy">hypothesis cards,</text>
+    <text x="1298" y="368" class="node-copy">chosen action sequence</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="1198" y="478" rx="28" ry="28" width="322" height="128" fill="#F7FCFB" stroke="#D5E6E1"/>
+    <text x="1228" y="514" class="phase-kicker">Execute and score</text>
+    <text x="1228" y="548" class="node-title">environment step + observer</text>
+    <text x="1228" y="576" class="node-copy">extract_observation(), evaluate_falsifier(),</text>
+    <text x="1228" y="600" class="node-copy">level rise, region anchor, dominant transition</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="812" y="466" rx="32" ry="32" width="330" height="152" fill="#FFFFFF" stroke="#DCE6E5"/>
+    <text x="842" y="504" class="phase-kicker">Working memory</text>
+    <text x="842" y="542" class="node-title">GoalBoard + DiffMemory</text>
+    <text x="842" y="572" class="node-copy">choice_history, observation_log,</text>
+    <text x="842" y="596" class="node-copy">skill bank, cross-level confirms,</text>
+    <text x="842" y="620" class="node-copy">region click stats, stagnation window</text>
+  </g>
+
+  <path d="M316 293 H354" fill="none" stroke="#1A6C72" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowTeal)"/>
+  <path d="M586 293 H626" fill="none" stroke="#1A6C72" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowTeal)"/>
+  <path d="M958 293 H1018" fill="none" stroke="#1A6C72" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowTeal)"/>
+  <path d="M1236 293 H1268" fill="none" stroke="#E99B3F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowOrange)"/>
+  <path d="M1424 378 V448 H1360" fill="none" stroke="#E99B3F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowOrange)"/>
+  <path d="M1198 542 H1142" fill="none" stroke="#1A6C72" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowTeal)"/>
+
+  <path d="M980 620 L980 704 L1292 704 L1292 646" fill="none" stroke="#7B9396" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1028" y="690" class="loop-label soft">persistence loop</text>
+
+  <path d="M812 542 L724 542 L676 424" fill="none" stroke="#1A6C72" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="592" y="430" class="loop-label" fill="#1A6C72">next-turn memory</text>
+
+  <path d="M900 466 L900 406 L1268 406 L1268 390" fill="none" stroke="#E99B3F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1012" y="424" class="loop-label" fill="#C97C28">reflexion and skill feedback</text>
+
+  <g class="node-box">
+    <rect x="78" y="510" rx="24" ry="24" width="250" height="120" fill="#FFFFFF" stroke="#D9E3E2"/>
+    <text x="108" y="548" class="artifact-title">recording.jsonl</text>
+    <text x="108" y="576" class="artifact-copy">raw frame after each submitted action</text>
+    <text x="108" y="598" class="artifact-copy">plus action_input and level count</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="362" y="510" rx="24" ry="24" width="252" height="120" fill="#FFFFFF" stroke="#D9E3E2"/>
+    <text x="392" y="548" class="artifact-title">goal_board.json</text>
+    <text x="392" y="576" class="artifact-copy">selected predicate, verdict,</text>
+    <text x="392" y="598" class="artifact-copy">skill bank, cross-level memory</text>
+  </g>
+
+  <g class="node-box">
+    <rect x="648" y="510" rx="24" ry="24" width="130" height="120" fill="#FFFFFF" stroke="#D9E3E2"/>
+    <text x="676" y="548" class="artifact-title">run log</text>
+    <text x="676" y="576" class="artifact-copy">reflexion text</text>
+    <text x="676" y="598" class="artifact-copy">action counts</text>
+  </g>
+
+  <path d="M812 588 C760 588 760 598 778 598" fill="none" stroke="#7B9396" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowSoft)"/>
+  <path d="M812 574 C712 574 638 570 614 570" fill="none" stroke="#7B9396" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowSoft)"/>
+  <path d="M812 558 C592 558 416 558 328 558" fill="none" stroke="#7B9396" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowSoft)"/>
+
+  <text x="80" y="742" class="phase-kicker">What the visualizer can show faithfully</text>
+  <text x="80" y="786" class="small-copy">1. action and state change from recording frames</text>
+  <text x="80" y="812" class="small-copy">2. chosen hypothesis, verdict, and final skill memory from GoalBoard</text>
+  <text x="80" y="838" class="small-copy">3. reflexion directives from run logs when they were persisted</text>
+  <text x="856" y="742" class="phase-kicker">What is still missing in current persistence</text>
+  <text x="856" y="786" class="small-copy">raw M1 candidate set for each turn</text>
+  <text x="856" y="812" class="small-copy">full raw M2 JSON including expected_step_diffs</text>
+  <text x="856" y="838" class="small-copy">complete semantic-packet snapshot per turn</text>
+
+  <text x="80" y="878" class="footer">Code anchors: main.py, agents/swarm.py, agents/templates/agentica_simple/agent.py, goal_board.py, reflexion_prompt.py</text>
+</svg>
+
+</body>
+</html>

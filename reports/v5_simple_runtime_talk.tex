@@ -1,0 +1,466 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, shapes.misc, fit, calc, backgrounds}
+\usetheme{metropolis}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{navigation symbols}{}
+\setbeamerfont{frametitle}{size=\large}
+
+\definecolor{BlueA}{HTML}{174A7E}
+\definecolor{BlueB}{HTML}{E4F0FB}
+\definecolor{GreenA}{HTML}{2D7D46}
+\definecolor{GreenB}{HTML}{E4F5E7}
+\definecolor{OrangeA}{HTML}{B46A1E}
+\definecolor{OrangeB}{HTML}{FAEBD7}
+\definecolor{RedA}{HTML}{A33636}
+\definecolor{RedB}{HTML}{F9E4E4}
+\definecolor{GrayA}{HTML}{59636E}
+\definecolor{GrayB}{HTML}{EEF2F5}
+\definecolor{PurpleA}{HTML}{5B4B8A}
+\definecolor{PurpleB}{HTML}{EEEAF8}
+\definecolor{TealA}{HTML}{2A7E7E}
+\definecolor{TealB}{HTML}{E0F2F2}
+
+\tikzset{
+  box/.style={draw, rounded corners=3pt, align=center, font=\scriptsize, minimum height=1.0cm, inner sep=5pt, thick},
+  soft/.style={fill=GrayB, draw=GrayA},
+  env/.style={fill=PurpleB, draw=PurpleA},
+  wm/.style={fill=OrangeB, draw=OrangeA},
+  hyp/.style={fill=BlueB, draw=BlueA},
+  plan/.style={fill=GreenB, draw=GreenA},
+  good/.style={fill=TealB, draw=TealA},
+  bad/.style={fill=RedB, draw=RedA},
+  arr/.style={-{Latex[length=1.8mm]}, thick},
+  arrdash/.style={-{Latex[length=1.8mm]}, thick, dashed},
+  note/.style={align=left, font=\tiny, text=GrayA}
+}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\addedLabel}{\textcolor{TealA}{\textbf{[added]}}}
+\newcommand{\workedLabel}{\textcolor{GreenA}{\textbf{[worked]}}}
+\newcommand{\missingLabel}{\textcolor{RedA}{\textbf{[missing]}}}
+
+\title{ARC-AGI-3 Symbolica}
+\subtitle{Reflexion-driven hypothesis-test agent on ft09 --- what works, where the L4 ceiling sits}
+\author{ARC-AGI-3 Symbolica Research}
+\date{2026-04-28}
+
+\begin{document}
+
+% ============================================================
+% Slide 1 - Title
+% ============================================================
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+% ============================================================
+% Slide 2 - TL;DR (added / worked / missing)
+% ============================================================
+\begin{frame}{Since v40 baseline --- in one slide}
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.5cm and 0.7cm]
+
+  \node[box, good, text width=4.4cm] (add)
+    {\addedLabel\ \textit{since v40}\\[2pt]
+     Reflexion module on stagnation\\
+     Abstract+grounded predicates\\
+     Multi-step plan with abort\\
+     Strict region\_id binding};
+  \node[box, good, right=of add, text width=4.4cm] (work)
+    {\workedLabel\\[2pt]
+     Confirm rate \textbf{6\% $\to$ 52\%}\\
+     L2--L3 reached in $<$30 turns\\
+     Cross-level transfer banked\\
+     Rationale coverage 73\% $\to$ 96\%};
+  \node[box, bad, right=of work, text width=4.4cm] (miss)
+    {\missingLabel\\[2pt]
+     L4 ceiling unbroken\\
+     0 NTi clicks despite 3 NTi\\
+     56\% off-region at L4\\
+     Multi-step plan rarely emitted};
+
+  \draw[arr] (add) -- (work);
+  \draw[arr, draw=RedA] (work) -- (miss);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.6em}
+\centering
+\footnotesize
+v40 = palette tokens, no Reflexion. \quad v41-c = abstract+grounded, Reflexion. \quad v43 = discovery + anomaly hypothesis (running).
+\end{frame}
+
+% ============================================================
+% Slide 3 - Architecture overview (per-turn loop)
+% ============================================================
+\begin{frame}{Per-turn loop --- five components, one shared GoalBoard}
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.7cm and 0.7cm]
+
+  \node[box, env,  text width=2.7cm] (sp)
+    {\textbf{SemanticPacket}\\visible\_regions,\\indicator\_pattern,\\joint\_neighbors};
+  \node[box, hyp,  right=of sp, text width=2.7cm] (m1)
+    {\textbf{M1}\\hypothesis cards\\(predicate + signature)};
+  \node[box, plan, right=of m1, text width=2.7cm] (m2)
+    {\textbf{M2}\\action plan\\(1--3 steps)};
+  \node[box, wm,   right=of m2, text width=2.7cm] (step)
+    {\textbf{Step loop}\\execute, observe,\\abort if mismatch};
+  \node[box, bad,  right=of step, text width=2.7cm] (fal)
+    {\textbf{Falsifier}\\verdict =\\confirm/falsify};
+
+  \node[box, soft, below=1.0cm of m2, text width=13.5cm, minimum height=0.95cm] (gb)
+    {\textbf{GoalBoard} \quad active\_cards \quad $\cdot$ \quad falsified\_cards \quad $\cdot$ \quad cross\_level\_confirmed \quad $\cdot$ \quad reflexion\_buffer \quad $\cdot$ \quad stagnation\_window};
+
+  \node[box, good, above=0.5cm of m1, text width=4.0cm] (rfx)
+    {\textbf{Reflexion} \addedLabel\\fires when stagnation\_window $\ge$ 6\\or 4 falsify in window};
+
+  \draw[arr] (sp) -- (m1);
+  \draw[arr] (m1) -- (m2);
+  \draw[arr] (m2) -- (step);
+  \draw[arr] (step) -- (fal);
+  \draw[arrdash, draw=GrayA] (fal.south) -- (fal.south |- gb.north);
+  \draw[arrdash, draw=GrayA] (m1.south) -- (m1.south |- gb.north);
+  \draw[arrdash, draw=GrayA] (m2.south) -- (m2.south |- gb.north);
+  \draw[arrdash, draw=GrayA] (sp.south) -- (sp.south |- gb.north);
+  \draw[arrdash, draw=GrayA] (step.south) -- (step.south |- gb.north);
+  \draw[arr, draw=TealA] (rfx.south) -- (m1.north);
+  \draw[arr, draw=TealA] (rfx.east) to[out=0,in=90] (m2.north);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.4em}
+\centering
+\footnotesize
+M3 (skill compressor) and M4 (lesson) are gated off in v41+. Reflexion took over the corrective channel.
+\end{frame}
+
+% ============================================================
+% Slide 4 - Six levels of ft09
+% ============================================================
+\begin{frame}{ft09 has six levels --- L4 is where the mechanic changes}
+\centering
+\small
+\begin{tabular}{c l r r r l r}
+\toprule
+\textbf{level} & \textbf{name} & \textbf{markers} & \textbf{Hkx} & \textbf{NTi} & \textbf{gqb cycle} & \textbf{kCv budget} \\
+\midrule
+L0 & THR & 1 &  8 & 0 & \{9, 8\}        &  32 \\
+L1 & hxv & 1 & 13 & 0 & \{9, 12\}       &  32 \\
+L2 & Fmh & 2 & 23 & 0 & \{8, 12\}       &  96 \\
+L3 & oea & 2 & 18 & 0 & \{9, 8, 12\}    &  96 \\
+\rowcolor{RedB}
+L4 & INW & 6+ & 27 & \textbf{3 NTi} & \{14, 15\} & 128 \\
+\rowcolor{RedB}
+L5 & DFx & 1 &  0 & ZkU & ---            & 128 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.7em}
+\centering
+\footnotesize
+L0--L3 share Hkx single-toggle physics with growing palette + count.
+\quad L4 introduces \textbf{NTi} (multi-toggle).
+\quad L5 introduces \textbf{ZkU} (custom).
+\end{frame}
+
+% ============================================================
+% Slide 5 - Predicate language: palette token vs abstract+grounded
+% ============================================================
+\begin{frame}[fragile]{Predicate abstraction --- palette token cannot transfer L0$\to$L4}
+\scriptsize\textbf{(v40) Palette-only predicate --- works only on L0:}
+\begin{Verbatim}[fontsize=\tiny]
+predicate: "R31 transitions 9 to 8"
+problem  : L1 cycle is {9,12}, L2 is {8,12}, L3 is {9,8,12}, L4 is {14,15}.
+           "9 to 8" tokens have ZERO transfer value when palette rotates.
+\end{Verbatim}
+
+\scriptsize\textbf{(v41-c) Abstract intent + concrete grounding --- transfers across levels:}
+\begin{Verbatim}[fontsize=\tiny]
+predicate: "Marker R31 reaches satisfied state when satisfy marker.E
+            needs_toggle is completed by advance neighbor toward
+            target_color (currently R32 9 -> 8)."
+form     : <ABSTRACT INTENT>  <CONCRETE GROUNDING in parens>
+abstract : "satisfy marker.<dir> needs_toggle", "advance neighbor toward
+            target_color", "shared neighbor with conflicting target_colors"
+grounding: "(currently R32 9 -> 8)"  <-- still satisfies BIND_DIGIT_RE.
+\end{Verbatim}
+
+\scriptsize\textbf{Hidden bug fixed alongside the rewrite:}
+\begin{Verbatim}[fontsize=\tiny]
+BIND_DIGIT_RE was:  r"r\d+[^.]{0,80}?\b\d\s*<conn>\s*\d"        # single digit only
+                    -> silently rejected "14 to 15", "8 to 12" at L1+
+fixed to:           r"r\d+[^.]{0,80}?\b\d{1,2}\s*<conn>\s*\d{1,2}"
+\end{Verbatim}
+
+\vspace{0.2em}
+\centering
+\scriptsize
+Without the regex fix the abstraction would have been silently filtered out.
+\end{frame}
+
+% ============================================================
+% Slide 6 - Reflexion module loop
+% ============================================================
+\begin{frame}{Reflexion --- one LLM call per stagnation, $\le$220-char corrective}
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.7cm and 0.9cm]
+
+  \node[box, hyp,  text width=3.6cm] (trig)
+    {\textbf{Trigger}\\stagnation\_window $\ge$ 6\\OR last 4 verdicts\\$=$ falsify/inconclusive};
+  \node[box, plan, right=of trig, text width=3.6cm] (call)
+    {\textbf{Reflexion call}\\1 LLM call, JSON out:\\\{diagnosis, corrective\}};
+  \node[box, good, right=of call, text width=3.6cm] (buf)
+    {\textbf{Buffer}\\reflexion\_buffer\\(string, $\le$220 chars)};
+
+  \node[box, wm, below=0.7cm of call, text width=8.0cm] (inj)
+    {\textbf{Injected into next M1 + M2 prompts}\\HIGHEST PRIORITY rule: card and action must obey corrective};
+
+  \node[box, bad, right=of buf, text width=3.6cm] (decay)
+    {\textbf{Decay}\\level\_rise\\OR 8 turns since set};
+
+  \draw[arr] (trig) -- (call);
+  \draw[arr] (call) -- (buf);
+  \draw[arr] (buf) -- (decay);
+  \draw[arr] (buf.south) -- (buf.south |- inj.north);
+  \draw[arr] (call.south) -- (inj.north);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.4em}
+\centering
+\footnotesize
+Replaces v40 M3/M4 corrective channel which never reached the action planner. Reflexion writes directly to M1+M2.
+\end{frame}
+
+% ============================================================
+% Slide 7 - Real cross_level_confirmed entries (cycle40)
+% ============================================================
+\begin{frame}[fragile]{Cross-level analogy bank --- agent-confirmed predicates from cycle40}
+\scriptsize\textbf{Real entries in \texttt{board.cross\_level\_confirmed} after L0$\to$L3 progression:}
+\begin{Verbatim}[fontsize=\tiny]
+[1] "Win-state for marker R18 is satisfy marker.NE needs_toggle by advance
+     neighbor toward target_color (currently R15 12 -> 8), so the same R15
+     transition jointly advances R18 and R10 toward completion."
+     [precision_score 84, level_delta 1, is_target_state true]
+
+[2] "Mask-rule alternative on marker R18: click neighbor advances one step
+     in gqb cycle (currently R15 12 -> 9) before final target 8, i.e.,
+     satisfy marker.NE needs_toggle may require two-step cycling."
+
+[3] "Win-state for marker R18 is satisfy marker.NE needs_toggle by advance
+     neighbor toward target_color (currently per_neighbor_target.NE neighbor
+     R15 9 -> 8), while shared neighbor with conflicting target_colors at
+     R6 (9 -> 8 vs stay 9) remains deferred."
+     [precision_score 99, is_target_state true]
+\end{Verbatim}
+
+\vspace{0.2em}
+\centering
+\scriptsize
+Abstract intent (\textit{satisfy marker.<dir> needs\_toggle}, \textit{advance neighbor}) is constant.
+Only the parenthetical R-id and palette tokens change between levels.
+\end{frame}
+
+% ============================================================
+% Slide 8 - Cycle progression dashboard
+% ============================================================
+\begin{frame}{Cycle progression --- four cycles since palette baseline}
+\centering
+\scriptsize
+\begin{tabular}{l l r l r r l}
+\toprule
+\textbf{cycle} & \textbf{rev} & \textbf{conf \%} & \textbf{max L} & \textbf{multi-step} & \textbf{cross-L} & \textbf{remark} \\
+\midrule
+33 & v40 (palette)        &  6\% & L4 @ t33 & 0 & 0 & 5 redundant skills \\
+37 & v41-b (strict gates) & 35\% & L3 @ t53 & 0 & 2 & slow climb \\
+38 & v41-c (abstract+grd) & \textbf{52\%} & L2 @ t25 & 0 & 4 & fastest L2 entry \\
+40 & v41-c rerun          & 50\% & L3 @ t28 & 0 & \textbf{6} & L3 stag 45, no L4 \\
+\midrule
+41 & v43 (disc+anom)      & --- & --- & --- & --- & running, L4-targeted \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.7em}
+\centering
+\footnotesize
+Confirm rate climbed 6\% $\to$ 52\% in three revs. Multi-step still 0 across all cycles. L4 ceiling unbroken.
+\end{frame}
+
+% ============================================================
+% Slide 9 - L4 ceiling diagnosis
+% ============================================================
+\begin{frame}{L4 ceiling --- the structural arithmetic of why v41-c stalls}
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.6cm and 0.7cm]
+
+  \node[box, env, text width=3.5cm] (req)
+    {\textbf{Requirement count}\\6 markers $\times$ 8 neighbors\\$=$ \textbf{48 mask requirements}};
+  \node[box, wm, right=of req, text width=3.5cm] (tog)
+    {\textbf{Toggleable cells}\\27 Hkx + 3 NTi\\$=$ \textbf{30 cells}};
+  \node[box, bad, right=of tog, text width=3.5cm] (sh)
+    {\textbf{Shared neighbors}\\\textbf{18+ cells}\\with conflicting masks};
+
+  \node[box, bad, below=0.6cm of tog, text width=10.5cm] (run)
+    {\textbf{cycle33 L4 run (18 actions)}: \textbf{56\% off-region clicks} \quad on-target shows \textbf{forward 4 / reverse 4 zero-sum} \quad \textbf{0 NTi clicks} despite 3 NTi sprites};
+
+  \node[box, good, below=0.4cm of run, text width=10.5cm] (diag)
+    {\textbf{Agent self-diagnosis (skill text)}: ``high-conflict marker-mask frame where all unsatisfied shared hubs are mixed-demand''};
+
+  \draw[arr] (req) -- (tog);
+  \draw[arr] (tog) -- (sh);
+  \draw[arr, draw=RedA] (sh.south) -- (sh.south |- run.north);
+  \draw[arr] (run) -- (diag);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.3em}
+\centering
+\footnotesize
+48 demands vs 30 toggleables, $>$60\% of toggles shared. Single-step planning cannot escape zero-sum hubs.
+\end{frame}
+
+% ============================================================
+% Slide 10 - NTi mechanism extracted from ft09.py
+% ============================================================
+\begin{frame}[fragile]{NTi mechanism --- one click advances four Hkx at once}
+\scriptsize\textbf{From \texttt{environment\_files/ft09/9ab2447a/ft09.py} lines 2400--2424:}
+\begin{Verbatim}[fontsize=\tiny]
+NTi sprite (introduced at L4):
+  - placed alongside Hkx in the same play area
+  - on click, NTi.pixel mask is consulted: every cell within the mask
+    advances one step in the gqb cycle, simultaneously
+  - effective behaviour: 1 click -> ~4 Hkx neighbours change in one step
+\end{Verbatim}
+
+\scriptsize\textbf{Why M1 (v41-c) cannot see this:}
+\begin{Verbatim}[fontsize=\tiny]
+- per_neighbor_target schema models 1-marker-per-click physics only.
+- changed_cells statistic at L0-L3 is ~36 (one neighbor block).
+- An NTi click would produce changed_cells ~ 4 x 36 = ~144, far above
+  the L0-L3 mode. v41-c has no anomaly rule -- M1 silently treats the
+  outlier as noise and re-emits Hkx-style cards.
+\end{Verbatim}
+
+\vspace{0.2em}
+\centering
+\scriptsize
+The mechanic is in the env; the agent's semantic packet does not surface it.
+\end{frame}
+
+% ============================================================
+% Slide 11 - v43 fix: discovery mode + anomaly hypothesis
+% ============================================================
+\begin{frame}{v43 fix --- discovery mode and anomaly hypothesis on level rise}
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.55cm and 0.7cm]
+
+  \node[box, env, text width=4.2cm] (lr)
+    {\textbf{Level rise detected}\\stagnation\_window\\reset to 0\\reflexion\_buffer auto-set};
+  \node[box, hyp, right=of lr, text width=4.2cm] (disc)
+    {\textbf{DISCOVERY MODE}\\(if stag $\le$ 4 \&\\cross\_level\_count $\ge$ 1)\\$\ge$3 observation cards / 6,\\mech+goal $\le$ 2};
+  \node[box, plan, right=of disc, text width=4.2cm] (anom)
+    {\textbf{ANOMALY HYPOTHESIS}\\if any click last 8 has\\changed\_cells $>$ 50\\or $\ge$2$\times$ level mode\\$\to$ emit ``new-sprite'' obs card};
+
+  \node[box, good, below=0.6cm of disc, text width=10.5cm] (out)
+    {\textbf{Result}: M1 forced to observe NEW sprite behavior BEFORE applying L0--L3 prior. NTi-class clicks (high changed\_cells) are recognized as a structurally distinct mechanic, not Hkx noise.};
+
+  \draw[arr] (lr) -- (disc);
+  \draw[arr] (disc) -- (anom);
+  \draw[arr] (disc.south) -- (out.north);
+  \draw[arr] (anom.south) -- (out.north -| anom.south);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.3em}
+\centering
+\footnotesize
+Currently running as cycle41. Targets the L4 ceiling identified on slide 9.
+\end{frame}
+
+% ============================================================
+% Slide 12 - What is still missing for L4
+% ============================================================
+\begin{frame}{What is still missing for L4 clear --- three gaps after v43}
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.55cm and 0.7cm]
+
+  \node[box, bad, text width=4.2cm] (g1)
+    {\textbf{Multi-step plan rarely emitted}\\M2 conservative: defaults to 1\\step unless joint\_neighbors\\evidence is dense};
+  \node[box, bad, right=of g1, text width=4.2cm] (g2)
+    {\textbf{NTi-aware semantic packet}\\v43 detects anomaly post-hoc;\\packet still lacks an\\\code{nti\_pixel\_mask} field};
+  \node[box, bad, right=of g2, text width=4.2cm] (g3)
+    {\textbf{Joint-constraint sequencing}\\18+ shared cells require 2--3\\step plans that resolve conflicts\\in order; M2 has no scheduler};
+
+  \node[box, good, below=0.6cm of g2, text width=10.5cm] (need)
+    {\textbf{Minimum interface fix} (no new module): expose joint\_neighbors covering-set hint to M2; force length-2 plan when uncovered\_count $\ge$ 4. Then NTi anomaly card from v43 can be \emph{tested} in 1 plan, not 4 single clicks.};
+
+  \draw[arr, draw=RedA] (g1) -- (g2);
+  \draw[arr, draw=RedA] (g2) -- (g3);
+  \draw[arr] (g2.south) -- (need.north);
+
+\end{tikzpicture}%
+}
+
+\vspace{0.3em}
+\centering
+\footnotesize
+v43 fixes ``M1 doesn't notice NTi''. It does not fix ``M2 cannot plan multi-click''.
+\end{frame}
+
+% ============================================================
+% Slide 13 - Visualizer dashboard
+% ============================================================
+\begin{frame}{Visualizer --- ft09\_trace\_explorer.html bundles five cycles}
+\centering
+\small
+\begin{tabular}{l r}
+\toprule
+\textbf{field} & \textbf{value} \\
+\midrule
+file size & 3.7 MB self-contained HTML \\
+cycles bundled & 5 (cycle33, 37, 38, 40, 41) \\
+per-turn fields surfaced & 20 \\
+key per-turn diff fields & \code{reported\_changed\_cells} vs \code{derived\_changed\_cells} \\
+rationale-coverage cycle33 (v40) & 73\% \\
+rationale-coverage cycle40 (v41-c) & \textbf{96\%} \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.7em}
+\resizebox{0.94\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.3cm and 0.5cm]
+  \node[box, env, text width=3.0cm] (logs) {goal\_board.json\\per-turn};
+  \node[box, hyp, right=of logs, text width=3.0cm] (extr) {extract\_turn\\fields};
+  \node[box, wm, right=of extr, text width=3.0cm] (cmp) {derive\\changed\_cells};
+  \node[box, good, right=of cmp, text width=3.4cm] (html) {self-contained\\HTML dashboard};
+  \draw[arr] (logs) -- (extr); \draw[arr] (extr) -- (cmp); \draw[arr] (cmp) -- (html);
+\end{tikzpicture}%
+}
+
+\vspace{0.2em}
+\centering
+\footnotesize
+\scriptsize File: \texttt{\scriptsize presentation/ft09\_trace\_explorer.html}. Coverage 73\% $\to$ 96\%.
+\end{frame}
+
+\end{document}
