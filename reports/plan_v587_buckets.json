@@ -1,0 +1,33 @@
+{
+  "n_lp_events": 26,
+  "n_cycles_scanned": 44,
+  "click_count_distribution": {
+    "4": 11,
+    "6": 15
+  },
+  "repeat_clicks_distribution": {
+    "0": 21,
+    "1": 4,
+    "2": 1
+  },
+  "inter_lp_gap_median": 15,
+  "click_count_cut_points": [
+    4,
+    6
+  ],
+  "repeat_clicks_cut_points": [
+    0,
+    0
+  ],
+  "K_STUCK": 30,
+  "click_count_buckets": [
+    "<=4",
+    "5-6",
+    ">6"
+  ],
+  "repeat_clicks_buckets": [
+    "<=0",
+    "1-0",
+    ">0"
+  ]
+}

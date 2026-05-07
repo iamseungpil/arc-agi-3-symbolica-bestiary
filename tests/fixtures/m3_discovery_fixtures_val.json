@@ -1,0 +1,7254 @@
+{
+ "fixtures": [
+  {
+   "cycle": "cycle159_1777994833",
+   "l1_turn": 41,
+   "turn": 74,
+   "turns_post_l1": 33,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. In the IMAGE I saw two multicolor markers with R12 in the lower center, and coord (30,40) lies inside R12 bbox [28,38,33,43]. C24 has the best informati",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. In the IMAGE I saw the two multicolor markers and the surrounding play-zone blocks, and coord (22,32) lies inside R8 bbox [20,30,25,35]. C17 has higher "
+   ],
+   "m3_emitted": [
+    {
+     "id": "C25",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the crop selects the corresponding neighboring play-zone region for its one-click transition, and completing the sector sweep around one marker advances the level.",
+     "click_sequence": [
+      {
+       "region_id": "R3",
+       "expected_color_after": 12,
+       "rationale": "This is the north neighbor of the upper marker, matching a filled directional sector in that marker crop."
+      },
+      {
+       "region_id": "R4",
+       "expected_color_after": 12,
+       "rationale": "This is the northeast neighbor of the upper marker, continuing the compass sweep through a filled crop sector."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 9,
+       "rationale": "This is the east neighbor of the upper marker, selected by the same marker-crop directional-sector pattern."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "This is the south neighbor of the upper marker, completing a compact four-step sector sweep around that marker."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C26",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop may define a directional sector compass sweep over only the non-background sectors; applying the prescribed one-click transitions to those compass neighbors around a marker is the level-advancing interaction.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "This is the north neighbor of the lower marker, aligned with a non-background sector in its crop."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 12,
+       "rationale": "This is the east neighbor of the lower marker, matching the horizontal directional sector in the marker crop."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 9,
+       "rationale": "This is the southeast neighbor of the lower marker, matching the lower-right directional sector in the crop."
+      },
+      {
+       "region_id": "R11",
+       "expected_color_after": 9,
+       "rationale": "This is the west neighbor of the lower marker, matching the opposite horizontal directional sector and completing the sector set."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C27",
+     "type": "single",
+     "region_id": "R7",
+     "abstraction_level": "mid",
+     "predicate": "Clicking R7 performs the same full-region 36-cell toggle seen in the plateau, changing it from color 12 to color 9 without advancing the level by itself.",
+     "expected_signature": {
+      "dominant_transition": {
+       "from": 12,
+       "to": 9
+      },
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle152_v586_phaseC1_1777948358",
+   "l1_turn": 3,
+   "turn": 25,
+   "turns_post_l1": 22,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. The IMAGE shows two stacked multicolor markers R6 and R12 with all visible marker-neighbor blocks currently color 12, and RECENT_TURNS show R15 and R2 changed 9",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_direction, sector_sequence]; transferable=YES. Plan C10 has the best payoff-wei",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[adjacent_marker_clicked_first, marker_crop, directional_sector_sweep, click_order]; transferable=YES",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[adjacent_marker_clicked_first, marker_crop, directional_sector_sweep, click_order]; transferable=YES",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. The IMAGE shows two multicolor markers R6 and R12 with their surrounding play-zone blocks, plus a small top-strip R1 and bottom-budget R17 that are not marker n"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C13",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the multicolor marker prescribes a one-click state change for the corresponding compass neighbor, and completing the prescribed local sweep around that marker advances the interaction level.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the northern neighbor of marker R12; its current color 9 should toggle as the first sector-directed step in the R12 compass sweep."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 9,
+       "rationale": "R10 is the northeast neighbor shared near the marker crop; clicking it tests whether adjacent directional sectors are consumed clockwise."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 9,
+       "rationale": "R13 is the eastern neighbor of R12 and matches a visible side sector in the marker crop."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 9,
+       "rationale": "R16 is the southeast neighbor of R12 and corresponds to the lower-right directional sector visible in the crop."
+      },
+      {
+       "region_id": "R15",
+       "expected_color_after": 9,
+       "rationale": "R15 continues the clockwise sweep through the southern compass position around R12."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C14",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A directional sector mapping from stacked marker crops selects one exterior flank, and the level advances only after a contiguous flank sweep changes each region along that marker-aligned side.",
+     "click_sequence": [
+      {
+       "region_id": "R4",
+       "expected_color_after": 12,
+       "rationale": "R4 is on the upper-right flank of the upper marker cluster and tests the start of a contiguous exterior-side sweep."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 9,
+       "rationale": "R7 continues the same right-side flank adjacent to the upper marker."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 9,
+       "rationale": "R10 is the bridge position between the two marker neighborhoods on the same flank."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 9,
+       "rationale": "R13 continues the right flank adjacent to the lower marker."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 9,
+       "rationale": "R16 closes the lower-right end of the contiguous flank sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C15",
+     "type": "single",
+     "region_id": "R12",
+     "abstraction_level": "mid",
+     "predicate": "Clicking R12's multicolor marker body acts as a marker selector or phase-setting click rather than a solid-region recolor, so it should produce no dominant 6x6 color transition by itself.",
+     "expected_signature": {
+      "dominant_transition": null,
+      "min_cell_count": 0,
+      "level_delta": 0
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle159_1777994833",
+   "l1_turn": 41,
+   "turn": 73,
+   "turns_post_l1": 32,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,compass_sweep,directional_sector_subset,adjacent_region_transition]; transferabl",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. In the IMAGE I saw two multicolor markers with R12 in the lower center, and coord (30,40) lies inside R12 bbox [28,38,33,43]. C24 has the best informati"
+   ],
+   "m3_emitted": []
+  },
+  {
+   "cycle": "cycle163_v586_B7_1778030244",
+   "l1_turn": 3,
+   "turn": 39,
+   "turns_post_l1": 36,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sector, compass_neighbor_mapping, ordered_sequence]; transferable=YES. ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sector, compass_neighbor_mapping, ordered_sequence]; transferable=YES. ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sector, compass_neighbor_mapping, ordered_sequence]; transferable=YES. ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[vertical_alignment, shared_inter_marker_neighbors, immediate_flanks]; transferable=YES. Plan",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[visible_transition_classes, marker_neighbor_geometry, paired_temporal_pattern]; transferable"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C22",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the marker crop prescribes a one-click state change in the corresponding compass neighbor, and completing the remaining sectors around that marker triggers level rise.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the south compass neighbor of the upper marker; the SUMMARY says prior upper-marker sectors R3/R7/R10 already produced 9\u219212 without level rise, so this tests the next remaining sector."
+      },
+      {
+       "region_id": "R8",
+       "expected_color_after": 12,
+       "rationale": "R8 is the southwest compass neighbor of the same marker and is explicitly named in the SUMMARY as part of finishing the compass-sweep."
+      },
+      {
+       "region_id": "R5",
+       "expected_color_after": 12,
+       "rationale": "R5 is the west compass neighbor of the upper marker; if all sectors around one marker must be acknowledged, this fills another currently unmatched neighbor sector."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 12,
+       "rationale": "R10 is a previously responsive southeast neighbor; revisiting it after adjacent remaining sectors tests whether the sweep depends on completing an ordered local ring."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C23",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A global structure rule advances only when all regions in one geometric row or band reach the same interaction state, independent of their concrete color labels or region IDs.",
+     "click_sequence": [
+      {
+       "region_id": "R14",
+       "expected_color_after": 12,
+       "rationale": "R14 is in the bottom play-zone row and currently differs from the middle marker-neighbor rows; clicking it tests row homogenization."
+      },
+      {
+       "region_id": "R15",
+       "expected_color_after": 12,
+       "rationale": "R15 is the center member of the same row, so it extends the same-state band test coherently."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 12,
+       "rationale": "R16 completes the three-cell bottom row state alignment."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 9,
+       "rationale": "R13 is directly above the bottom-right cell; toggling this adjacent row member checks whether the success condition is row-specific rather than simply more 12-cells."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C24",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A region's interaction outcome depends on whether a geometrically related neighbor was clicked first within the last few turns, so level rise occurs from a short temporal dependency rather than from isolated toggles.",
+     "click_sequence": [
+      {
+       "region_id": "R5",
+       "expected_color_after": 12,
+       "rationale": "R5 is a west-side neighbor of the upper marker and a plausible precondition setter because it is still in the alternate state."
+      },
+      {
+       "region_id": "R8",
+       "expected_color_after": 9,
+       "rationale": "R8 is diagonally related below R5; this tests whether a prior west-sector click changes the next southwest-sector response."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "R9 is adjacent to R8 and below the marker, testing whether the dependency propagates through neighboring sectors."
+      },
+      {
+       "region_id": "R11",
+       "expected_color_after": 9,
+       "rationale": "R11 is the west neighbor of the lower marker, giving a nearby but distinct sector to check whether the dependency transfers across the vertical marker pair."
+      },
+      {
+       "region_id": "R14",
+       "expected_color_after": 12,
+       "rationale": "R14 is the southwest neighbor of the lower marker and closes the short related-neighbor chain."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle153_v586_B4_1777962947",
+   "l1_turn": 3,
+   "turn": 8,
+   "turns_post_l1": 5,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. The IMAGE shows two multicolor markers R6 and R12 with a shared vertical neighbor R9 between them, so the shrink from the prior four-marker level makes ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sweep, directional_sector, geometric_correspondence]; transferable=YES.",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop,directional_sector,geometric_correspondence,neighboring_regions]; transferable=Y",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. The IMAGE shows the two stacked multicolor markers R6 and R12 with many fresh blue neighbor blocks still unclicked, while RECENT_TURNS show R9, R3, and "
+   ],
+   "m3_emitted": [
+    {
+     "id": "C7",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the marker crop prescribes a one-click state change for the corresponding compass neighbor, and completing the local sector sweep around one marker can trigger a level rise.",
+     "click_sequence": [
+      {
+       "region_id": "R4",
+       "expected_color_after": 12,
+       "rationale": "R4 is the northeast compass neighbor of the upper marker R6; the upper marker crop has a non-background directional sector toward this side."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 12,
+       "rationale": "R7 is the east neighbor of R6, testing the same marker-crop directional-sector mapping on the horizontal sector."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 12,
+       "rationale": "R10 is the southeast neighbor of R6 and also geometrically adjacent to the shared middle zone, making it part of a coherent compass sweep around the marker."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "R9 is the south neighbor shared between the two markers; its prior observed 9\u219212 behavior makes it a key sector in completing the crop-indicated sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C8",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A level rise depends on completing a directional sector pattern shared by adjacent marker crops, where the overlapping compass neighbors between markers must be clicked in an order consistent with their shared geometry.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "R9 is the shared vertical neighbor between the two marker crops and has already shown a post-rise toggle class."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 12,
+       "rationale": "R10 is shared diagonally by the upper and lower marker neighborhoods, testing whether overlap sectors are part of the rule."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 12,
+       "rationale": "R13 is the east neighbor of the lower marker R12, matching the visible right-side sector in the marker crop."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 12,
+       "rationale": "R16 is the southeast neighbor of R12, completing the lower marker\u2019s right/lower directional sector cluster."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C9",
+     "type": "single",
+     "region_id": "R6",
+     "abstraction_level": "mid",
+     "predicate": "Clicking the multicolor marker R6 itself tests whether the marker crop is an activator rather than only a guide for neighbor clicks.",
+     "expected_signature": {
+      "dominant_transition": null,
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle163_v586_B7_1778030244",
+   "l1_turn": 3,
+   "turn": 11,
+   "turns_post_l1": 8,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_encoding, compass_neighbor_relation, compass_sweep]; transferable=YES. Plan C8 s",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[shared_marker_crop_sectors, contiguous_bridge_relation, peripheral_neighbor_order]; transfer",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. C10 has the best information_value because it targets R4, an untested 9-colored marker-neighbor visible in the IMAGE, so it can resolve whether untouche",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_encoding, compass_neighbor_relation, compass_sweep]; transferable=YES. C11 has h",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[geometric_adjacency, shared_visible_state, scanline_order, full_local_run]; transferable=YES"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C13",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A multicolor marker crop encodes a compass sweep: each colored directional sector of the marker crop prescribes clicking the corresponding compass neighbor, and completing the marked sectors around one marker triggers a level rise.",
+     "click_sequence": [
+      {
+       "region_id": "R11",
+       "expected_color_after": 9,
+       "rationale": "R11 is the west neighbor of the lower marker; the lower marker crop has a colored west directional sector, so this begins the compass sweep."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the north neighbor of the same marker; the crop shows a colored north sector."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 12,
+       "rationale": "R13 is the east neighbor; the crop has a colored east directional sector."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 12,
+       "rationale": "R16 is the southeast neighbor; the crop has a colored southeast sector, so this should complete the marked compass sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C14",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker's internal directional sector pixels, rather than only its neighboring regions, can be active click targets; clicking the marked internal sectors of the marker crop should produce the large transition class if the sector itself is the handler.",
+     "click_sequence": [
+      {
+       "region_id": "R12",
+       "expected_color_after": 0,
+       "rationale": "Click the north marked sector inside the lower marker crop rather than the neighboring region.",
+       "coord": [
+        30,
+        39
+       ]
+      },
+      {
+       "region_id": "R12",
+       "expected_color_after": 0,
+       "rationale": "Click the west marked sector inside the same crop to test internal directional-sector targeting.",
+       "coord": [
+        29,
+        41
+       ]
+      },
+      {
+       "region_id": "R12",
+       "expected_color_after": 0,
+       "rationale": "Click the east marked sector inside the crop.",
+       "coord": [
+        32,
+        41
+       ]
+      },
+      {
+       "region_id": "R12",
+       "expected_color_after": 0,
+       "rationale": "Click the southeast marked sector inside the crop, matching the crop\u2019s asymmetric lower-right sector.",
+       "coord": [
+        32,
+        42
+       ]
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C15",
+     "type": "single",
+     "region_id": "R16",
+     "abstraction_level": "mid",
+     "predicate": "Clicking the southeast neighbor of the lower multicolor marker by itself performs the local 9\u219212 toggle but does not independently cause the large level-rising transition.",
+     "expected_signature": {
+      "dominant_transition": {
+       "from": 9,
+       "to": 12
+      },
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle153_v586_B4_1777962947",
+   "l1_turn": 3,
+   "turn": 37,
+   "turns_post_l1": 34,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_pattern, crop_empty_sector_position, compass_sweep, geometric_neighbor_direction",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. In the IMAGE I saw two multicolor marker blocks with a compact neighbor grid, and the lower marker's blank-sector C13 sweep just finished on turns 30-32",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_pattern, colored_sector_position, compass_sweep, geometric_neighbor_direction]; ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_pattern, colored_directional_sector, geometric_neighbor_direction]; transferable",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[vertical_marker_relation, shared_inter_marker_band, geometric_between_markers, lateral_secto"
+   ],
+   "m3_emitted": []
+  },
+  {
+   "cycle": "cycle153_v586_B4_1777962947",
+   "l1_turn": 3,
+   "turn": 38,
+   "turns_post_l1": 35,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. In the IMAGE I saw two multicolor marker blocks with a compact neighbor grid, and the lower marker's blank-sector C13 sweep just finished on turns 30-32",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_pattern, colored_sector_position, compass_sweep, geometric_neighbor_direction]; ",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_pattern, colored_directional_sector, geometric_neighbor_direction]; transferable",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[vertical_marker_relation, shared_inter_marker_band, geometric_between_markers, lateral_secto",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. C2 has low current information_value because its R30 region is absent from the visible grid, so its predicted 9\u21928 transition cannot be tested now; C3 ha"
+   ],
+   "m3_emitted": []
+  },
+  {
+   "cycle": "cycle163_v586_B7_1778030244",
+   "l1_turn": 3,
+   "turn": 8,
+   "turns_post_l1": 5,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_directional_sector, compass_neighbor_relation, local_toggle_cycle, sequence_comp",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_directional_sector_mapping, accent-bearing_crop_sectors, local_compass_sweep]; t",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop_encoding, compass_neighbor_relation, compass_sweep]; transferable=YES. Plan C8 s",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ABSTRACT: rule cites colors=[none], rids=[none], relations=[shared_marker_crop_sectors, contiguous_bridge_relation, peripheral_neighbor_order]; transfer"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C10",
+     "type": "single",
+     "region_id": "R4",
+     "abstraction_level": "mid",
+     "predicate": "Clicking an untested play-zone neighbor currently in the same local class as other 9-colored neighbors will produce the common one-step 9\u21928 transition without itself advancing the level.",
+     "expected_signature": {
+      "dominant_transition": {
+       "from": 9,
+       "to": 8
+      },
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    },
+    {
+     "id": "C11",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector in the crop dictates which geometrically corresponding neighbor must receive one click, and completing the visible directional sector sweep around that marker advances the level.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 4,
+       "rationale": "This neighbor lies in the marker's north direction, matching a colored directional sector in the crop."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 8,
+       "rationale": "This neighbor lies in the marker's east direction, matching a colored directional sector in the crop."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 8,
+       "rationale": "This neighbor lies in the marker's southeast direction, matching a colored directional sector in the crop."
+      },
+      {
+       "region_id": "R11",
+       "expected_color_after": 8,
+       "rationale": "This neighbor lies in the marker's west direction, matching a colored directional sector in the crop and completes the four-sector compass sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C12",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A compact run of geometrically adjacent play-zone regions sharing the same visible state forms a structural activation band; advancing the band in scanline order triggers the large transition only after the full local run has been clicked.",
+     "click_sequence": [
+      {
+       "region_id": "R11",
+       "expected_color_after": 8,
+       "rationale": "Starts the same-state activation band on the left side of the lower marker neighborhood."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 8,
+       "rationale": "Continues the same-state band across the marker's horizontal row."
+      },
+      {
+       "region_id": "R14",
+       "expected_color_after": 8,
+       "rationale": "Extends the band to the next scanline while preserving same-state adjacency."
+      },
+      {
+       "region_id": "R15",
+       "expected_color_after": 8,
+       "rationale": "Continues the contiguous lower-row same-state run."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 8,
+       "rationale": "Completes the compact same-state lower-row activation band."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle152_v586_phaseC1_1777948358",
+   "l1_turn": 3,
+   "turn": 7,
+   "turns_post_l1": 4,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sweep, directional_sector, compass_neighbor]; transferable=YES. The IMAGE shows",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[full_local_compass_sweep, geometric_relation_to_marker_crop, sequence_completion]; transferable=YES.",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. The IMAGE shows two stacked multicolor marker crops R6 and R12 with a shared grid of neighboring single-color regions, and the SUMMARY says the marker count shr"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C7",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the multicolor marker crop selects the geometrically corresponding neighbor, and completing the indicated sector sweep advances the level.",
+     "click_sequence": [
+      {
+       "region_id": "R3",
+       "expected_color_after": 8,
+       "rationale": "R3 is the north neighbor of the upper marker, matching a highlighted upper directional sector in that marker crop."
+      },
+      {
+       "region_id": "R4",
+       "expected_color_after": 8,
+       "rationale": "R4 is the northeast neighbor of the upper marker, consistent with the highlighted upper-right sector of the crop."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 8,
+       "rationale": "R7 is the east neighbor of the upper marker, matching the crop's right-side directional sector."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the south neighbor of the upper marker and also the north neighbor of the lower marker, so it tests whether shared compass sectors must be included in the sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C8",
+     "type": "single",
+     "region_id": "R2",
+     "abstraction_level": "mid",
+     "predicate": "Clicking R2 tests whether an already-orange marker-neighbor region participates in the current local interaction class rather than only blue neighbors toggling.",
+     "expected_signature": {
+      "dominant_transition": {
+       "from": 12,
+       "to": 8
+      },
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    },
+    {
+     "id": "C9",
+     "type": "single",
+     "region_id": "R3",
+     "abstraction_level": "low",
+     "predicate": "Clicking R3 should produce the common small neighbor transition without immediate level rise.",
+     "expected_signature": {
+      "dominant_transition": {
+       "from": 9,
+       "to": 8
+      },
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle152_v586_phaseC1_1777948358",
+   "l1_turn": 3,
+   "turn": 34,
+   "turns_post_l1": 31,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 11,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sweep, directional_sector, corresponding_compass_neighbor, sequence_completion]",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[directional_sector_mapping, stacked_marker_crops, exterior_flank, contiguous_flank_sweep, marker_ali",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[directional_sector_mapping, stacked_marker_crops, exterior_flank, contiguous_flank_sweep, marker_ali",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[directional_sector_mapping, stacked_marker_crops, exterior_flank, contiguous_flank_sweep, marker_ali",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. In the IMAGE, I see two stacked multicolor marker bodies with their surrounding 6x6 neighbor regions, matching the current VISIBLE_REGIONS. C2 has high theoreti"
+   ],
+   "m3_emitted": [
+    {
+     "id": "C16",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector of the crop prescribes a one-click state change for the geometrically corresponding neighbor, and completing the indicated sweep around that marker advances the level.",
+     "click_sequence": [
+      {
+       "region_id": "R4",
+       "expected_color_after": 9,
+       "rationale": "R4 is the northeast neighbor of the upper marker; the marker crop has a non-background directional sector in the upper-right area, so this tests that sector-to-neighbor mapping."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 12,
+       "rationale": "R7 is the east neighbor of the upper marker; the crop shows a right-side sector, so the east compass position should participate in the sweep."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "R9 is the south neighbor of the upper marker; the lower central crop sector suggests the south position is part of the encoded sweep."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 9,
+       "rationale": "R10 is the southeast neighbor of the upper marker and also lies between the two markers, making it a plausible terminal sector in the local compass sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C17",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop's directional sector pattern defines a compass sweep over only the sectors containing the marker's special internal color, and the level advances when those corresponding neighboring regions are clicked in sector order.",
+     "click_sequence": [
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "For the lower marker, R9 is the north neighbor; the marker crop has an upper central sector, so this starts the sector-ordered sweep."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 9,
+       "rationale": "R10 is the northeast neighbor of the lower marker and matches the upper-right special sector family in the crop."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 12,
+       "rationale": "R13 is the east neighbor of the lower marker; the crop includes right-side non-background sectors, so this tests the east mapping."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 12,
+       "rationale": "R16 is the southeast neighbor of the lower marker; the lower-right crop sector suggests it may complete the encoded sweep."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C18",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "When two marker neighborhoods overlap, the level advances only after clicking the shared connector regions whose positions satisfy both markers' relational sector constraints, rather than after completing either full local ring.",
+     "click_sequence": [
+      {
+       "region_id": "R8",
+       "expected_color_after": 9,
+       "rationale": "R8 lies in the lower-left area of the upper marker and the upper-left area of the lower marker, so it tests a shared-neighborhood connector role."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 9,
+       "rationale": "R9 is directly between the two markers vertically, making it a central shared connector."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 9,
+       "rationale": "R10 is also shared by both marker neighborhoods and sits on the diagonal connector path."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 12,
+       "rationale": "R13 extends the shared-sector path into the lower marker's east side, testing whether overlap plus continuation is required."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 12,
+       "rationale": "R16 is a lower-marker diagonal continuation that could close the connector sequence if overlap alone is insufficient."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    }
+   ]
+  },
+  {
+   "cycle": "cycle161_v586_B6_1778027170",
+   "l1_turn": 3,
+   "turn": 15,
+   "turns_post_l1": 12,
+   "visible_regions": [
+    {
+     "id": "R6",
+     "bbox": [
+      28,
+      22,
+      33,
+      27
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R3",
+      "NE": "R4",
+      "E": "R7",
+      "SE": "R10",
+      "S": "R9",
+      "SW": "R8",
+      "W": "R5",
+      "NW": "R2"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       12,
+       12,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R12",
+     "bbox": [
+      28,
+      38,
+      33,
+      43
+     ],
+     "size": 36,
+     "color": 0,
+     "is_multicolor": true,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false,
+     "neighbors_3x3": {
+      "N": "R9",
+      "NE": "R10",
+      "E": "R13",
+      "SE": "R16",
+      "S": "R15",
+      "SW": "R14",
+      "W": "R11",
+      "NW": "R8"
+     },
+     "crop": [
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       2,
+       2,
+       0,
+       0,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       2,
+       2,
+       12,
+       12,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       0,
+       0,
+       0,
+       0,
+       2,
+       2,
+       4
+      ],
+      [
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4,
+       4
+      ]
+     ]
+    },
+    {
+     "id": "R2",
+     "bbox": [
+      20,
+      14,
+      25,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R3",
+     "bbox": [
+      28,
+      14,
+      33,
+      19
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R4",
+     "bbox": [
+      36,
+      14,
+      41,
+      19
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R5",
+     "bbox": [
+      20,
+      22,
+      25,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R7",
+     "bbox": [
+      36,
+      22,
+      41,
+      27
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R8",
+     "bbox": [
+      20,
+      30,
+      25,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R9",
+     "bbox": [
+      28,
+      30,
+      33,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R10",
+     "bbox": [
+      36,
+      30,
+      41,
+      35
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R11",
+     "bbox": [
+      20,
+      38,
+      25,
+      43
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R13",
+     "bbox": [
+      36,
+      38,
+      41,
+      43
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R14",
+     "bbox": [
+      20,
+      46,
+      25,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R15",
+     "bbox": [
+      28,
+      46,
+      33,
+      51
+     ],
+     "size": 36,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R16",
+     "bbox": [
+      36,
+      46,
+      41,
+      51
+     ],
+     "size": 36,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "play_zone",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": true,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R1",
+     "bbox": [
+      60,
+      0,
+      63,
+      7
+     ],
+     "size": 32,
+     "color": 9,
+     "is_multicolor": false,
+     "y_band": "top_strip",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    },
+    {
+     "id": "R17",
+     "bbox": [
+      0,
+      63,
+      63,
+      63
+     ],
+     "size": 64,
+     "color": 12,
+     "is_multicolor": false,
+     "y_band": "bottom_budget",
+     "click_response": {
+      "clicks": 0,
+      "responses": 0
+     },
+     "is_marker_neighbor": false,
+     "is_primary_marker": false
+    }
+   ],
+   "visible_region_ids": [
+    "R6",
+    "R12",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R1",
+    "R17"
+   ],
+   "recent_thoughts": [
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sweep, directional_sector, compass_neighbor]; transferable=YES. Plan C9 step 4/",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[crop_nonzero_position, compass_direction_mapping, geometric_neighbor]; transferable=YES. Plan C10 st",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[marker_crop, compass_sweep, directional_sector, compass_neighbor]; transferable=YES. Plan C10 step 2",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. ABSTRACT: rule cites colors=[none], rids=[none], relations=[shared_neighbor, marker_neighborhood, local_sequence, temporal_dependence]; transferable=YES. Plan C",
+    "META: N=2, STATIC=[R1,R17], REL=shrunk. The IMAGE shows two multicolor markers R6 and R12 with compass-neighbor blocks around them, while RECENT_TURNS show R9 toggled 9\u219212 on turn 11 and then 12\u21929 on "
+   ],
+   "m3_emitted": [
+    {
+     "id": "C13",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A marker crop encodes a compass sweep: each directional sector in the marker crop dictates a one-click state change for the geometrically corresponding neighboring region, and completing the sector-defined sweep around one marker advances the level.",
+     "click_sequence": [
+      {
+       "region_id": "R11",
+       "expected_color_after": 12,
+       "rationale": "R11 is the west neighbor of the lower marker R12, and the marker crop contains a highlighted west-side directional sector."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the north neighbor of R12, matching the marker crop's upper directional sector."
+      },
+      {
+       "region_id": "R13",
+       "expected_color_after": 9,
+       "rationale": "R13 is the east neighbor of R12, matching the crop's east-side directional sector; because it is currently in the alternate state, the expected one-click response is the reverse state."
+      },
+      {
+       "region_id": "R16",
+       "expected_color_after": 9,
+       "rationale": "R16 is the southeast neighbor of R12, corresponding to the crop's lower-right directional sector."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C14",
+     "type": "plan",
+     "abstraction_level": "high",
+     "rule_hypothesis": "A region's interaction outcome depends on whether a neighboring marker-sector sweep was partially established within the last few turns, so a short ordered sequence through adjacent sectors should reveal a temporal precondition rather than an isolated toggle.",
+     "click_sequence": [
+      {
+       "region_id": "R3",
+       "expected_color_after": 9,
+       "rationale": "R3 is the north neighbor of the upper marker R6 and is already in the alternate state, testing whether clearing the top sector is an ordering precondition."
+      },
+      {
+       "region_id": "R7",
+       "expected_color_after": 12,
+       "rationale": "R7 is the east neighbor of R6, continuing clockwise through adjacent sectors around the same marker."
+      },
+      {
+       "region_id": "R10",
+       "expected_color_after": 12,
+       "rationale": "R10 is the southeast neighbor of R6, extending the ordered local sequence rather than mixing unrelated regions."
+      },
+      {
+       "region_id": "R9",
+       "expected_color_after": 12,
+       "rationale": "R9 is the south neighbor of R6 and also links the upper marker to the lower marker, testing whether a bridge sector completes the temporal dependency."
+      }
+     ],
+     "expected_outcome": {
+      "level_delta": 1
+     }
+    },
+    {
+     "id": "C15",
+     "type": "single",
+     "region_id": "R12",
+     "abstraction_level": "mid",
+     "predicate": "Clicking unresolved multicolor marker R12 acts as a local activator for its sector-neighborhood rather than merely toggling a single 36-cell solid region.",
+     "expected_signature": {
+      "dominant_transition": null,
+      "min_cell_count": 36,
+      "level_delta": 0
+     }
+    }
+   ]
+  }
+ ]
+}
