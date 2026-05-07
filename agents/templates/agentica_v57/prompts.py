@@ -160,7 +160,7 @@ You emit ONE JSON object:
                 IMAGE you saw at least once. If the chosen card is a
                 'plan' type, name the rule_hypothesis being tested and
                 which sequence step you are executing.>",
-    "chosen_hypothesis_id": "<id from ACTIVE_HYPOTHESES, or null if exploring>",
+    "chosen_hypothesis_id": "<id from ACTIVE_HYPOTHESES if non-empty; ELSE the predicate_id (or candidate_id) of your selected entry from CANDIDATE_TESTS; null ONLY if BOTH lists are empty>",
     "action": {"type": "ACTION6", "coord": [x, y]},
     "expected_observation": {
       "primary_region_id": "<R-id you expect the click to land in>",

@@ -1859,20 +1859,30 @@ async def run_turn(
                     snapped = True
                 break
 
-    # v590 B18: snap-to-predicate fallback. When M1 emits coord _outside_
-    # AND no chosen_hypothesis_id is set BUT predicate_tests are present
-    # (cold start before M3 emits cards), use the top-score predicate's
-    # suggested_coord. This closes the knowing-doing gap empirically
-    # observed in cycle231: M1 reasons about exploration but emits coord
-    # that lands _outside_, ignoring the 8 Symbolica-precomputed
-    # in-bbox suggested_coords. Verdicts use action-conditioned matching
-    # (predicate_id ↔ click_coord ∈ anchor_region.bbox).
-    if (
+    # v590 B18 round-3: snap-to-predicate during cold start.
+    # Trigger conditions (any one):
+    #   (a) coord _outside_ AND chosen_card None AND predicates present
+    #   (b) M1 chose null AND active_hypotheses empty AND predicates
+    #       present (cold start: M3 hasn't emitted yet — predicate-driven
+    #       is the ONLY informed strategy until then)
+    # Cycle234 trace showed (b): coord landed in arbitrary region
+    # (in_some_region=True) but M1 set chosen_id=null and ignored 8
+    # ready-to-test predicates → all 44 verdicts refuted, 0 supported.
+    # Round-3 expands trigger to cover (b) so predicate-driven cold-start
+    # is deterministic until M3 brings cards.
+    _b18_cold_start = (
+        not aresp.get("chosen_hypothesis_id")
+        and chosen_card is None
+        and not board.active_hypotheses
+        and candidate_tests_for_m1
+    )
+    _b18_outside = (
         not in_some_region
         and chosen_card is None
         and not snapped
         and candidate_tests_for_m1
-    ):
+    )
+    if _b18_outside or _b18_cold_start:
         for cand in candidate_tests_for_m1:
             sc = cand.get("suggested_coord")
             anchor = cand.get("anchor_region") or {}
@@ -2006,6 +2016,9 @@ async def run_turn(
             board.consecutive_inconclusive = 0
 
     # 5. Push verbose turn into rolling window.
+    # B18 round-3: re-read chosen_hypothesis_id from aresp (snap-fallback
+    # may have mutated it after the early line-1718 capture).
+    chosen_id = aresp.get("chosen_hypothesis_id") or chosen_id
     verbose_entry = {
         "turn": board.turn_index,
         "thought": (aresp.get("thought") or "")[:600],
