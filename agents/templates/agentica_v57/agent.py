@@ -147,6 +147,9 @@ def _compact_regions(regions: list[dict]) -> list[dict]:
             "click_response": r.get("click_response") or {"clicks": 0, "responses": 0},
             "is_marker_neighbor": r.get("id") in marker_neighbors,
             "is_primary_marker": r.get("id") == primary_marker_id,
+            # v590 round-5: expose centroid (point-avg) so predicate_generator
+            # can avoid bbox-midpoint hole-fall on L-shape regions.
+            "centroid": r.get("centroid"),
         }
         if r.get("is_multicolor"):
             n3 = r.get("neighbors_3x3")
