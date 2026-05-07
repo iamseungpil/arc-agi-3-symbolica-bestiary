@@ -30,9 +30,14 @@ from typing import Any
 from agents.templates.agentica.agent import Arcgentica
 from agents.templates.agentica.compat import spawn  # TRAPI bridge
 from tools.chain_compress import compress_action_state_chain  # v588 B16
-from tools.candidate_generator import (  # v589 B17
+from tools.candidate_generator import (  # v589 B17 (legacy)
     generate_candidates,
     update_candidate_log_with_observation,
+)
+from tools.predicate_generator import (  # v590 B18 (live)
+    build_chain_state_from_inputs,
+    generate_predicates,
+    update_predicate_log_with_observation,
 )
 
 from .prompts import (
@@ -746,15 +751,24 @@ class V57Board:
     def register_candidate_log(self, candidates: list[dict]) -> None:
         """Append fresh candidates to in-flight log with emitted_at_turn
         and verdict=None. LRU-by-verdict eviction at cap (ignored
-        before resolved before unverified)."""
+        before resolved before unverified). Supports both B17 (candidate_id
+        + suggested_test) and B18 (predicate_id + template_id +
+        anchor_region + suggested_coord) entries."""
         for c in candidates or []:
             entry = {
+                # B17 legacy fields (None for B18 entries).
                 "candidate_id": c.get("candidate_id"),
                 "suggested_test": c.get("suggested_test") or {},
                 "expected_observable_signature":
                     c.get("expected_observable_signature") or {},
                 "refutation_signature":
                     c.get("refutation_signature") or {},
+                # B18 fields (None for B17 entries).
+                "predicate_id": c.get("predicate_id"),
+                "template_id": c.get("template_id"),
+                "anchor_region": c.get("anchor_region"),
+                "suggested_coord": c.get("suggested_coord"),
+                "coord_policy": c.get("coord_policy"),
                 "score": c.get("score", 0),
                 "emitted_at_turn": int(self.turn_index),
                 "verdict": None,
@@ -789,12 +803,18 @@ class V57Board:
                 continue
             # Build leak-safe payload (drop internal fields).
             out.append({
+                # B17 legacy.
                 "candidate_id": e.get("candidate_id"),
                 "suggested_test": e.get("suggested_test"),
                 "expected_observable_signature":
                     e.get("expected_observable_signature"),
                 "refutation_signature":
                     e.get("refutation_signature"),
+                # B18 fields (None for B17 entries).
+                "predicate_id": e.get("predicate_id"),
+                "template_id": e.get("template_id"),
+                "anchor_region": e.get("anchor_region"),
+                "suggested_coord": e.get("suggested_coord"),
                 "score": e.get("score"),
                 "emitted_at_turn": e.get("emitted_at_turn"),
                 "reemit_count": int(e.get("reemit_count", 0)),
@@ -1638,20 +1658,28 @@ async def run_turn(
             k_per_class=k,
         )
 
-    # v589 B17: typed candidate generation. AFTER marker_neighbor_states
-    # is built (defined ~30 lines above) and BEFORE spawn_action.
-    new_candidates = generate_candidates(
+    # v590 B18: predicate-induction generation (supersedes B17 typed roles).
+    # Symbolica enumerates a bounded predicate library and proposes
+    # action-grounded candidates. M1 only does info-gain selection.
+    _b18_chain_state = build_chain_state_from_inputs(
         visible_regions=visible_regions,
         recent_turn_diffs=board.recent_turn_diffs,
         marker_neighbor_states=marker_neighbor_states,
-        level_bridges=board.level_bridges.get("bridges", []) or [],
-        chain_rule_log=board.chain_rule_log,
-        role_history=board.role_history,
-        recent_emissions=list(board.recent_candidate_emissions),
         recent_clicks=list(board.recent_clicks),
+    )
+    _b18_template_history: dict = {}
+    for _e in (board.candidate_log or []):
+        _tid = _e.get("template_id")
+        if not _tid: continue
+        _bk = _b18_template_history.setdefault(
+            _tid, {"supported": 0, "refuted": 0})
+        _v = _e.get("verdict")
+        if _v == "supported": _bk["supported"] += 1
+        elif _v == "refuted": _bk["refuted"] += 1
+    new_candidates = generate_predicates(
+        chain_state=_b18_chain_state,
         turn_index=board.turn_index,
-        chain_tokens_len=len(chain_full.get("chain_tokens", []) or []),
-        k_per_marker=_CAND_K_PER_MARKER,
+        template_history=_b18_template_history,
         k_global=_CAND_K_GLOBAL,
     )
     board.append_candidate_emissions(new_candidates)
@@ -1986,26 +2014,37 @@ async def run_turn(
     )
     obs_for_candidates = dict(obs or {})
     obs_for_candidates["compass_change_count"] = cc_count
-    new_verdicts = update_candidate_log_with_observation(
-        candidate_log=board.candidate_log,
+    # B18: action-conditioned verdicts (clicked anchor or coord∈bbox).
+    _click_rid = (
+        obs_for_candidates.get("primary_region_id")
+        if isinstance(obs_for_candidates, dict) else None
+    )
+    _click_xy = [int(cx), int(cy)]
+    new_verdicts = update_predicate_log_with_observation(
+        predicate_log=board.candidate_log,
         observation=obs_for_candidates,
+        click_region_id=_click_rid,
+        click_coord=_click_xy,
         turn_now=board.turn_index,
     )
-    # Persist role_history outcomes from new verdicts.
+    # Persist verdict outcomes (B17 role_history if present; B18 predicate_id).
     for v_entry in new_verdicts:
-        cid = v_entry.get("candidate_id")
+        cid = v_entry.get("predicate_id") or v_entry.get("candidate_id")
         verdict = v_entry.get("verdict")
-        # Find the role for this candidate.
         for c in board.candidate_log:
-            if c.get("candidate_id") == cid:
-                role = (c.get("suggested_test") or {}).get("role")
-                if role and verdict in ("supported", "refuted", "ignored"):
-                    board.update_role_history(role, verdict)
-                # Round-3 C-9: increment reemit_count when ignored
-                # (so M1 gets re-presented up to MAX times).
-                if verdict == "ignored":
-                    c["reemit_count"] = int(c.get("reemit_count", 0)) + 1
-                break
+            cmatch = (
+                c.get("predicate_id") == cid
+                or c.get("candidate_id") == cid
+            )
+            if not cmatch:
+                continue
+            # B17 legacy role_history (no-op for B18 predicate entries).
+            role = (c.get("suggested_test") or {}).get("role")
+            if role and verdict in ("supported", "refuted", "ignored"):
+                board.update_role_history(role, verdict)
+            if verdict == "ignored":
+                c["reemit_count"] = int(c.get("reemit_count", 0)) + 1
+            break
     # Track recent_clicks for next-turn causal_proximity score.
     if obs_region_id and obs_region_id != "_outside_":
         board.recent_clicks.append(obs_region_id)

@@ -344,30 +344,35 @@ You receive:
     PRIORITY RULE: when chain_tokens or trajectory_features APPEAR TO
     DISAGREE with SUMMARY, prefer the chain — it is deterministic;
     SUMMARY is LLM-derived.
-  - CANDIDATE_TESTS: list (≤8) of typed falsifiable candidate tests
-    emitted by the Symbolica deterministic generator. Each entry:
-      {candidate_id, suggested_test:{role, anchor_marker_id,
-       abstraction_hint}, expected_observable_signature:
-       {transition_kind?, compass_change_count?, level_delta_min?},
-       refutation_signature:{transition_kind?, compass_change_count?,
-       level_delta_max?}, score, emitted_at_turn, reemit_count}
-    The roles describe ABSTRACT region/role relationships only —
-    NEVER the rule. Use them as TESTS the next click should answer.
-    The signatures tell you what to LOOK FOR after the click, not how
-    to perform the click. Higher score = more informative.
+  - CANDIDATE_TESTS (B18 PREDICATE_TESTS): list (≤8) of falsifiable
+    predicates emitted by the Symbolica deterministic predicate-induction
+    library. Each entry has BOTH legacy and B18 keys:
+      {predicate_id, template_id, anchor_region:{region_id, bbox, color,
+       is_multicolor, kind}, suggested_coord:[x,y], score, emitted_at_turn,
+       reemit_count}  ← B18 (preferred)
+      Legacy candidate_id / suggested_test fields may also be present
+      from older B17 entries (None for B18 entries).
+    Each predicate already includes a SUGGESTED_COORD inside its
+    anchor_region.bbox — Symbolica did the coord arithmetic for you.
+    Higher score = more informative under the Beta-Bernoulli posterior.
+    The score reflects the predicate's empirical success rate across
+    prior verdicts (supported/refuted), so prefer high-score unresolved
+    predicates.
 
     BINDING — before choosing an action, you MUST:
-      (a) select one unresolved CANDIDATE_TEST by candidate_id;
-      (b) state in your thought why its expected_observable_signature
-          OR refutation_signature is informative for the next turn;
-      (c) choose an action consistent with the suggested_test.role —
-          do NOT copy the candidate's anchor coord (it has none); pick
-          a coord that exercises the abstract role in the current
-          board (e.g. if role is "not_yet_clicked_neighbor_of_active_marker",
-          click a fresh neighbor of an already-tested marker).
-      (d) cite the candidate_id explicitly in your thought.
-    If CANDIDATE_TESTS is empty (cold start, turn <10), reason
-    state-only and skip (a)–(d).
+      (a) select one unresolved entry (prefer by predicate_id; fall back
+          to candidate_id for legacy entries);
+      (b) cite the predicate_id (or candidate_id) explicitly in your
+          thought, with one sentence on what evidence the next observation
+          should produce if the predicate is correct vs refuted;
+      (c) for a B18 entry (predicate_id present), prefer the
+          suggested_coord verbatim — Symbolica guarantees it lies inside
+          anchor_region.bbox. You may pick another coord ONLY if you
+          cite a stronger reason in your thought.
+      (d) for a legacy B17 entry (suggested_test present), pick a coord
+          consistent with suggested_test.role.
+    If CANDIDATE_TESTS is empty (cold start), reason state-only and
+    skip (a)–(d).
   - CHAIN_RULE_LOG: list (≤8) of chain_rule entries you OR an earlier
     M3 call already emitted in this run. Each entry has:
       {id, rule, evidence_turns, predicted_outcome_next_turn,
