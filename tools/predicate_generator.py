@@ -39,6 +39,7 @@ class RegionRef:
     is_multicolor: bool = False
     kind: str = "non_marker"
     neighbors_3x3: dict = field(default_factory=dict)
+    centroid: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -81,6 +82,7 @@ def _to_region_ref(r: dict) -> RegionRef:
         is_multicolor=bool(r.get("is_multicolor")),
         kind="marker_multicolor" if r.get("is_multicolor") else "non_marker",
         neighbors_3x3=r.get("neighbors_3x3") or {},
+        centroid=r.get("centroid") or {},
     )
 
 
@@ -135,11 +137,23 @@ def _coord_for(region: RegionRef, policy: str = "centroid") -> list[int]:
     bb = region.bbox if isinstance(region.bbox, dict) else _bbox_dict(region.bbox)
     if policy == "corner_top_left":
         return [int(bb["min_x"]), int(bb["min_y"])]
+    # v590 round-5 fix: prefer the TRUE centroid (mean of region points)
+    # exposed by state.py:_visible_regions as {"centroid": {"x":, "y":}}.
+    # bbox midpoint can fall in a region's hole (L-shape regions) → game
+    # returns _outside_ even though click is "inside" the bbox. Cycle247
+    # showed 70% _outside_ rate with bbox-midpoint coords. Use point-avg
+    # centroid which is guaranteed to be near actual region pixels.
+    centroid = getattr(region, "centroid", None) or {}
+    if isinstance(centroid, dict) and "x" in centroid and "y" in centroid:
+        cx_c, cy_c = int(round(float(centroid["x"]))), int(round(float(centroid["y"])))
+        # Clamp to bbox in case centroid rounds outside.
+        cx_c = max(int(bb["min_x"]), min(int(bb["max_x"]), cx_c))
+        cy_c = max(int(bb["min_y"]), min(int(bb["max_y"]), cy_c))
+        return [cx_c, cy_c]
     if policy == "sprite_center":
-        # mid of bbox; for multicolor markers this hits the marker body.
         return [int((bb["min_x"] + bb["max_x"]) / 2),
                 int((bb["min_y"] + bb["max_y"]) / 2)]
-    # centroid (default): same as sprite_center for our boxes.
+    # Fallback: bbox midpoint.
     return [int((bb["min_x"] + bb["max_x"]) / 2),
             int((bb["min_y"] + bb["max_y"]) / 2)]
 
