@@ -344,6 +344,30 @@ You receive:
     PRIORITY RULE: when chain_tokens or trajectory_features APPEAR TO
     DISAGREE with SUMMARY, prefer the chain — it is deterministic;
     SUMMARY is LLM-derived.
+  - CANDIDATE_TESTS: list (≤8) of typed falsifiable candidate tests
+    emitted by the Symbolica deterministic generator. Each entry:
+      {candidate_id, suggested_test:{role, anchor_marker_id,
+       abstraction_hint}, expected_observable_signature:
+       {transition_kind?, compass_change_count?, level_delta_min?},
+       refutation_signature:{transition_kind?, compass_change_count?,
+       level_delta_max?}, score, emitted_at_turn, reemit_count}
+    The roles describe ABSTRACT region/role relationships only —
+    NEVER the rule. Use them as TESTS the next click should answer.
+    The signatures tell you what to LOOK FOR after the click, not how
+    to perform the click. Higher score = more informative.
+
+    BINDING — before choosing an action, you MUST:
+      (a) select one unresolved CANDIDATE_TEST by candidate_id;
+      (b) state in your thought why its expected_observable_signature
+          OR refutation_signature is informative for the next turn;
+      (c) choose an action consistent with the suggested_test.role —
+          do NOT copy the candidate's anchor coord (it has none); pick
+          a coord that exercises the abstract role in the current
+          board (e.g. if role is "not_yet_clicked_neighbor_of_active_marker",
+          click a fresh neighbor of an already-tested marker).
+      (d) cite the candidate_id explicitly in your thought.
+    If CANDIDATE_TESTS is empty (cold start, turn <10), reason
+    state-only and skip (a)–(d).
   - CHAIN_RULE_LOG: list (≤8) of chain_rule entries you OR an earlier
     M3 call already emitted in this run. Each entry has:
       {id, rule, evidence_turns, predicted_outcome_next_turn,

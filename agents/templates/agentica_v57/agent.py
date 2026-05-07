@@ -73,6 +73,18 @@ _CHAIN_VERBOSE_WINDOW = int(os.environ.get("V57_CHAIN_VERBOSE_WINDOW", "24"))
 # eviction (not pure FIFO — preserves rules that are accumulating
 # evidence even if old).
 _CHAIN_RULE_LOG_MAX = int(os.environ.get("V57_CHAIN_RULE_LOG_MAX", "30"))
+# v589 B17: with typed-candidate path live, M3 dormant by default.
+# Set V57_LEGACY_M3=1 to re-enable old M3 spawn (back-compat).
+_V57_LEGACY_M3 = int(os.environ.get("V57_LEGACY_M3", "0")) == 1
+# Per round-3 C-12 + plan §4.1: per-marker beam=2, global beam=8.
+_CAND_K_PER_MARKER = int(os.environ.get("V57_CAND_K_PER_MARKER", "2"))
+_CAND_K_GLOBAL = int(os.environ.get("V57_CAND_K_GLOBAL", "8"))
+# Per round-3 C-13: role_history.json race-safe persistence.
+# Per round-2 C-3 + §4.2 verdict table: max in-flight candidate log.
+_CANDIDATE_LOG_MAX = int(os.environ.get("V57_CANDIDATE_LOG_MAX", "40"))
+# Per round-3 C-9 (M1 textual compliance): re-emit ignored candidates
+# up to N times before dropping. M4 enforces alignment.
+_CANDIDATE_REEMIT_MAX = int(os.environ.get("V57_CANDIDATE_REEMIT_MAX", "3"))
 
 
 def _strip_json_fence(text: str) -> str:
@@ -416,6 +428,23 @@ class V57Board:
         # eviction (preferring to drop low-confirmed entries).
         self.chain_rule_log: list[dict] = []
         self._next_chain_rule_id: int = 1
+        # v589 B17: candidate-test infrastructure.
+        # candidate_log holds in-flight typed candidates with their
+        # verdict status. Capped at _CANDIDATE_LOG_MAX, oldest evicted
+        # when over cap (with verdict-aware eviction: ignored first).
+        self.candidate_log: list[dict] = []
+        # recent_candidate_emissions tracks (role, anchor_marker_id)
+        # tuples per turn so the score's novelty term can penalise
+        # repeats within the last 5 turns.
+        self.recent_candidate_emissions: list[dict] = []
+        # recent_clicks (rolling window of last 10 region_ids the
+        # agent actually clicked). Used by score's causal_proximity.
+        self.recent_clicks: list[str] = []
+        # role_history: cross-run persistence of per-role outcome
+        # statistics (supported / refuted / ignored). Loaded once at
+        # board init from <workdir.parent>/role_history.json. Used by
+        # the score's delta_correlation_prior term.
+        self.role_history: dict = self._load_role_history()
 
     def _cross_run_memory_path(self) -> Path:
         return self.workdir.parent / "cross_run_memory.json"
@@ -657,6 +686,121 @@ class V57Board:
             return {"schema_version": 1, "bridges": []}
         data.setdefault("bridges", [])
         return data
+
+    # ---------------- v589 B17: role_history (race-safe) -------------
+
+    def _role_history_path(self) -> Path:
+        return self.workdir.parent / "role_history.json"
+
+    def _load_role_history(self) -> dict:
+        path = self._role_history_path()
+        if not path.exists():
+            return {}
+        try:
+            data = json.loads(path.read_text())
+        except Exception:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _save_role_history(self) -> None:
+        try:
+            self._role_history_path().write_text(
+                json.dumps(self.role_history, indent=2, default=str),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    def update_role_history(self, role: str, outcome: str) -> None:
+        """outcome ∈ {supported, refuted, ignored}. Race-safe: reload,
+        merge, save. Mirrors B9v2 pattern."""
+        if outcome not in ("supported", "refuted", "ignored"):
+            return
+        on_disk = self._load_role_history()
+        entry = on_disk.setdefault(role, {
+            "observed_supported": 0, "observed_refuted": 0,
+            "observed_ignored": 0, "last_seen_run": "",
+            "last_seen_turn": 0,
+        })
+        entry[f"observed_{outcome}"] = int(entry.get(f"observed_{outcome}", 0)) + 1
+        entry["last_seen_run"] = self.namespace
+        entry["last_seen_turn"] = int(self.turn_index)
+        self.role_history = on_disk
+        self._save_role_history()
+
+    # ---------------- v589 B17: candidate_log management ------------
+
+    def append_candidate_emissions(self, candidates: list[dict]) -> None:
+        """Track per-turn (role, anchor) for novelty score."""
+        for c in candidates or []:
+            st = c.get("suggested_test") or {}
+            self.recent_candidate_emissions.append({
+                "turn": self.turn_index,
+                "role": st.get("role"),
+                "anchor_marker_id": st.get("anchor_marker_id"),
+            })
+        # Trim to last 5 turns × beam=8 = 40 entries.
+        if len(self.recent_candidate_emissions) > 40:
+            self.recent_candidate_emissions = self.recent_candidate_emissions[-40:]
+
+    def register_candidate_log(self, candidates: list[dict]) -> None:
+        """Append fresh candidates to in-flight log with emitted_at_turn
+        and verdict=None. LRU-by-verdict eviction at cap (ignored
+        before resolved before unverified)."""
+        for c in candidates or []:
+            entry = {
+                "candidate_id": c.get("candidate_id"),
+                "suggested_test": c.get("suggested_test") or {},
+                "expected_observable_signature":
+                    c.get("expected_observable_signature") or {},
+                "refutation_signature":
+                    c.get("refutation_signature") or {},
+                "score": c.get("score", 0),
+                "emitted_at_turn": int(self.turn_index),
+                "verdict": None,
+                "reemit_count": 0,
+            }
+            self.candidate_log.append(entry)
+        # Evict at cap.
+        if len(self.candidate_log) > _CANDIDATE_LOG_MAX:
+            # Sort by eviction priority: ignored first, then resolved,
+            # then unverified. Within each, oldest first.
+            def _key(e):
+                v = e.get("verdict")
+                v_pri = {"ignored": 0, "supported": 1,
+                         "refuted": 1, "inconclusive": 1}.get(v, 2)
+                return (v_pri, int(e.get("emitted_at_turn", 0)))
+            self.candidate_log.sort(key=_key)
+            # Drop the oldest of lowest-priority.
+            self.candidate_log = self.candidate_log[
+                -_CANDIDATE_LOG_MAX:
+            ]
+
+    def serialised_candidate_tests_for_m1(self) -> list[dict]:
+        """Round-3 C-9 re-emission rule: present unresolved candidates
+        (verdict=None) AND ignored ones whose reemit_count<MAX. Sort
+        by score desc."""
+        out = []
+        for e in self.candidate_log:
+            v = e.get("verdict")
+            if v in ("supported", "refuted", "inconclusive"):
+                continue
+            if v == "ignored" and int(e.get("reemit_count", 0)) >= _CANDIDATE_REEMIT_MAX:
+                continue
+            # Build leak-safe payload (drop internal fields).
+            out.append({
+                "candidate_id": e.get("candidate_id"),
+                "suggested_test": e.get("suggested_test"),
+                "expected_observable_signature":
+                    e.get("expected_observable_signature"),
+                "refutation_signature":
+                    e.get("refutation_signature"),
+                "score": e.get("score"),
+                "emitted_at_turn": e.get("emitted_at_turn"),
+                "reemit_count": int(e.get("reemit_count", 0)),
+            })
+        out.sort(key=lambda c: -c.get("score", 0))
+        return out[:_CAND_K_GLOBAL]
 
     def _segment_index_path(self) -> Path:
         return self.workdir.parent / "segment_index.json"
@@ -1109,6 +1253,7 @@ async def call_action(
     stuck_mode: bool = False,
     analogous_past_segments: list[dict] | None = None,
     action_state_chain_compact: dict | None = None,
+    candidate_tests: list[dict] | None = None,
 ) -> dict:
     """Invoke the ACTION main reasoner."""
     compact_regions = _compact_regions(visible_regions)
@@ -1129,6 +1274,7 @@ async def call_action(
             "chain_tokens": [], "trajectory_features": {},
             "prediction_errors": [], "causal_table": [],
         },
+        "candidate_tests": candidate_tests or [],
     }
     agent = await spawn(
         system=ACTION_SYSTEM_PROMPT,
@@ -1327,7 +1473,15 @@ async def run_turn(
         recent_turn_diffs=board.recent_turn_diffs,
         level="compact",
     )
-    if len(board.active_hypotheses) < _HYPOTHESIS_POOL_TARGET:
+    # v589 B17: candidate generation deferred until AFTER
+    # marker_neighbor_states is built (downstream). Initialise here
+    # to avoid forward-reference; populate at the deferred site.
+    new_candidates: list = []
+    candidate_tests_for_m1: list = []
+
+    # v589 B17: M3 dormant by default. Re-enable via V57_LEGACY_M3=1.
+    spawn_m3 = _V57_LEGACY_M3 and len(board.active_hypotheses) < _HYPOTHESIS_POOL_TARGET
+    if spawn_m3:
         # B9: pass cross-run abstract mechanics to HYPOTHESIZE as priors.
         cross_run_priors = list(
             (board.cross_run_memory or {}).get("abstract_mechanics", [])
@@ -1484,6 +1638,26 @@ async def run_turn(
             k_per_class=k,
         )
 
+    # v589 B17: typed candidate generation. AFTER marker_neighbor_states
+    # is built (defined ~30 lines above) and BEFORE spawn_action.
+    new_candidates = generate_candidates(
+        visible_regions=visible_regions,
+        recent_turn_diffs=board.recent_turn_diffs,
+        marker_neighbor_states=marker_neighbor_states,
+        level_bridges=board.level_bridges.get("bridges", []) or [],
+        chain_rule_log=board.chain_rule_log,
+        role_history=board.role_history,
+        recent_emissions=list(board.recent_candidate_emissions),
+        recent_clicks=list(board.recent_clicks),
+        turn_index=board.turn_index,
+        chain_tokens_len=len(chain_full.get("chain_tokens", []) or []),
+        k_per_marker=_CAND_K_PER_MARKER,
+        k_global=_CAND_K_GLOBAL,
+    )
+    board.append_candidate_emissions(new_candidates)
+    board.register_candidate_log(new_candidates)
+    candidate_tests_for_m1 = board.serialised_candidate_tests_for_m1()
+
     aresp = await spawn_action(
         summary=board.summary,
         visible_regions=visible_regions,
@@ -1499,6 +1673,7 @@ async def run_turn(
         stuck_mode=bool(board.stuck_mode),
         analogous_past_segments=analogous_segments,
         action_state_chain_compact=chain_compact,
+        candidate_tests=candidate_tests_for_m1,
     )
 
     coord = (aresp.get("action") or {}).get("coord") or [32, 32]
@@ -1800,6 +1975,42 @@ async def run_turn(
     board.update_chain_rule_log_with_observation(
         observation=obs, turn_now=board.turn_index
     )
+    # v589 B17: candidate verdict resolution. Build a richer
+    # observation payload (compass_change_count from current
+    # turn_diff if available) and resolve in-flight candidates.
+    last_diff = (board.recent_turn_diffs[-1]
+                 if board.recent_turn_diffs else {})
+    cc_count = (
+        len(last_diff.get("compass_changes") or [])
+        if isinstance(last_diff, dict) else 0
+    )
+    obs_for_candidates = dict(obs or {})
+    obs_for_candidates["compass_change_count"] = cc_count
+    new_verdicts = update_candidate_log_with_observation(
+        candidate_log=board.candidate_log,
+        observation=obs_for_candidates,
+        turn_now=board.turn_index,
+    )
+    # Persist role_history outcomes from new verdicts.
+    for v_entry in new_verdicts:
+        cid = v_entry.get("candidate_id")
+        verdict = v_entry.get("verdict")
+        # Find the role for this candidate.
+        for c in board.candidate_log:
+            if c.get("candidate_id") == cid:
+                role = (c.get("suggested_test") or {}).get("role")
+                if role and verdict in ("supported", "refuted", "ignored"):
+                    board.update_role_history(role, verdict)
+                # Round-3 C-9: increment reemit_count when ignored
+                # (so M1 gets re-presented up to MAX times).
+                if verdict == "ignored":
+                    c["reemit_count"] = int(c.get("reemit_count", 0)) + 1
+                break
+    # Track recent_clicks for next-turn causal_proximity score.
+    if obs_region_id and obs_region_id != "_outside_":
+        board.recent_clicks.append(obs_region_id)
+        if len(board.recent_clicks) > 10:
+            board.recent_clicks = board.recent_clicks[-10:]
 
     # 5b. v585zz: append to L+ event registry on level rise.
     if int(obs.get("level_delta") or 0) >= 1 and obs.get("primary_region_id"):
@@ -1949,6 +2160,10 @@ async def run_turn(
             "region_clicks_this_level": dict(board.region_clicks_this_level),
             "marker_neighbor_states": marker_neighbor_states,
             "action_state_chain_compact": chain_compact,
+            # v589 B17: candidate-test telemetry.
+            "candidate_tests_emitted": new_candidates,
+            "candidate_tests_for_m1": candidate_tests_for_m1,
+            "candidate_verdicts_this_turn": new_verdicts,
         }
     )
 

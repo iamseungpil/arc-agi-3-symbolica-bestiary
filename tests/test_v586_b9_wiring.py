@@ -9,10 +9,20 @@ Verifies that:
 """
 import asyncio
 import json
+import os
 import pathlib
 import tempfile
 
 import pytest
+
+# Plan v589 §4.6: T-B9-3 / T-B9-4 require legacy M3 spawn path.
+# T-B9-1 and T-B9-2 test V57Board internals (load/save, add_to_1A)
+# which are unaffected by B17 — keep them ungated.
+_LEGACY_M3 = int(os.environ.get("V57_LEGACY_M3", "0")) == 1
+_legacy_m3_skipif = pytest.mark.skipif(
+    not _LEGACY_M3,
+    reason="B17 disables M3 by default; set V57_LEGACY_M3=1 to run",
+)
 
 from agents.templates.agentica_v57.agent import V57Board, run_turn
 
@@ -53,6 +63,7 @@ def _make_run_turn_inputs(tmp, prior_text=None):
     return b
 
 
+@_legacy_m3_skipif
 def test_b9_3_priors_passed_to_hypothesize():
     received = {}
 
@@ -93,6 +104,7 @@ def test_b9_3_priors_passed_to_hypothesize():
     asyncio.run(main())
 
 
+@_legacy_m3_skipif
 def test_b9_4_promote_to_1A_persisted():
     captured_promotions = []
 
