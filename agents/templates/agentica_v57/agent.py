@@ -1500,7 +1500,18 @@ async def run_turn(
     candidate_tests_for_m1: list = []
 
     # v589 B17: M3 dormant by default. Re-enable via V57_LEGACY_M3=1.
-    spawn_m3 = _V57_LEGACY_M3 and len(board.active_hypotheses) < _HYPOTHESIS_POOL_TARGET
+    # v590 B18 round-4: force-fire M3 within K turns after any L+1 event,
+    # because post-L+1 progression requires plan cards (cold-start B18
+    # predicates can't capture multi-step compose mechanics).
+    # cycle237 splice showed M3=. for 12 post-L+1 turns → 0 L+2.
+    _b18_recent_l_plus = any(
+        int(((rv or {}).get("observation") or {}).get("level_delta") or 0) >= 1
+        for rv in (board.recent_verbose[-5:] if board.recent_verbose else [])
+    )
+    spawn_m3 = (
+        (_V57_LEGACY_M3 or _b18_recent_l_plus)
+        and len(board.active_hypotheses) < _HYPOTHESIS_POOL_TARGET
+    )
     if spawn_m3:
         # B9: pass cross-run abstract mechanics to HYPOTHESIZE as priors.
         cross_run_priors = list(
@@ -1717,6 +1728,19 @@ async def run_turn(
     # arithmetic mistakes.
     chosen_id = aresp.get("chosen_hypothesis_id")
     chosen_card = next((c for c in board.active_hypotheses if c.get("id") == chosen_id), None)
+    # v590 B18 round-4: reject hallucinated chid. M1 sometimes invents
+    # IDs not in candidate_tests OR active_hypotheses (e.g.
+    # "P_R12_crop_sector_alignment", "H_replay_prior_trigger" observed
+    # in cycle237). If chid doesn't match any real source, null it so
+    # snap-fallback can override with top-score predicate.
+    if chosen_id and chosen_card is None:
+        _real_pred_ids = {
+            (c.get("predicate_id") or c.get("candidate_id"))
+            for c in (candidate_tests_for_m1 or [])
+        }
+        if chosen_id not in _real_pred_ids:
+            aresp["chosen_hypothesis_id"] = None
+            chosen_id = None
 
     # v586 Phase C: skip dead-region steps in plan-card click_sequence.
     # If the current step's region_id has been marked dead (≥3 _outside_
@@ -1909,13 +1933,16 @@ async def run_turn(
     # bbox-center. cycle79's GAME_OVER at action 49 was triggered by a
     # 4-click oscillation on (46,38); preventing the 3rd repeat preserves
     # action budget for new exploration.
+    # v590 B18 round-4: cycle237 trace showed 7x repeat clicks at L+1
+    # coord [38,48] post-L+1 — marker_neighbor fallback failed (no fresh
+    # neighbor). Extended fallback chain: marker_neighbor → predicate
+    # suggested_coord (any unrecent) → multicolor center (any unrecent).
     if len(board.recent_verbose) >= 2:
         last2 = [(rv or {}).get("coord") for rv in board.recent_verbose[-2:]]
         if all(lc and lc[0] == cx and lc[1] == cy for lc in last2):
-            # Try any multicolor-neighbor whose bbox-center we haven't
-            # clicked in the last 4 turns.
             recent_coords = {tuple((rv or {}).get("coord") or [-1, -1])
                               for rv in board.recent_verbose[-4:]}
+            # Tier 1: marker_neighbor with fresh coord.
             for r in visible_regions:
                 if not r.get("is_marker_neighbor"):
                     continue
@@ -1927,7 +1954,39 @@ async def run_turn(
                 if (ax, ay) not in recent_coords:
                     cx, cy = ax, ay
                     snapped = True
+                    aresp["chosen_hypothesis_id"] = "anti_osc_marker_neighbor"
                     break
+            # Tier 2 (B18 round-4): if marker_neighbor exhausted, use
+            # any predicate's suggested_coord that's not in recent.
+            if not snapped and candidate_tests_for_m1:
+                for cand in candidate_tests_for_m1:
+                    sc = cand.get("suggested_coord")
+                    if not (isinstance(sc, (list, tuple)) and len(sc) == 2):
+                        continue
+                    sct = (int(sc[0]), int(sc[1]))
+                    if sct in recent_coords:
+                        continue
+                    cx, cy = sct
+                    snapped = True
+                    aresp["chosen_hypothesis_id"] = (
+                        cand.get("predicate_id") or cand.get("candidate_id")
+                    )
+                    break
+            # Tier 3: any multicolor center not in recent.
+            if not snapped:
+                for r in visible_regions:
+                    if not r.get("is_multicolor"):
+                        continue
+                    bb = _bbox_xyxy(r.get("bbox"))
+                    if bb is None:
+                        continue
+                    ax = (bb[0] + bb[2]) // 2
+                    ay = (bb[1] + bb[3]) // 2
+                    if (ax, ay) not in recent_coords:
+                        cx, cy = ax, ay
+                        snapped = True
+                        aresp["chosen_hypothesis_id"] = "anti_osc_multicolor"
+                        break
 
     # 3. Execute (caller-provided).
     obs = await execute_action(cx, cy)
