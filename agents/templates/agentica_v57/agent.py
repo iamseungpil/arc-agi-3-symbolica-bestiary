@@ -30,6 +30,10 @@ from typing import Any
 from agents.templates.agentica.agent import Arcgentica
 from agents.templates.agentica.compat import spawn  # TRAPI bridge
 from tools.chain_compress import compress_action_state_chain  # v588 B16
+from tools.candidate_generator import (  # v589 B17
+    generate_candidates,
+    update_candidate_log_with_observation,
+)
 
 from .prompts import (
     ACTION_SYSTEM_PROMPT,
@@ -1782,9 +1786,12 @@ async def run_turn(
     # (24-deep) for the chain layer's prediction_errors channel.
     board.append_chain_verbose(verbose_entry)
     # v588 round-2 Q-E + N-2: validate + log chain_rule emissions from
-    # the latest M3 call (if any).
-    if hresp and isinstance(hresp.get("chain_rule"), list):
-        for cr in hresp["chain_rule"][:3]:
+    # the latest M3 call (if any). BUGFIX: use hypothesize_log
+    # (defined at function scope as None default) — hresp only exists
+    # inside the `if len(active_hypotheses) < target` branch and
+    # NameError fires on the no-spawn path.
+    if hypothesize_log and isinstance(hypothesize_log.get("chain_rule"), list):
+        for cr in hypothesize_log["chain_rule"][:3]:
             board.append_chain_rule_log(cr, turn_emitted=board.turn_index)
     # v588 round-3 reviewer fix — close the loop. After observation,
     # confirm/falsify rules in the chain_rule_log against actual obs
