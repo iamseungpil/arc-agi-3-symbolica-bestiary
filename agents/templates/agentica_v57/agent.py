@@ -1859,6 +1859,41 @@ async def run_turn(
                     snapped = True
                 break
 
+    # v590 B18: snap-to-predicate fallback. When M1 emits coord _outside_
+    # AND no chosen_hypothesis_id is set BUT predicate_tests are present
+    # (cold start before M3 emits cards), use the top-score predicate's
+    # suggested_coord. This closes the knowing-doing gap empirically
+    # observed in cycle231: M1 reasons about exploration but emits coord
+    # that lands _outside_, ignoring the 8 Symbolica-precomputed
+    # in-bbox suggested_coords. Verdicts use action-conditioned matching
+    # (predicate_id ↔ click_coord ∈ anchor_region.bbox).
+    if (
+        not in_some_region
+        and chosen_card is None
+        and not snapped
+        and candidate_tests_for_m1
+    ):
+        for cand in candidate_tests_for_m1:
+            sc = cand.get("suggested_coord")
+            anchor = cand.get("anchor_region") or {}
+            bb = _bbox_xyxy(anchor.get("bbox"))
+            if (
+                isinstance(sc, (list, tuple))
+                and len(sc) == 2
+                and bb is not None
+                and bb[0] <= int(sc[0]) <= bb[2]
+                and bb[1] <= int(sc[1]) <= bb[3]
+            ):
+                cx, cy = int(sc[0]), int(sc[1])
+                snapped = True
+                # Tag chosen_hypothesis_id with the predicate_id so
+                # downstream verdict resolution can match.
+                aresp["chosen_hypothesis_id"] = (
+                    cand.get("predicate_id")
+                    or cand.get("candidate_id")
+                )
+                break
+
     # cycle80: anti-oscillation. If the last 2 clicks were the same coord
     # (toggling 9↔8 with no progress), pick a different multicolor-neighbor
     # bbox-center. cycle79's GAME_OVER at action 49 was triggered by a

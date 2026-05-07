@@ -359,20 +359,29 @@ You receive:
     prior verdicts (supported/refuted), so prefer high-score unresolved
     predicates.
 
-    BINDING — before choosing an action, you MUST:
-      (a) select one unresolved entry (prefer by predicate_id; fall back
-          to candidate_id for legacy entries);
-      (b) cite the predicate_id (or candidate_id) explicitly in your
-          thought, with one sentence on what evidence the next observation
-          should produce if the predicate is correct vs refuted;
-      (c) for a B18 entry (predicate_id present), prefer the
-          suggested_coord verbatim — Symbolica guarantees it lies inside
-          anchor_region.bbox. You may pick another coord ONLY if you
-          cite a stronger reason in your thought.
-      (d) for a legacy B17 entry (suggested_test present), pick a coord
-          consistent with suggested_test.role.
-    If CANDIDATE_TESTS is empty (cold start), reason state-only and
-    skip (a)–(d).
+    HARD BINDING — choose ONE entry from CANDIDATE_TESTS for THIS turn:
+      (1) If CANDIDATE_TESTS is non-empty (regardless of whether
+          ACTIVE_HYPOTHESES is empty), you MUST select exactly one
+          unresolved entry — DO NOT skip the section just because
+          ACTIVE_HYPOTHESES is empty. CANDIDATE_TESTS is the
+          INDEPENDENT evidence channel emitted by Symbolica every turn,
+          and it is your primary action target during cold start.
+      (2) Cite the chosen predicate_id (or candidate_id for legacy)
+          VERBATIM in your thought, e.g. "I am testing
+          P02_compass_changed_neighbor_revisit:T7:R23 because if it
+          holds, the next observation will show level_delta≥1 at
+          primary_region_id=R23".
+      (3) Prefer suggested_coord VERBATIM. Symbolica guarantees
+          suggested_coord ∈ anchor_region.bbox. Do NOT recompute it.
+          You may override ONLY if you cite a stronger reason — and
+          even then, your override must lie inside anchor_region.bbox.
+      (4) Set chosen_hypothesis_id to the predicate_id (or
+          candidate_id) so downstream M3/M4 can resolve verdict.
+      (5) If CANDIDATE_TESTS is truly empty (n=0), and only then,
+          reason state-only and explore.
+    Anti-pattern (FORBIDDEN): "ACTIVE_HYPOTHESES is empty so I am
+    exploring" while CANDIDATE_TESTS has ≥1 entry. That conflates two
+    different channels and ignores Symbolica evidence.
   - CHAIN_RULE_LOG: list (≤8) of chain_rule entries you OR an earlier
     M3 call already emitted in this run. Each entry has:
       {id, rule, evidence_turns, predicted_outcome_next_turn,
