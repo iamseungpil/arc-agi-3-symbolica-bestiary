@@ -1881,30 +1881,32 @@ async def run_turn(
                     snapped = True
                 break
 
-    # v590 B18 round-3: snap-to-predicate during cold start.
-    # Trigger conditions (any one):
-    #   (a) coord _outside_ AND chosen_card None AND predicates present
-    #   (b) M1 chose null AND active_hypotheses empty AND predicates
-    #       present (cold start: M3 hasn't emitted yet — predicate-driven
-    #       is the ONLY informed strategy until then)
-    # Cycle234 trace showed (b): coord landed in arbitrary region
-    # (in_some_region=True) but M1 set chosen_id=null and ignored 8
-    # ready-to-test predicates → all 44 verdicts refuted, 0 supported.
-    # Round-3 expands trigger to cover (b) so predicate-driven cold-start
-    # is deterministic until M3 brings cards.
+    # v590 B18 round-7: TIGHTEN cold-start snap to ONLY fire on
+    # GENUINE coord-fail. Round-3..6 fired on `chosen_card is None`,
+    # which is True whenever M1 picks a predicate_id (predicates
+    # aren't M3-emitted active_hypotheses cards). That overrode
+    # 100% of cycle259/260 turns with bbox-center coords that
+    # systematically miss ft09 XOR sectors.
+    #
+    # Empirical evidence (cycle237 vs cycle259, both with chid="P01_..."
+    # picked by M1, [34,34] coord, in_some_region=True):
+    #   cycle237 T1: snap=False ✓ — coord [34,34] preserved
+    #   cycle259 T1: snap=True  → coord [6,38] (R21 predicate sc) override
+    # The cycle237 analogue that succeeded (T1 chid="H_static_nonmarker_R19")
+    # used M1-invented chid; cycle259 T1's chid was a real predicate_id.
+    #
+    # Round-7 fix: only snap when M1's coord lies OUTSIDE every visible
+    # region AND M1 didn't supply a chid (true cold start). Respect M1's
+    # in-bbox coord even when chid is a predicate_id — M1's coord ≠ snap
+    # bbox-center is INTENTIONAL (M1 explores discriminating sectors).
     _b18_cold_start = (
         not aresp.get("chosen_hypothesis_id")
         and chosen_card is None
         and not board.active_hypotheses
+        and not in_some_region
         and candidate_tests_for_m1
     )
-    _b18_outside = (
-        not in_some_region
-        and chosen_card is None
-        and not snapped
-        and candidate_tests_for_m1
-    )
-    if _b18_outside or _b18_cold_start:
+    if _b18_cold_start:
         for cand in candidate_tests_for_m1:
             sc = cand.get("suggested_coord")
             anchor = cand.get("anchor_region") or {}
@@ -1918,8 +1920,6 @@ async def run_turn(
             ):
                 cx, cy = int(sc[0]), int(sc[1])
                 snapped = True
-                # Tag chosen_hypothesis_id with the predicate_id so
-                # downstream verdict resolution can match.
                 aresp["chosen_hypothesis_id"] = (
                     cand.get("predicate_id")
                     or cand.get("candidate_id")

@@ -171,17 +171,23 @@ You emit ONE JSON object:
 
 Coord rules (HARD — failure to follow wastes the action):
   - 0 ≤ x < 64, 0 ≤ y < 64.
-  - DEFAULT coord = bbox CENTER of the chosen hypothesis region.
-    Compute explicitly: cx = (bbox[0] + bbox[2]) // 2,
-    cy = (bbox[1] + bbox[3]) // 2.
-  - PROHIBITED: coord lying OUTSIDE the bbox of every region. If your
-    coord (x,y) doesn't satisfy
-      (min_x ≤ x ≤ max_x AND min_y ≤ y ≤ max_y)
-    for at least one region, the click hits empty space and returns
-    `_outside_` — your hypothesis cannot be tested.
+  - The coord MUST lie inside SOME visible region's bbox
+    (min_x ≤ x ≤ max_x AND min_y ≤ y ≤ max_y for at least one region).
+    A coord outside every bbox returns `_outside_` (no pixel change).
+  - You may pick ANY pixel inside the chosen region — the bbox CENTER
+    is one option, but it is OFTEN A NO-OP (puzzles routinely use
+    parity / sector / corner rules where the center cell does not
+    discriminate). Strongly consider:
+       (a) corner cells of a multicolor marker bbox
+       (b) edge cells matching a specific color in the `crop` array
+       (c) the centroid (point-average of region pixels) when it
+           differs from the bbox midpoint
+       (d) cells flagged by recent_turn_diffs as click-responsive
+    The ONLY constraint is bbox-membership; everything else is your
+    judgment based on visual evidence.
   - Verify in your thought: "coord (cx,cy) lies inside R{id} bbox [a,b,c,d]".
-    If it doesn't, recompute.
-  - Avoid coords already in RECENT_TURNS (repetition penalty).
+  - Avoid coords already in RECENT_TURNS (repetition penalty) — pick a
+    different cell of the same region rather than reclick the same coord.
 
 Reasoning priorities (general, not game-specific):
   1. Which region/transition is most diagnostic right now? Diagnostic =
@@ -371,10 +377,15 @@ You receive:
           P02_compass_changed_neighbor_revisit:T7:R23 because if it
           holds, the next observation will show level_delta≥1 at
           primary_region_id=R23".
-      (3) Prefer suggested_coord VERBATIM. Symbolica guarantees
-          suggested_coord ∈ anchor_region.bbox. Do NOT recompute it.
-          You may override ONLY if you cite a stronger reason — and
-          even then, your override must lie inside anchor_region.bbox.
+      (3) suggested_coord is a STARTING POINT, not a mandate. It is
+          the bbox midpoint of the anchor — fine for first probes, but
+          freely override when visual evidence (centroid, crop pattern,
+          a specific color cell) suggests a more discriminating pixel
+          inside anchor_region.bbox. Override coord MUST stay inside
+          anchor_region.bbox. ft09-class XOR/parity puzzles routinely
+          require corner / edge / color-specific cells; bbox center is
+          frequently a no-op. Pick the coord most likely to PROVE OR
+          DISPROVE the predicate, not the center.
       (4) Set chosen_hypothesis_id to the predicate_id (or
           candidate_id) so downstream M3/M4 can resolve verdict.
       (5) If CANDIDATE_TESTS is truly empty (n=0), and only then,
