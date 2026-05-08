@@ -1731,19 +1731,14 @@ async def run_turn(
     # arithmetic mistakes.
     chosen_id = aresp.get("chosen_hypothesis_id")
     chosen_card = next((c for c in board.active_hypotheses if c.get("id") == chosen_id), None)
-    # v590 B18 round-4: reject hallucinated chid. M1 sometimes invents
-    # IDs not in candidate_tests OR active_hypotheses (e.g.
-    # "P_R12_crop_sector_alignment", "H_replay_prior_trigger" observed
-    # in cycle237). If chid doesn't match any real source, null it so
-    # snap-fallback can override with top-score predicate.
-    if chosen_id and chosen_card is None:
-        _real_pred_ids = {
-            (c.get("predicate_id") or c.get("candidate_id"))
-            for c in (candidate_tests_for_m1 or [])
-        }
-        if chosen_id not in _real_pred_ids:
-            aresp["chosen_hypothesis_id"] = None
-            chosen_id = None
+    # v590 round-6: REVERTED chid validation. cycle237 organic L+1 events
+    # used M1-invented chids ("P_R12_crop_sector_alignment", etc.) — those
+    # were CORRECT clicks. Validation nullifying them caused 83% _outside_
+    # (vs cycle237 21%) because snap-fallback overrode M1's clever clicks
+    # with predicate bbox-center clicks (which happen to be no-op XOR
+    # sectors). M1's intuition >> deterministic snap. Keep chid as-is for
+    # tracing; verdict resolver matches by anchor.bbox containment.
+    pass  # chid_validation removed
 
     # v586 Phase C: skip dead-region steps in plan-card click_sequence.
     # If the current step's region_id has been marked dead (≥3 _outside_
