@@ -482,3 +482,62 @@ Then extract first `R\d+` as region_id, last `_(NS|EW|NE|...)` as direction (opt
 15. Monitor V-H1..V-H6 over 400 actions × 3 cycles.
 
 Plan v591 frozen at end of round 3. Implementation proceeds from §12 step 1.
+
+---
+
+## 13. Round-2 review + post-smoke prior-cycle reanalysis (annex 2026-05-08)
+
+User feedback: §0 진단의 표본이 너무 좁았음 — cycle237 vs cycle259-263만 비교했고 그 사이 cycle234-260 시계열은 표면적으로만 봤음. 정밀 재분석 결과:
+
+### 13.1 Pre-cycle237 cycles (B18snap r2-3 era, 24-39 turns)
+
+| cycle | turns | max L+ | dominant chid pattern | L+ event |
+|---|---|---|---|---|
+| 234 | 26 | L+1 | **chid=None all turns** | T8 coord=[54,46] R32 |
+| 235 | 26 | L+1 | mixed | (similar) |
+| 236 | 24 | L+1 | mixed | (similar) |
+| 237 | 39 | **L+2** | M1-invented (`H_*`/`P_*`) | T6 + T27 |
+| 238 | 31 | L+1 | mixed | T~ |
+| 239 | 29 | L+1 | mixed | T~ |
+
+§0 이전 주장 정정:
+- ❌ "cycle237 L+2 came from M1 invention" — 부분만 맞음.
+- ✅ Reality: **L+1는 chid=None random exploration만으로도 cycle234가 T8에 도달**. invention은 없어도 L+1 가능.
+- ✅ **L+2는 cycle234-239 6개 cycles 중 cycle237 (39턴) 단 1회**. invention + **충분한 턴 수** + 운의 결합. 단일 메커니즘으로 보장 안 됨.
+
+### 13.2 Post-cycle237 cycles (round-4~7 era, 0-10 turns)
+
+cycle240-263 (24 cycles) 모두 TRAPI timeout으로 조기 사망. 5-10턴짜리 표본은 round-4~7 logic fix의 효과 검증에 부적합. 즉 **§0 cycle259 "100% snap, 67-80% _outside_" 진단은 5턴 표본 통계에 기반 → 약한 증거**.
+
+진짜 cycle240+ 사망 원인:
+1. `ARC_AGENTICA_TRAPI_TIMEOUT_SEC` default 120s.
+2. gpt-5.5 + multimodal + 14KB prompt = ACTION call 평균 ~180s, P95 >300s.
+3. 첫 호출에서 timeout → openai retry → 두 번째 timeout → 라이브러리가 SIGINT 발생.
+
+**즉 round-4~7 logic patch는 거의 효과를 보지 못한 채 묻힘.** v591 round-3 이후의 patch들이 이번 cycle265-267에서 실제로 처음으로 검증되는 것.
+
+### 13.3 v591 design implications
+
+(a) **L+1은 design 목표 X** — random exploration만으로도 가능. v591 H6 falsification은 너무 엄격할 수 있음 (cycle237조차 L+2 1/6 hit rate). 보수적 V-H6a 추가:
+   - V-H6a (interim): 3 cycles 중 ≥1이 turn 100 이내 L+1 — pass rate >95% 예상.
+   - V-H6b: 3 cycles 중 ≥1이 turn 200 이내 L+2 — pass rate ~30-50% 예상 (cycle237 reference).
+   - V-H6 (original): 3 cycles 중 ≥1이 turn 400 이내 L+2 — pass rate >50% 기대.
+
+(b) **L+2 도달은 stochastic** — 단일 cycle 실패가 plan 실패 아님. 3 cycles 중 0회면 B20 (differentiable inducer) escalation; 1회 이상이면 v591 success.
+
+(c) **TRAPI timeout 600s 설정 + setsid -f 분리는 이번에 처음 적용된 인프라 fix**. cycle265-267가 첫 풀-런 검증 표본.
+
+### 13.4 Plan v591 status post-annex
+
+§0 진단 narrative는 정확하지 않으나 (overclaimed invention's role), §3 H1-H5 wiring hypotheses와 §4 implementation은 cycle237 invention 패턴 복원 + 인프라 fix 측면에서 여전히 유효. §3 H6는 V-H6a/V-H6b 추가로 robust 화.
+
+### 13.5 cycle265-267 expectation matrix
+
+| outcome | probability | interpretation |
+|---|---|---|
+| ≥1 cycle reaches L+2 in 400 turns | 50-70% | v591 success → freeze plan |
+| All 3 cycles reach L+1 only | 20-30% | mechanism OK, L+2 stochastic — relaunch 3 more |
+| ≥1 cycle TRAPI errors mid-run | 10-15% | infra hardening needed (timeout > 600s OR retry tuning) |
+| All 3 stall at L0 | 5-10% | architecture issue → B20 differentiable inducer |
+
+각 outcome별 액션 사전 정의됨. 결과 도착 시 자동 분기.
