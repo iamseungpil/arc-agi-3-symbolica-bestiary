@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #172033;
+      --border: #263247;
+      --text: #ecf2ff;
+      --muted: #9fb0cf;
+      --accent: #4ade80;
+      --warn: #f59e0b;
+      --bad: #fb7185;
+      --blue: #60a5fa;
+      --mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+      --sans: "Inter", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(74,222,128,0.16), transparent 24%),
+        linear-gradient(180deg, #08101f 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+    .page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+    h1 { margin: 0; font-size: 30px; }
+    .sub { color: var(--muted); margin-top: 6px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(23,32,51,0.96), rgba(15,23,42,0.96));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+    }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .metric-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .metric-value { font-size: 36px; font-weight: 700; margin-top: 8px; }
+    .metric-note { color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+    }
+    .pill.keep { color: var(--accent); }
+    .pill.discard { color: var(--bad); }
+    .pill.structured { color: var(--blue); }
+    .pill.hierarchical { color: var(--accent); }
+    .pill.exact-spine { color: var(--warn); }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 0;
+      overflow: auto;
+      max-height: 320px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; border-top: none; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .action-chip {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 8px 10px;
+      min-width: 90px;
+    }
+    .action-name {
+      display: block;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--text);
+    }
+    .action-count {
+      display: block;
+      color: var(--muted);
+      margin-top: 3px;
+      font-size: 12px;
+    }
+    a { color: #93c5fd; text-decoration: none; }
+    ul { margin: 0; padding-left: 18px; }
+    .callout {
+      border-left: 3px solid var(--warn);
+      padding-left: 12px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    @media (max-width: 960px) {
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 12; }
+      .hero { flex-direction: column; align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="hero">
+      <div>
+        <h1>ARC Research Dashboard</h1>
+        <div class="sub">ls20-cb3b57cc / arcgentica_v3_full_20260416_2239</div>
+        <div class="sub">Generated 2026-04-16 22:55:06 UTC</div>
+      </div>
+      <div class="pill">Modules: none</div>
+    </div>
+
+    <div class="grid">
+      <section class="card span-3">
+        <div class="metric-label">Best Level</div>
+        <div class="metric-value">?</div>
+        <div class="metric-note">Latest bounded summary result.</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Non-reset Actions</div>
+        <div class="metric-value">?</div>
+        <div class="metric-note">Current failure mode is shallow stop after a short probe.</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Reset Count</div>
+        <div class="metric-value">?</div>
+        <div class="metric-note">Useful to distinguish startup loop issues from deeper search.</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Skill Library</div>
+        <div class="metric-value">30</div>
+        <div class="metric-note">Watch structured vs exact-spine balance, not just raw count.</div>
+      </section>
+
+      <section class="card span-7">
+        <h2>Why It Stopped</h2>
+        <div class="callout">
+          <strong>Status:</strong> ?<br />
+          <strong>Interpretation:</strong> the harness accepted a probe report as terminal even though it contained a concrete next step.
+        </div>
+        <div style="height: 12px"></div>
+        <pre>No finish reason found.</pre>
+      </section>
+
+      <section class="card span-5">
+        <h2>Probe Extraction</h2>
+        <table>
+          <tr><th>Field</th><th>Value</th></tr>
+          <tr><td>current_hypothesis</td><td>-</td></tr>
+          <tr><td>next_step</td><td>-</td></tr>
+          <tr><td>report_ok</td><td>True</td></tr>
+          <tr><td>timed_out</td><td>False</td></tr>
+        </table>
+      </section>
+
+      <section class="card span-12">
+        <h2>Latest Action Episode</h2>
+        <div class="chips">
+          <div class="action-chip"><span class="action-name">RESET</span><span class="action-count">#0</span></div><div class="action-chip"><span class="action-name">ACTION1</span><span class="action-count">#5</span></div><div class="action-chip"><span class="action-name">ACTION2</span><span class="action-count">#6</span></div><div class="action-chip"><span class="action-name">ACTION3</span><span class="action-count">#7</span></div><div class="action-chip"><span class="action-name">ACTION1</span><span class="action-count">#8</span></div><div class="action-chip"><span class="action-name">ACTION2</span><span class="action-count">#9</span></div><div class="action-chip"><span class="action-name">ACTION3</span><span class="action-count">#10</span></div><div class="action-chip"><span class="action-name">ACTION3</span><span class="action-count">#1</span></div><div class="action-chip"><span class="action-name">ACTION3</span><span class="action-count">#2</span></div><div class="action-chip"><span class="action-name">ACTION4</span><span class="action-count">#3</span></div><div class="action-chip"><span class="action-name">ACTION1</span><span class="action-count">#4</span></div><div class="action-chip"><span class="action-name">ACTION1</span><span class="action-count">#5</span></div><div class="action-chip"><span class="action-name">ACTION2</span><span class="action-count">#6</span></div><div class="action-chip"><span class="action-name">ACTION3</span><span class="action-count">#7</span></div><div class="action-chip"><span class="action-name">ACTION1</span><span class="action-count">#8</span></div><div class="action-chip"><span class="action-name">ACTION2</span><span class="action-count">#9</span></div>
+        </div>
+      </section>
+
+      <section class="card span-8">
+        <h2>Top Skills</h2>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Score</th>
+            <th>Support</th>
+            <th>Selected</th>
+            <th>Revs</th>
+            <th>Preview</th>
+          </tr>
+          
+            <tr>
+              <td>mcts:a81ec3:ACTION3-ACTION1-ACTION4-ACTION2</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>88.2</td>
+              <td>31</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION3 -&gt; ACTION1 -&gt; ACTION4 -&gt; ACTION2</td>
+            </tr>
+            
+            <tr>
+              <td>mcts:9659f3:ACTION4-ACTION2-ACTION3-ACTION1</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>82.8</td>
+              <td>29</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION4 -&gt; ACTION2 -&gt; ACTION3 -&gt; ACTION1</td>
+            </tr>
+            
+            <tr>
+              <td>mcts:f8b740:ACTION4-ACTION3-ACTION2-ACTION1</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>80.8</td>
+              <td>28</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION4 -&gt; ACTION3 -&gt; ACTION2 -&gt; ACTION1</td>
+            </tr>
+            
+            <tr>
+              <td>mcts:d601e2:ACTION2-ACTION1-ACTION4-ACTION3</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>72.2</td>
+              <td>25</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION2 -&gt; ACTION1 -&gt; ACTION4 -&gt; ACTION3</td>
+            </tr>
+            
+            <tr>
+              <td>wrapper:ACTION4-ACTION2</td>
+              <td><span class="pill hierarchical">hierarchical</span></td>
+              <td>66.2</td>
+              <td>24</td>
+              <td>0</td>
+              <td>0</td>
+              <td>ACTION4 -&gt; ACTION2</td>
+            </tr>
+            
+            <tr>
+              <td>wrapper:ACTION1-ACTION4</td>
+              <td><span class="pill hierarchical">hierarchical</span></td>
+              <td>64.8</td>
+              <td>23</td>
+              <td>0</td>
+              <td>0</td>
+              <td>ACTION1 -&gt; ACTION4</td>
+            </tr>
+            
+            <tr>
+              <td>bfs-explore-grid</td>
+              <td><span class="pill structured">structured</span></td>
+              <td>62.8</td>
+              <td>22</td>
+              <td>0</td>
+              <td>0</td>
+              <td>1) List untried actions from this state. 2) If any exist, pick the lexicographically first untried one and submit it. 3) Else pick the action with the lowest local count and the highest branch-escape rate from the wor...</td>
+            </tr>
+            
+            <tr>
+              <td>probe-rival-discriminator</td>
+              <td><span class="pill structured">structured</span></td>
+              <td>62.8</td>
+              <td>22</td>
+              <td>0</td>
+              <td>0</td>
+              <td>1) Inspect rival predictions and shortlist actions for which the predictions diverge. 2) Pick the action whose outcome would falsify the higher-scoring rival. 3) Submit that action and register the outcome as either `...</td>
+            </tr>
+            
+            <tr>
+              <td>mcts:496d3b:ACTION4-ACTION1-ACTION3-ACTION2</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>60.2</td>
+              <td>21</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION4 -&gt; ACTION1 -&gt; ACTION3 -&gt; ACTION2</td>
+            </tr>
+            
+            <tr>
+              <td>mcts:f9f694:ACTION1-ACTION4-ACTION3-ACTION2</td>
+              <td><span class="pill exact-spine">exact-spine</span></td>
+              <td>60.2</td>
+              <td>21</td>
+              <td>1</td>
+              <td>0</td>
+              <td>ACTION1 -&gt; ACTION4 -&gt; ACTION3 -&gt; ACTION2</td>
+            </tr>
+            
+        </table>
+      </section>
+
+      <section class="card span-4">
+        <h2>World Model</h2>
+        <table>
+          <tr><th>Metric</th><th>Value</th></tr>
+          <tr><td>drafts</td><td>1</td></tr>
+          <tr><td>structured_predictions</td><td>77</td></tr>
+          <tr><td>matches</td><td>1</td></tr>
+          <tr><td>mismatches</td><td>76</td></tr>
+          <tr><td>prior_suggestions</td><td>3</td></tr>
+          <tr><td>prior_overrides</td><td>3</td></tr>
+        </table>
+        <div style="height: 12px"></div>
+        <pre>```python
+def predict_effect(action, observation):
+    # best hypothesis: each directional action applies a global transition T[action]
+    if action in [&#x27;ACTION1&#x27;,&#x27;ACTION2&#x27;,&#x27;ACTION3&#x27;,&#x27;ACTION4&#x27;]:
+        return {
+            &#x27;expect_change&#x27;: True,
+            &#x27;expected_diff_band&#x27;: &#x27;large&#x27;,
+            &#x27;next_signature_hint&#x27;: f&#x27;phase signature after T[{action}]&#x27;,
+            &#x27;observation_prediction&#x27;: &#x27;multi-region layout remap; blue clusters may reshape/relocate&#x27;,
+            &#x27;progress_prediction&#x27;: &#x27;progress if specific phase sequence is discovered&#x27;,
+            &#x27;action_recommendation&#x27;: &#x27;prefer least-used action to falsify looped transitions&#x27;
+        }
+    return {&#x27;expect_change&#x27;: None, &#x27;expected_diff_band&#x27;: &#x27;unknown&#x27;}
+```</pre>
+      </section>
+
+      <section class="card span-7">
+        <h2>Recent Autoresearch Rows</h2>
+        <table>
+          <tr>
+            <th>Iteration</th>
+            <th>Hypothesis</th>
+            <th>Decision</th>
+            <th>Metric Summary</th>
+          </tr>
+          
+            <tr>
+              <td>ARX</td>
+              <td>Bounded verification run.</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=120.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wo...</td>
+            </tr>
+            
+            <tr>
+              <td>ARX</td>
+              <td>Bounded verification run.</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=130.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wo...</td>
+            </tr>
+            
+            <tr>
+              <td>STABLE_Q</td>
+              <td>Post-smoke stable all-on build should at least preserve L0-&gt;L1 entry while reducing same-family replay pressure.</td>
+              <td><span class="pill discard">discard</span></td>
+              <td>elapsed=181.0s; returncode=0; timed_out=False; startup_stalled=True; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wor...</td>
+            </tr>
+            
+            <tr>
+              <td>STABLE_R</td>
+              <td>After fixing false startup-stall detection, the stable all-on run should complete naturally and ideally preserve prior L0-&gt;L1 entry behavior.</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=215.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wo...</td>
+            </tr>
+            
+            <tr>
+              <td>STABLE_S</td>
+              <td>Allowing action-prior generalization plus same-family attractor novelty probes should convert world-model predictions into actual routing pressure and improve L0 exploration quality.</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=210.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wo...</td>
+            </tr>
+            
+            <tr>
+              <td>v3-smoke</td>
+              <td>v3 MCTS/Wake/Sleep smoke — verify bypass + surprise wake + sleep refactor in live TRAPI env</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=145.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wo...</td>
+            </tr>
+            
+            <tr>
+              <td>v3-full</td>
+              <td>v3 full bounded run — fixed unit_test_matches signature-hint semantics, gate=0.4; verify MCTS activates and skill-bypass + wake fires</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=45.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wor...</td>
+            </tr>
+            
+            <tr>
+              <td>v3.1-reward-tuned</td>
+              <td>v3.1: boost MCTS reward weights for new_family(3→8) and branch_escape(2→5), tighten repeat_penalty(-1→-3) to push out of opening family (v3 full: new_family=1/80, branch_escape=0)</td>
+              <td><span class="pill keep">keep</span></td>
+              <td>elapsed=60.0s; returncode=0; timed_out=False; startup_stalled=False; summary_stale=False; zero_action_run=False; rate_limited=False; modules=[&#x27;dreamcoder&#x27;, &#x27;wor...</td>
+            </tr>
+            
+        </table>
+      </section>
+
+      <section class="card span-5">
+        <h2>Artifacts</h2>
+        <ul>
+          <li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/experiment_logs/reports/arcgentica_v3_full_20260416_2239.json">bounded_report.json</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/research_logs/shared/ls20-cb3b57cc/arcgentica_v3_full_20260416_2239/dreamcoder_library.json">dreamcoder_library.json</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/research_logs/shared/ls20-cb3b57cc/arcgentica_v3_full_20260416_2239/world_model.json">world_model.json</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/research_logs/shared/ls20-cb3b57cc/arcgentica_v3_full_20260416_2239/planner_state.json">planner_state.json</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/research_logs/shared/ls20-cb3b57cc/arcgentica_v3_full_20260416_2239/meta_harness.json">meta_harness.json</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/WEEKLY_REPORT_20260416.md">weekly_report.md</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/recordings/ls20-cb3b57cc.arcgentica_research.dreamcoder+world_model+meta_harness+planner.4fc19759-80f1-4455-862f-5e9d5dc3e7f0.recording.jsonl">recording_1.jsonl</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/recordings/ls20-cb3b57cc.arcgentica_research.dreamcoder+world_model+meta_harness+planner.78ae08df-3beb-4d15-8af9-126a179e300a.recording.jsonl">recording_2.jsonl</a></li><li><a href="/home/v-seungplee/skilldiscovery/arc-agi-3-symbolica-research/recordings/ls20-cb3b57cc.arcgentica_research.dreamcoder+world_model+meta_harness+planner.57d8dc27-d00b-41f6-a911-bff8d8961913.recording.jsonl">recording_3.jsonl</a></li>
+        </ul>
+        <div style="height: 16px"></div>
+        <div class="metric-note">
+          Visualizer design principle: the first screen should explain <em>why the run stopped</em>,
+          <em>which skill or world prior shaped the last branch</em>, and <em>whether the library is growing in a reusable direction</em>.
+          Raw frames are still useful, but they should be secondary to stop diagnostics, action chronology, and abstraction quality.
+        </div>
+      </section>
+    </div>
+
+    <div class="grid" style="margin-top:20px">
+      <section class="card span-12">
+        <h2>v3 Panels</h2>
+        <div class="sub">Plug-in panels sourced from v3 artifacts (world_model / planner_state / dreamcoder_library / meta_harness). Existing layout above is unchanged.</div>
+      </section>
+
+      <section class="card span-3">
+        <div class="metric-label">Transition Accuracy</div>
+        <div class="metric-value">0.922</div>
+        <div class="metric-note">unit_tests_passed / seen = 59 / 64</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Falsification Probe</div>
+        <div class="metric-value">76</div>
+        <div class="metric-note">Last run_history entry (meta_harness).</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Branch Escape</div>
+        <div class="metric-value">0</div>
+        <div class="metric-note">Goal: &gt; 0 after imagination warm-up.</div>
+      </section>
+      <section class="card span-3">
+        <div class="metric-label">Repeated-family Penalty</div>
+        <div class="metric-value">1984</div>
+        <div class="metric-note">Watch per-action ratio, not raw value.</div>
+      </section>
+
+      <section class="card span-7">
+        <h2>Transition Accuracy Timeline</h2>
+        <svg viewBox="0 0 640 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" role="img"><rect x="44" y="18" width="578" height="172" fill="rgba(255,255,255,0.02)" stroke="#263247" /><line x1="44" y1="190.0" x2="622" y2="190.0" stroke="#1f2b40" stroke-width="1" /><text x="38" y="193.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">0.00</text><line x1="44" y1="147.0" x2="622" y2="147.0" stroke="#1f2b40" stroke-width="1" /><text x="38" y="150.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">0.25</text><line x1="44" y1="104.0" x2="622" y2="104.0" stroke="#1f2b40" stroke-width="1" /><text x="38" y="107.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">0.50</text><line x1="44" y1="61.0" x2="622" y2="61.0" stroke="#1f2b40" stroke-width="1" /><text x="38" y="64.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">0.75</text><line x1="44" y1="18.0" x2="622" y2="18.0" stroke="#1f2b40" stroke-width="1" /><text x="38" y="21.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">1.00</text><polyline points="51.2,31.4 58.5,31.4 65.7,31.4 72.9,31.4 80.1,31.4 87.3,31.4 94.6,31.4 101.8,31.4 109.0,31.4 116.2,31.4 123.5,31.4 130.7,31.4 137.9,31.4 145.1,31.4 152.4,31.4 159.6,31.4 166.8,31.4 174.1,31.4 181.3,31.4 188.5,31.4 195.7,31.4 203.0,31.4 210.2,31.4 217.4,31.4 224.6,31.4 231.8,31.4 239.1,31.4 246.3,31.4 253.5,31.4 260.8,31.4 268.0,31.4 275.2,31.4 282.4,31.4 289.6,31.4 296.9,31.4 304.1,31.4 311.3,31.4 318.6,31.4 325.8,31.4 333.0,31.4 340.2,31.4 347.4,31.4 354.7,31.4 361.9,31.4 369.1,31.4 376.3,31.4 383.6,31.4 390.8,31.4 398.0,31.4 405.2,31.4 412.5,31.4 419.7,31.4 426.9,31.4 434.2,31.4 441.4,31.4 448.6,31.4 455.8,31.4 463.1,31.4 470.3,31.4 477.5,31.4 484.7,31.4 491.9,31.4 499.2,31.4 506.4,31.4 513.6,31.4 520.8,31.4 528.1,31.4 535.3,31.4 542.5,31.4 549.8,31.4 557.0,31.4 564.2,31.4 571.4,31.4 578.6,31.4 585.9,31.4 593.1,31.4 600.3,31.4 607.5,31.4 614.8,31.4 622.0,31.4" fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" /><polyline points="51.2,187.8 58.5,187.8 65.7,187.8 72.9,187.8 80.1,187.8 87.3,187.8 94.6,187.8 101.8,187.8 109.0,187.8 116.2,187.8 123.5,187.8 130.7,187.8 137.9,187.8 145.1,187.8 152.4,187.8 159.6,187.8 166.8,187.8 174.1,187.8 181.3,187.8 188.5,187.8 195.7,187.8 203.0,187.8 210.2,187.8 217.4,187.8 224.6,187.8 231.8,187.8 239.1,187.8 246.3,187.8 253.5,187.8 260.8,187.8 268.0,187.8 275.2,187.8 282.4,187.8 289.6,187.8 296.9,187.8 304.1,187.8 311.3,187.8 318.6,187.8 325.8,187.8 333.0,187.8 340.2,187.8 347.4,187.8 354.7,187.8 361.9,187.8 369.1,187.8 376.3,187.8 383.6,187.8 390.8,187.8 398.0,187.8 405.2,187.8 412.5,187.8 419.7,187.8 426.9,187.8 434.2,187.8 441.4,187.8 448.6,187.8 455.8,187.8 463.1,187.8 470.3,187.8 477.5,187.8 484.7,187.8 491.9,187.8 499.2,187.8 506.4,187.8 513.6,187.8 520.8,187.8 528.1,187.8 535.3,187.8 542.5,187.8 549.8,187.8 557.0,187.8 564.2,187.8 571.4,187.8 578.6,187.8 585.9,187.8 593.1,187.8 600.3,187.8 607.5,187.8 614.8,187.8 622.0,187.8" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linejoin="round" /><polyline points="51.2,190.0 58.5,190.0 65.7,190.0 72.9,190.0 80.1,190.0 87.3,190.0 94.6,190.0 101.8,190.0 109.0,190.0 116.2,190.0 123.5,190.0 130.7,190.0 137.9,190.0 145.1,190.0 152.4,190.0 159.6,190.0 166.8,190.0 174.1,190.0 181.3,190.0 188.5,190.0 195.7,190.0 203.0,190.0 210.2,190.0 217.4,190.0 224.6,190.0 231.8,190.0 239.1,190.0 246.3,190.0 253.5,190.0 260.8,190.0 268.0,190.0 275.2,190.0 282.4,190.0 289.6,190.0 296.9,190.0 304.1,190.0 311.3,190.0 318.6,190.0 325.8,190.0 333.0,190.0 340.2,190.0 347.4,190.0 354.7,190.0 361.9,190.0 369.1,190.0 376.3,190.0 383.6,190.0 390.8,190.0 398.0,190.0 405.2,190.0 412.5,190.0 419.7,190.0 426.9,190.0 434.2,190.0 441.4,190.0 448.6,190.0 455.8,190.0 463.1,190.0 470.3,190.0 477.5,190.0 484.7,190.0 491.9,190.0 499.2,190.0 506.4,190.0 513.6,190.0 520.8,190.0 528.1,190.0 535.3,190.0 542.5,190.0 549.8,190.0 557.0,190.0 564.2,190.0 571.4,190.0 578.6,190.0 585.9,190.0 593.1,190.0 600.3,190.0 607.5,190.0 614.8,190.0 622.0,190.0" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round" /><g font-family="Inter, sans-serif" font-size="11" fill="#ecf2ff"><rect x="50" y="24" width="10" height="10" fill="#4ade80"/><text x="66" y="33">transition_accuracy = 0.922</text><rect x="254" y="24" width="10" height="10" fill="#60a5fa"/><text x="270" y="33">cum. new_family / n</text><rect x="404" y="24" width="10" height="10" fill="#f59e0b"/><text x="420" y="33">cum. branch_escape / n</text></g><text x="333.0" y="212" text-anchor="middle" fill="#9fb0cf" font-size="11" font-family="Inter, sans-serif">unit_test index (n=80, passed=59/64)</text></svg>
+        <div class="metric-note">Green reference line = final transition_accuracy. Blue/orange lines show cumulative new_family / branch_escape share over the logged unit_tests stream.</div>
+      </section>
+      <section class="card span-5">
+        <h2>Skill Library Breakdown</h2>
+        <svg viewBox="0 0 560 170" width="100%" height="170" xmlns="http://www.w3.org/2000/svg" role="img"><text x="30" y="28" fill="#9fb0cf" font-size="11" font-family="Inter, sans-serif">total skills: 30</text><rect x="30.0" y="40" width="216.7" height="38" fill="#4ade80"><title>mcts_proposal: 13</title></rect><text x="138.3" y="63.0" text-anchor="middle" fill="#0f172a" font-size="12" font-family="Inter, sans-serif" font-weight="700">13</text><rect x="246.7" y="40" width="166.7" height="38" fill="#60a5fa"><title>abstract_primitive: 10</title></rect><text x="330.0" y="63.0" text-anchor="middle" fill="#0f172a" font-size="12" font-family="Inter, sans-serif" font-weight="700">10</text><rect x="413.3" y="40" width="116.7" height="38" fill="#f59e0b"><title>wrapper: 7</title></rect><text x="471.7" y="63.0" text-anchor="middle" fill="#0f172a" font-size="12" font-family="Inter, sans-serif" font-weight="700">7</text><g><rect x="30" y="90" width="12" height="12" fill="#4ade80"/><text x="48" y="100" fill="#ecf2ff" font-size="12" font-family="Inter, sans-serif">mcts_proposal (13)</text></g><g><rect x="170" y="90" width="12" height="12" fill="#60a5fa"/><text x="188" y="100" fill="#ecf2ff" font-size="12" font-family="Inter, sans-serif">abstract_primitive (10)</text></g><g><rect x="310" y="90" width="12" height="12" fill="#f59e0b"/><text x="328" y="100" fill="#ecf2ff" font-size="12" font-family="Inter, sans-serif">wrapper (7)</text></g></svg>
+        <div class="metric-note">Counts by payload.kind. abstract_primitive are seeded; mcts_proposal are auto-distilled from MCTS top paths; wrapper are sleep-refactor merges.</div>
+      </section>
+
+      <section class="card span-7">
+        <h2>MCTS vs BFS Advantage</h2>
+        <svg viewBox="0 0 640 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" role="img"><rect x="46.6" y="104.0" width="16.3" height="0.0" fill="#4ade80" opacity="0.9"><title>call #1: +0.000</title></rect><rect x="68.0" y="104.0" width="16.3" height="0.0" fill="#4ade80" opacity="0.9"><title>call #2: +0.000</title></rect><rect x="89.4" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #3: +1.750</title></rect><rect x="110.8" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #4: +1.750</title></rect><rect x="132.2" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #5: +1.250</title></rect><rect x="153.6" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #6: +1.750</title></rect><rect x="175.0" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #7: +1.750</title></rect><rect x="196.4" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #8: +1.250</title></rect><rect x="217.8" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #9: +1.250</title></rect><rect x="239.2" y="75.3" width="16.3" height="28.7" fill="#4ade80" opacity="0.9"><title>call #10: +0.750</title></rect><rect x="260.6" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #11: +1.750</title></rect><rect x="282.1" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #12: +1.250</title></rect><rect x="303.5" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #13: +1.750</title></rect><rect x="324.9" y="46.7" width="16.3" height="57.3" fill="#4ade80" opacity="0.9"><title>call #14: +1.500</title></rect><rect x="346.3" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #15: +1.750</title></rect><rect x="367.7" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #16: +1.250</title></rect><rect x="389.1" y="65.8" width="16.3" height="38.2" fill="#4ade80" opacity="0.9"><title>call #17: +1.000</title></rect><rect x="410.5" y="18.0" width="16.3" height="86.0" fill="#4ade80" opacity="0.9"><title>call #18: +2.250</title></rect><rect x="431.9" y="27.6" width="16.3" height="76.4" fill="#4ade80" opacity="0.9"><title>call #19: +2.000</title></rect><rect x="453.3" y="65.8" width="16.3" height="38.2" fill="#4ade80" opacity="0.9"><title>call #20: +1.000</title></rect><rect x="474.7" y="56.2" width="16.3" height="47.8" fill="#4ade80" opacity="0.9"><title>call #21: +1.250</title></rect><rect x="496.1" y="65.8" width="16.3" height="38.2" fill="#4ade80" opacity="0.9"><title>call #22: +1.000</title></rect><rect x="517.5" y="46.7" width="16.3" height="57.3" fill="#4ade80" opacity="0.9"><title>call #23: +1.500</title></rect><rect x="538.9" y="46.7" width="16.3" height="57.3" fill="#4ade80" opacity="0.9"><title>call #24: +1.500</title></rect><rect x="560.3" y="46.7" width="16.3" height="57.3" fill="#4ade80" opacity="0.9"><title>call #25: +1.500</title></rect><rect x="581.8" y="27.6" width="16.3" height="76.4" fill="#4ade80" opacity="0.9"><title>call #26: +2.000</title></rect><rect x="603.2" y="37.1" width="16.3" height="66.9" fill="#4ade80" opacity="0.9"><title>call #27: +1.750</title></rect><line x1="44" y1="104.0" x2="622" y2="104.0" stroke="#9fb0cf" stroke-width="1" /><text x="38" y="193.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">-2.25</text><text x="38" y="107.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">0</text><text x="38" y="21.0" text-anchor="end" fill="#9fb0cf" font-size="10" font-family="Inter, sans-serif">+2.25</text><text x="50" y="32" font-family="Inter, sans-serif" font-size="11" fill="#ecf2ff">MCTS - BFS reward (n=27, mean=+1.389)</text><text x="333.0" y="212" text-anchor="middle" fill="#9fb0cf" font-size="11" font-family="Inter, sans-serif">imagination call index</text></svg>
+        <div class="metric-note">planner_state.recent_advantages — one bar per imagination call. H5 passes when mean advantage exceeds +1 stdev over the first 20 calls.</div>
+      </section>
+      <section class="card span-5">
+        <h2>Wake / Surprise Events</h2>
+        <table><tr><th>When</th><th>Note</th></tr><tr><td style='white-space:nowrap;color:#9fb0cf'>#2</td><td>Surprise on ACTION2: expected &#x27;EXPECT_CHANGE: (synthesised from simulator)&#x27; / observed diff=52</td></tr><tr><td style='white-space:nowrap;color:#9fb0cf'>#5</td><td>Surprise on ACTION4: expected &#x27;EXPECT_CHANGE: (synthesised from simulator)&#x27; / observed diff=52</td></tr><tr><td style='white-space:nowrap;color:#9fb0cf'>#8</td><td>Surprise on ACTION3: expected &#x27;EXPECT_CHANGE: (synthesised from simulator)&#x27; / observed diff=52</td></tr><tr><td style='white-space:nowrap;color:#9fb0cf'>#11</td><td>Surprise on ACTION1: expected &#x27;EXPECT_CHANGE: (synthesised from simulator)&#x27; / observed diff=52</td></tr><tr><td style='white-space:nowrap;color:#9fb0cf'>#14</td><td>Surprise on ACTION4: expected &#x27;EXPECT_CHANGE: (synthesised from simulator)&#x27; / observed diff=52</td></tr></table>
+      </section>
+
+      <section class="card span-12">
+        <h2>Per-turn Timeline (last 20 actions)</h2>
+        <div class="chips"><div class="action-chip" style="border-color:#9fb0cf55"><span class="action-name">RESET</span><span class="action-count">#0</span><span class="action-count" style="color:#9fb0cf;margin-top:2px">LLM</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION1</span><span class="action-count">#5</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION2</span><span class="action-count">#6</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION3</span><span class="action-count">#7</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION1</span><span class="action-count">#8</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION2</span><span class="action-count">#9</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION3</span><span class="action-count">#10</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION3</span><span class="action-count">#1</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION3</span><span class="action-count">#2</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION4</span><span class="action-count">#3</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION1</span><span class="action-count">#4</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION1</span><span class="action-count">#5</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION2</span><span class="action-count">#6</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION3</span><span class="action-count">#7</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION1</span><span class="action-count">#8</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div><div class="action-chip" style="border-color:#4ade8055"><span class="action-name">ACTION2</span><span class="action-count">#9</span><span class="action-count" style="color:#4ade80;margin-top:2px">MCTS</span></div></div>
+        <div class="metric-note">Green &ldquo;MCTS&rdquo; badge = first action matches a committed mcts_proposal skill (times_selected &gt; 0). Grey &ldquo;LLM&rdquo; badge = chosen via the LLM agent path.</div>
+      </section>
+    </div>
+    
+  </div>
+</body>
+</html>
