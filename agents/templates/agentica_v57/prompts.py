@@ -261,10 +261,67 @@ Plan-card execution:
 Anti-leakage (HARD):
   - You MUST NOT use vocabulary: per_neighbor_target / target_color /
     needs_toggle / marker_progress / joint_neighbors /
-    expected_neighbor_colors / win_state / goal_state.
+    expected_neighbor_colors / win_state / goal_state /
+    is_target_state / precision_score.
   - Reason about MECHANICS observable from clicks (region transitions,
     null returns, _outside_, level rise, sequences) — never about WHAT
     THE WIN STATE LOOKS LIKE.
+
+TWO-TIER chid SELECTION (v591 B19, MANDATORY):
+  Every turn you MUST set `chosen_hypothesis_id` to ONE of:
+
+  TIER-card: an id from ACTIVE_HYPOTHESES (when non-empty).
+
+  TIER-A: a `predicate_id` taken VERBATIM from CANDIDATE_TESTS, e.g.
+    "P05_shared_neighbor_between_markers:T7:R23". Pick by score ×
+    novelty. Coord starts at the entry's `suggested_coord`; you may
+    adjust ±2 px or pick another cell INSIDE
+    `anchor_region.bbox`. Cite the predicate_id and its score in
+    your thought.
+
+  TIER-B (INVENTED): when CANDIDATE_TESTS lacks an entry that
+    captures the structural relation you actually want to test —
+    cross-region, sprite-internal, corner / direction-specific,
+    sequence, or negation — INVENT a chid using grammar:
+        ^(H|P)_<rationale>(_R<region_id>)?(_<direction>)?$
+    where:
+      • <rationale> is a snake_case noun phrase you choose, e.g.
+        crop_align, sector_alignment, fresh_neighbor_toggle,
+        shared_blank_sweep, static_nonmarker, compass_sweep,
+        corner_probe, lower, upper. R-id token may also appear
+        MID-string (e.g. H_R15_lower_S).
+      • <region_id> must be a region in VISIBLE_REGIONS (use the
+        leading R<digits>).
+      • <direction> ∈ {N,S,E,W,NE,NW,SE,SW} when testing a specific
+        corner / edge / compass cell of the region.
+    Examples (cycle237 vintage that produced L+1 / L+2):
+        H_static_nonmarker_R19      H_crop_align_R31_NW
+        P_crop_compass_sweep_R31    P_R12_crop_sector_alignment
+        H_fresh_neighbor_toggle_R16
+
+  RATIONALE-COORD COUPLING (v591 B19): the click coord MUST match
+  the geometric meaning of the chid:
+    • If chid contains "neighbor", coord MUST land in the cited
+      region's `neighbors_3x3` cell (NOT inside the cited region
+      itself).
+    • If chid contains "_NW / _NE / _SW / _SE", coord MUST be the
+      corresponding CORNER of the cited region's bbox.
+    • If chid contains "_N / _S / _E / _W", coord MUST be the
+      midpoint of the corresponding EDGE of the cited region's bbox.
+    • Otherwise (no direction, no neighbor token), coord lies
+      INSIDE the cited region's bbox (centroid OK).
+  Show this geometric mapping in your thought.
+
+  NEVER null while CANDIDATE_TESTS or VISIBLE_REGIONS is non-empty.
+  If both lists are empty, default to
+  `H_explore_R<smallest_visible_R_id>` and click that region's
+  centroid.
+
+  In your thought you MUST:
+    (1) state TIER-card / TIER-A / TIER-B + WHY;
+    (2) cite predicate_id + score (TIER-A) or invented chid + the
+        structural property missing from CANDIDATE_TESTS (TIER-B);
+    (3) show the coord computation per RATIONALE-COORD COUPLING.
 
 Output ONLY the JSON object. Stop after the closing brace.
 """

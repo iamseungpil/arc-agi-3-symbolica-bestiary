@@ -35,6 +35,7 @@ from tools.candidate_generator import (  # v589 B17 (legacy)
     update_candidate_log_with_observation,
 )
 from tools.chid_grammar import (  # v591 B19 — TIER-B invented chid grammar
+    chid_rationale_intent,
     cited_region_id,
     is_non_trivial_invention,
     is_tier_a_predicate_id,
@@ -1938,27 +1939,86 @@ async def run_turn(
                     snapped = True
                 break
 
-    # v591 B19 (review issue W7): TIER-B coord-bbox cross-check.
-    # When M1 cited a TIER-B chid with an R<id>, the click coord MUST
-    # lie inside that region's bbox. If M1 wrote `H_crop_align_R31_NW`
-    # with coord=[2,2] (far from R31), snap to R31's centroid so the
-    # action actually probes the cited region.
+    # v591 B19 round-3 (review C-2): rationale-coord coupling.
+    # When M1 cites `H_neighbor_*_R14`, click MUST land in R14's
+    # neighbors_3x3 (not in R14 itself). When chid ends in `_NW`,
+    # click MUST be R14's NW-bbox corner. When chid ends in `_N`,
+    # click MUST be the midpoint of R14's N-bbox edge. Without this,
+    # `H_neighbor_toggle_R14` clicked at [13,19] (inside R14) and
+    # the verdict tests the wrong claim.
     if invented_meta is not None and chid_tier == "B":
         cited_rid = cited_region_id(invented_meta["chid"])
         if cited_rid:
-            for r in visible_regions:
-                if r.get("id") != cited_rid:
-                    continue
-                bb = _bbox_xyxy(r.get("bbox"))
-                if bb is None:
-                    break
-                if not (bb[0] <= cx <= bb[2] and bb[1] <= cy <= bb[3]):
+            cited_region = next(
+                (r for r in visible_regions if r.get("id") == cited_rid),
+                None,
+            )
+            if cited_region is not None:
+                intent = chid_rationale_intent(invented_meta["chid"])
+                bb = _bbox_xyxy(cited_region.get("bbox"))
+                target_xy = None
+                if intent["neighbor_of"]:
+                    # Pick first non-recently-clicked neighbor in
+                    # neighbors_3x3 (compass dict mapping dir → R-id).
+                    nbrs = cited_region.get("neighbors_3x3") or {}
+                    recent_coords = {
+                        tuple((rv or {}).get("coord") or [-1, -1])
+                        for rv in board.recent_verbose[-4:]
+                    }
+                    direction_pref = (
+                        [intent["direction"]] if intent["direction"]
+                        else ["N", "E", "S", "W", "NE", "NW", "SE", "SW"]
+                    )
+                    for d in direction_pref:
+                        nrid = nbrs.get(d)
+                        if not nrid:
+                            continue
+                        nreg = next(
+                            (r for r in visible_regions if r.get("id") == nrid),
+                            None,
+                        )
+                        if nreg is None:
+                            continue
+                        nbb = _bbox_xyxy(nreg.get("bbox"))
+                        if nbb is None:
+                            continue
+                        nx = (nbb[0] + nbb[2]) // 2
+                        ny = (nbb[1] + nbb[3]) // 2
+                        if (nx, ny) not in recent_coords:
+                            target_xy = (nx, ny)
+                            invented_meta["coord_redirected_to_neighbor"] = nrid
+                            break
+                elif intent["direction"] and bb is not None:
+                    d = intent["direction"]
+                    if d == "N":
+                        target_xy = ((bb[0] + bb[2]) // 2, bb[1])
+                    elif d == "S":
+                        target_xy = ((bb[0] + bb[2]) // 2, bb[3])
+                    elif d == "E":
+                        target_xy = (bb[2], (bb[1] + bb[3]) // 2)
+                    elif d == "W":
+                        target_xy = (bb[0], (bb[1] + bb[3]) // 2)
+                    elif d == "NE":
+                        target_xy = (bb[2], bb[1])
+                    elif d == "NW":
+                        target_xy = (bb[0], bb[1])
+                    elif d == "SE":
+                        target_xy = (bb[2], bb[3])
+                    elif d == "SW":
+                        target_xy = (bb[0], bb[3])
+                    if target_xy is not None:
+                        invented_meta["coord_redirected_to_direction"] = d
+                if target_xy is not None and (cx, cy) != target_xy:
+                    cx, cy = target_xy
+                    snapped = True
+                    in_some_region = True
+                elif bb is not None and not (bb[0] <= cx <= bb[2] and bb[1] <= cy <= bb[3]):
+                    # No rationale intent; fall back to centroid snap.
                     cx = (bb[0] + bb[2]) // 2
                     cy = (bb[1] + bb[3]) // 2
                     snapped = True
                     invented_meta["coord_snapped_to_cited_bbox"] = True
                     in_some_region = True
-                break
 
     # v591 B19 (review issue C4): chid=null AND coord-fail recovery.
     # cycle237 trace showed M1 occasionally returns null chid; cycle263

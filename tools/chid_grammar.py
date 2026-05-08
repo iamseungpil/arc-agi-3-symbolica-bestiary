@@ -187,3 +187,36 @@ def cited_region_id(chid: str) -> str | None:
     if parsed and parsed["region_ids"]:
         return parsed["region_ids"][0]
     return None
+
+
+_NEIGHBOR_RE = re.compile(r"(?:^|_)neighbor", re.IGNORECASE)
+
+
+def chid_rationale_intent(chid: str) -> dict:
+    """Extract rationale-coord intent from a TIER-B chid.
+
+    Returns:
+      {
+        "neighbor_of": True if rationale says "neighbor of cited
+                       region" → coord should land in
+                       cited.neighbors_3x3 not in cited.bbox itself,
+        "direction": "N|S|E|W|NE|NW|SE|SW" or None — coord should
+                     be the corner / edge midpoint of cited.bbox,
+        "corner": True if direction is 2-letter (corner pixel),
+                  False if 1-letter (edge midpoint),
+      }
+
+    Used by agent.py runtime to redirect M1's coord so the click
+    actually tests the rationale (review issue C-2 round-2).
+    """
+    parsed = parse_invented_chid(chid)
+    if parsed is None:
+        return {"neighbor_of": False, "direction": None, "corner": False}
+    body_lower = parsed["body"].lower()
+    is_neighbor = bool(_NEIGHBOR_RE.search(body_lower))
+    direction = parsed["direction"]
+    return {
+        "neighbor_of": is_neighbor,
+        "direction": direction,
+        "corner": direction is not None and len(direction) == 2,
+    }
