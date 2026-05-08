@@ -1364,21 +1364,27 @@ async def call_reflexion(
 # ---------------------------------------------------------------------------
 
 
-def _v592_stuck_rotation_should_force(board, candidate_tests):
-    """M-9-D: force TIER-A when last 3 turns were TIER-B with ld=0.
+def _v592_stuck_rotation_should_force(board, candidate_tests, *, streak=5):
+    """M-9-D (round-9-fix): force TIER-A when last `streak` turns were
+    all TIER-B with ld=0 AND no TIER-A in any of those `streak` turns.
+
+    Round-9-fix raises streak from 3 → 5 because V-FIXTURE-H5 (cycle237
+    replay) showed BBB triggered 9 times on the gold L+2 trace, forcing
+    TIER-A in 43% of qualifying turns. cycle237 had natural runs of 5+
+    TIER-B (T8-T14 = 7, T22-T26 = 5) interspersed with TIER-A — stuck
+    rotation must respect this rhythm.
 
     Reads board.recent_verbose (each entry has chid_tier + observation.
-    level_delta). If qualifying, returns the highest-score predicate from
-    candidate_tests (must have score >= 0.5 — codex round-3 watch item).
+    level_delta). Returns highest-score unresolved predicate (≥0.5) or None.
     """
     recent = getattr(board, "recent_verbose", [])
-    if len(recent) < 3:
+    if len(recent) < streak:
         return None
-    last3 = recent[-3:]
+    window = recent[-streak:]
     all_tier_b_zero_ld = all(
         (rv or {}).get("chid_tier") == "B"
         and int(((rv or {}).get("observation") or {}).get("level_delta") or 0) == 0
-        for rv in last3
+        for rv in window
     )
     if not all_tier_b_zero_ld:
         return None

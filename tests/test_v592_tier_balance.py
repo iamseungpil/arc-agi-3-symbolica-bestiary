@@ -39,23 +39,24 @@ def _make_cand(pid, score=0.5, verdict=None):
 # ---------------- T-V592-1..5: stuck rotation ----------------
 
 
-def test_stuck_rotation_returns_none_with_fewer_than_3_turns():
-    board = _make_board(["B", "B"])
+def test_stuck_rotation_returns_none_with_fewer_than_5_turns():
+    # round-9-fix: streak raised 3 → 5
+    board = _make_board(["B"] * 4)
     assert _v592_stuck_rotation_should_force(board, [_make_cand("P01", 0.6)]) is None
 
 
 def test_stuck_rotation_returns_none_when_not_all_tier_b():
-    board = _make_board(["B", "A", "B"])
+    board = _make_board(["B", "B", "A", "B", "B"])
     assert _v592_stuck_rotation_should_force(board, [_make_cand("P01", 0.6)]) is None
 
 
 def test_stuck_rotation_returns_none_when_some_ld_nonzero():
-    board = _make_board(["B", "B", "B"], [0, 1, 0])
+    board = _make_board(["B"] * 5, [0, 1, 0, 0, 0])
     assert _v592_stuck_rotation_should_force(board, [_make_cand("P01", 0.6)]) is None
 
 
-def test_stuck_rotation_returns_top_score_when_triggered():
-    board = _make_board(["B", "B", "B"], [0, 0, 0])
+def test_stuck_rotation_returns_top_score_when_5_consecutive():
+    board = _make_board(["B"] * 5, [0] * 5)
     cands = [_make_cand("P01", 0.4), _make_cand("P05", 0.7), _make_cand("P03", 0.6)]
     forced = _v592_stuck_rotation_should_force(board, cands)
     assert forced is not None
@@ -63,7 +64,7 @@ def test_stuck_rotation_returns_top_score_when_triggered():
 
 
 def test_stuck_rotation_returns_none_when_candidates_empty():
-    board = _make_board(["B", "B", "B"], [0, 0, 0])
+    board = _make_board(["B"] * 5, [0] * 5)
     assert _v592_stuck_rotation_should_force(board, []) is None
 
 
@@ -156,7 +157,10 @@ def test_min_ratio_respects_cap():
 
 def test_priority_stuck_then_score_then_min_ratio():
     """When stuck condition + high-score predicate + low ratio all hold,
-    stuck-rotation should fire first (highest priority)."""
+    stuck-rotation should fire first (highest priority).
+
+    round-9-fix: requires 5 consecutive TIER-B (raised from 3).
+    """
     board = _make_board(["B"] * 20, [0] * 20)
     cands = [_make_cand("P09", 0.95, verdict=None),
              _make_cand("P01", 0.6, verdict=None)]
