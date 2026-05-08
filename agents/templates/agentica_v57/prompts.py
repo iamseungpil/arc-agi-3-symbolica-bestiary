@@ -160,7 +160,7 @@ You emit ONE JSON object:
                 IMAGE you saw at least once. If the chosen card is a
                 'plan' type, name the rule_hypothesis being tested and
                 which sequence step you are executing.>",
-    "chosen_hypothesis_id": "<id from ACTIVE_HYPOTHESES if non-empty; ELSE the predicate_id (or candidate_id) of your selected entry from CANDIDATE_TESTS; null ONLY if BOTH lists are empty>",
+    "chosen_hypothesis_id": "<v591 TWO-TIER. Set to one of: (TIER-card) an id from ACTIVE_HYPOTHESES if non-empty; (TIER-A) a predicate_id from CANDIDATE_TESTS verbatim; (TIER-B) an INVENTED chid following grammar (H|P)_<rationale>_R<id>[_<dir>]? where rationale is a short snake_case noun phrase you choose. NEVER null while CANDIDATE_TESTS or VISIBLE_REGIONS is non-empty — if you have any visible region you can ALWAYS invent a TIER-B chid (e.g. H_explore_R<first_visible_id>) rather than return null.>",
     "action": {"type": "ACTION6", "coord": [x, y]},
     "expected_observation": {
       "primary_region_id": "<R-id you expect the click to land in>",
