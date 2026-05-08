@@ -1360,6 +1360,82 @@ async def call_reflexion(
 
 
 # ---------------------------------------------------------------------------
+# v592 B20 — TIER balance runtime forcing helpers (deterministic, testable).
+# ---------------------------------------------------------------------------
+
+
+def _v592_stuck_rotation_should_force(board, candidate_tests):
+    """M-9-D: force TIER-A when last 3 turns were TIER-B with ld=0.
+
+    Reads board.recent_verbose (each entry has chid_tier + observation.
+    level_delta). If qualifying, returns the highest-score predicate from
+    candidate_tests (must have score >= 0.5 — codex round-3 watch item).
+    """
+    recent = getattr(board, "recent_verbose", [])
+    if len(recent) < 3:
+        return None
+    last3 = recent[-3:]
+    all_tier_b_zero_ld = all(
+        (rv or {}).get("chid_tier") == "B"
+        and int(((rv or {}).get("observation") or {}).get("level_delta") or 0) == 0
+        for rv in last3
+    )
+    if not all_tier_b_zero_ld:
+        return None
+    if not candidate_tests:
+        return None
+    sorted_cands = sorted(
+        [c for c in candidate_tests if float(c.get("score", 0)) >= 0.5],
+        key=lambda c: -float(c.get("score", 0.0)),
+    )
+    return sorted_cands[0] if sorted_cands else None
+
+
+def _v592_score_gate_should_force(candidate_tests, threshold=0.85):
+    """M-9-C-HARD: force TIER-A when ANY unresolved predicate score >= threshold."""
+    sorted_cands = sorted(
+        [c for c in (candidate_tests or [])
+         if float(c.get("score", 0)) >= threshold
+         and c.get("verdict") in (None, "inconclusive")],
+        key=lambda c: -float(c.get("score", 0.0)),
+    )
+    return sorted_cands[0] if sorted_cands else None
+
+
+def _v592_min_ratio_should_force(
+    board, candidate_tests, *, window=20, floor=0.15, cap_per_50=3
+):
+    """M-9-B-soft: enforce TIER-A floor over rolling window.
+
+    If TIER-A ratio in last `window` turns < `floor` AND fewer than
+    `cap_per_50` prior min-ratio forces in last 50 turns AND there is
+    at least one candidate with score >= 0.5, return top-score candidate.
+    """
+    recent = getattr(board, "recent_verbose", [])
+    if len(recent) < window or not candidate_tests:
+        return None
+    last_window = recent[-window:]
+    tier_a = sum(1 for rv in last_window if (rv or {}).get("chid_tier") == "A")
+    total = len(last_window)
+    if total == 0:
+        return None
+    a_ratio = tier_a / total
+    if a_ratio >= floor:
+        return None
+    cap_used = sum(
+        1 for rv in recent[-50:]
+        if (rv or {}).get("v592_min_ratio_forced") is True
+    )
+    if cap_used >= cap_per_50:
+        return None
+    sorted_cands = sorted(
+        [c for c in candidate_tests if float(c.get("score", 0)) >= 0.5],
+        key=lambda c: -float(c.get("score", 0.0)),
+    )
+    return sorted_cands[0] if sorted_cands else None
+
+
+# ---------------------------------------------------------------------------
 # Verdict logic (pure, deterministic — testable without LLM).
 # ---------------------------------------------------------------------------
 
@@ -2120,6 +2196,35 @@ async def run_turn(
                     )
                         break
 
+    # v592 B20: TIER balance runtime forcing (M-9-D / M-9-C-HARD / M-9-B-soft).
+    # Apply order: stuck-rotation (D) → score-gate (C-HARD) → min-ratio (B-soft).
+    # Forced TIER-A overrides M1's chid only if M1 picked TIER-B; productive
+    # TIER-A picks (chid_tier == "A" already) are left alone.
+    v592_force_reason = None
+    if chid_tier == "B" and candidate_tests_for_m1:
+        forced_pred = (
+            _v592_stuck_rotation_should_force(board, candidate_tests_for_m1)
+            or _v592_score_gate_should_force(candidate_tests_for_m1)
+            or _v592_min_ratio_should_force(board, candidate_tests_for_m1)
+        )
+        if forced_pred is not None:
+            # Determine which mechanism fired (re-call to label).
+            if _v592_stuck_rotation_should_force(board, candidate_tests_for_m1):
+                v592_force_reason = "stuck_rotation"
+            elif _v592_score_gate_should_force(candidate_tests_for_m1):
+                v592_force_reason = "score_gate"
+            else:
+                v592_force_reason = "min_ratio"
+            aresp["chosen_hypothesis_id"] = forced_pred.get("predicate_id")
+            chosen_id = forced_pred.get("predicate_id")
+            chid_tier = "A"
+            invented_meta = None
+            # Snap coord to forced predicate's suggested_coord.
+            sc = forced_pred.get("suggested_coord")
+            if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                cx, cy = int(sc[0]), int(sc[1])
+                snapped = True
+
     # 3. Execute (caller-provided).
     obs = await execute_action(cx, cy)
 
@@ -2222,6 +2327,11 @@ async def run_turn(
         "action": {
             "expected_observation": aresp.get("expected_observation") or {},
         },
+        # v592 B20: TIER classification + force telemetry (per recent_verbose
+        # so v592 helpers can read prior turns' chid_tier).
+        "chid_tier": chid_tier,
+        "v592_min_ratio_forced": (v592_force_reason == "min_ratio"),
+        "v592_force_reason": v592_force_reason,
     }
     board.push_recent(verbose_entry)
     # v588 round-2 D-3: also append a TRIMMED entry into chain_verbose

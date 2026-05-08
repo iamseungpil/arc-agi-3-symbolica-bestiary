@@ -470,10 +470,23 @@ You receive:
           marker_progress, joint_neighbors,
           expected_neighbor_colors, win_state, goal_state.
 
-      Diversity reflection: if you have used TIER-A in 4 of the last
-      5 turns, REFLECT in your thought on whether TIER-B might offer
-      a structural property you have not yet tested; if you do not
-      switch, briefly cite WHY no TIER-B fits.
+      Bidirectional diversity reflection (v592 round-9):
+        - If you used TIER-A in 4 of last 5 turns: REFLECT on whether
+          TIER-B offers a structural property not yet tested.
+        - If you used TIER-B in 4 of last 5 turns: REFLECT on whether
+          a score-rich (≥0.5) unresolved TIER-A predicate provides
+          deterministic feedback you have been missing. Cite RECENT_TURNS
+          chid history.
+        - If 3 consecutive turns were TIER-B with level_delta=0, you
+          are STUCK; default this turn to the highest-score unresolved
+          TIER-A predicate. Runtime will enforce if you do not comply.
+
+      Score-gated TIER-A preference (v592 M-9-C-soft):
+        When CANDIDATE_TESTS has an unresolved entry with score ≥ 0.7,
+        you should PREFER it over a TIER-B invention UNLESS the
+        invention tests a structural property no TIER-A predicate
+        covers (cross-region relation, sprite-internal geometry,
+        negation, sequence). Cite the score in your thought.
 
       In your thought, you MUST:
         (1) State whether you chose TIER-A or TIER-B and WHY.
