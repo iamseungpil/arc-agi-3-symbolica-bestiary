@@ -34,6 +34,13 @@ from tools.candidate_generator import (  # v589 B17 (legacy)
     generate_candidates,
     update_candidate_log_with_observation,
 )
+from tools.chid_grammar import (  # v591 B19 — TIER-B invented chid grammar
+    cited_region_id,
+    is_non_trivial_invention,
+    is_tier_a_predicate_id,
+    template_id as invented_template_id,
+    validate_invented_chid,
+)
 from tools.predicate_generator import (  # v590 B18 (live)
     build_chain_state_from_inputs,
     generate_predicates,
@@ -1247,7 +1254,7 @@ async def call_hypothesize(
     }
     agent = await spawn(
         system=HYPOTHESIZE_SYSTEM_PROMPT,
-        model="gpt-5.5",
+        model=os.environ.get("V591_M3_MODEL", "gpt-5.5"),
     )
     task = HYPOTHESIZE_TASK_INSTRUCTIONS.format(
         input_json=json.dumps(payload, ensure_ascii=False, default=str)[:14000]
@@ -1301,7 +1308,7 @@ async def call_action(
     }
     agent = await spawn(
         system=ACTION_SYSTEM_PROMPT,
-        model="gpt-5.5",
+        model=os.environ.get("V591_M1_MODEL", "gpt-5.5"),
     )
     task = ACTION_TASK_INSTRUCTIONS.format(
         input_json=json.dumps(payload, ensure_ascii=False, default=str)[:12000]
@@ -1342,7 +1349,7 @@ async def call_reflexion(
     }
     agent = await spawn(
         system=REFLEXION_SYSTEM_PROMPT,
-        model="gpt-5.5",
+        model=os.environ.get("V591_M4_MODEL", "gpt-5.5"),
     )
     task = REFLEXION_TASK_INSTRUCTIONS.format(
         input_json=json.dumps(payload, ensure_ascii=False, default=str)[:12000]
@@ -1731,14 +1738,64 @@ async def run_turn(
     # arithmetic mistakes.
     chosen_id = aresp.get("chosen_hypothesis_id")
     chosen_card = next((c for c in board.active_hypotheses if c.get("id") == chosen_id), None)
-    # v590 round-6: REVERTED chid validation. cycle237 organic L+1 events
-    # used M1-invented chids ("P_R12_crop_sector_alignment", etc.) — those
-    # were CORRECT clicks. Validation nullifying them caused 83% _outside_
-    # (vs cycle237 21%) because snap-fallback overrode M1's clever clicks
-    # with predicate bbox-center clicks (which happen to be no-op XOR
-    # sectors). M1's intuition >> deterministic snap. Keep chid as-is for
-    # tracing; verdict resolver matches by anchor.bbox containment.
-    pass  # chid_validation removed
+
+    # v591 B19: TIER-B invented chid validation + chid_tier classification.
+    # Four valid chid kinds: (A) TIER-A predicate_id present in CURRENT
+    # candidate_tests_for_m1, (B) active_hypotheses card id, (C) TIER-B
+    # invented chid following tools.chid_grammar grammar, (D) null. A
+    # TIER-A-shaped string NOT in the current emission set is treated as
+    # hallucination and downgraded to TIER-B grammar validation
+    # (review issue W9). Anything ungrammatical is reset to None.
+    invented_meta = None
+    chid_tier = None  # 'A' | 'B' | 'card' | 'none'
+    visible_rids = {r.get("id") for r in visible_regions if r.get("id")}
+    if chosen_id and chosen_card is None:
+        if is_tier_a_predicate_id(chosen_id):
+            tier_a_pool = {
+                c.get("predicate_id") for c in (candidate_tests_for_m1 or [])
+                if c.get("predicate_id")
+            }
+            if chosen_id in tier_a_pool:
+                chid_tier = "A"
+            else:
+                # Hallucinated TIER-A id; downgrade to TIER-B grammar.
+                ok, reason = validate_invented_chid(chosen_id, visible_rids)
+                if ok:
+                    chid_tier = "B"
+                    invented_meta = {
+                        "chid": chosen_id,
+                        "template_id": invented_template_id(chosen_id),
+                        "non_trivial": is_non_trivial_invention(chosen_id),
+                        "downgraded_from_tier_a": True,
+                    }
+                else:
+                    board.invented_invalid_count = (
+                        getattr(board, "invented_invalid_count", 0) + 1
+                    )
+                    aresp["chosen_hypothesis_id"] = None
+                    chosen_id = None
+                    chid_tier = "none"
+        else:
+            ok, reason = validate_invented_chid(chosen_id, visible_rids)
+            if ok:
+                chid_tier = "B"
+                invented_meta = {
+                    "chid": chosen_id,
+                    "template_id": invented_template_id(chosen_id),
+                    "non_trivial": is_non_trivial_invention(chosen_id),
+                    "downgraded_from_tier_a": False,
+                }
+            else:
+                board.invented_invalid_count = (
+                    getattr(board, "invented_invalid_count", 0) + 1
+                )
+                aresp["chosen_hypothesis_id"] = None
+                chosen_id = None
+                chid_tier = "none"
+    elif chosen_card is not None:
+        chid_tier = "card"
+    else:
+        chid_tier = "none"
 
     # v586 Phase C: skip dead-region steps in plan-card click_sequence.
     # If the current step's region_id has been marked dead (≥3 _outside_
@@ -1881,50 +1938,63 @@ async def run_turn(
                     snapped = True
                 break
 
-    # v590 B18 round-7: TIGHTEN cold-start snap to ONLY fire on
-    # GENUINE coord-fail. Round-3..6 fired on `chosen_card is None`,
-    # which is True whenever M1 picks a predicate_id (predicates
-    # aren't M3-emitted active_hypotheses cards). That overrode
-    # 100% of cycle259/260 turns with bbox-center coords that
-    # systematically miss ft09 XOR sectors.
-    #
-    # Empirical evidence (cycle237 vs cycle259, both with chid="P01_..."
-    # picked by M1, [34,34] coord, in_some_region=True):
-    #   cycle237 T1: snap=False ✓ — coord [34,34] preserved
-    #   cycle259 T1: snap=True  → coord [6,38] (R21 predicate sc) override
-    # The cycle237 analogue that succeeded (T1 chid="H_static_nonmarker_R19")
-    # used M1-invented chid; cycle259 T1's chid was a real predicate_id.
-    #
-    # Round-7 fix: only snap when M1's coord lies OUTSIDE every visible
-    # region AND M1 didn't supply a chid (true cold start). Respect M1's
-    # in-bbox coord even when chid is a predicate_id — M1's coord ≠ snap
-    # bbox-center is INTENTIONAL (M1 explores discriminating sectors).
-    _b18_cold_start = (
-        not aresp.get("chosen_hypothesis_id")
-        and chosen_card is None
-        and not board.active_hypotheses
-        and not in_some_region
-        and candidate_tests_for_m1
-    )
-    if _b18_cold_start:
-        for cand in candidate_tests_for_m1:
-            sc = cand.get("suggested_coord")
-            anchor = cand.get("anchor_region") or {}
-            bb = _bbox_xyxy(anchor.get("bbox"))
-            if (
-                isinstance(sc, (list, tuple))
-                and len(sc) == 2
-                and bb is not None
-                and bb[0] <= int(sc[0]) <= bb[2]
-                and bb[1] <= int(sc[1]) <= bb[3]
-            ):
-                cx, cy = int(sc[0]), int(sc[1])
-                snapped = True
-                aresp["chosen_hypothesis_id"] = (
-                    cand.get("predicate_id")
-                    or cand.get("candidate_id")
-                )
+    # v591 B19 (review issue W7): TIER-B coord-bbox cross-check.
+    # When M1 cited a TIER-B chid with an R<id>, the click coord MUST
+    # lie inside that region's bbox. If M1 wrote `H_crop_align_R31_NW`
+    # with coord=[2,2] (far from R31), snap to R31's centroid so the
+    # action actually probes the cited region.
+    if invented_meta is not None and chid_tier == "B":
+        cited_rid = cited_region_id(invented_meta["chid"])
+        if cited_rid:
+            for r in visible_regions:
+                if r.get("id") != cited_rid:
+                    continue
+                bb = _bbox_xyxy(r.get("bbox"))
+                if bb is None:
+                    break
+                if not (bb[0] <= cx <= bb[2] and bb[1] <= cy <= bb[3]):
+                    cx = (bb[0] + bb[2]) // 2
+                    cy = (bb[1] + bb[3]) // 2
+                    snapped = True
+                    invented_meta["coord_snapped_to_cited_bbox"] = True
+                    in_some_region = True
                 break
+
+    # v591 B19 (review issue C4): chid=null AND coord-fail recovery.
+    # cycle237 trace showed M1 occasionally returns null chid; cycle263
+    # showed coord-fail without recovery wastes the turn. Snap to the
+    # first multicolor-marker centroid as a deterministic exploration
+    # fallback so the action lands on something interpretable.
+    if not in_some_region and chosen_card is None and not chosen_id:
+        for r in visible_regions:
+            if not r.get("is_multicolor"):
+                continue
+            bb = _bbox_xyxy(r.get("bbox"))
+            if bb is None:
+                continue
+            cx = (bb[0] + bb[2]) // 2
+            cy = (bb[1] + bb[3]) // 2
+            snapped = True
+            aresp["chosen_hypothesis_id"] = (
+                "H_null_chid_fallback_" + str(r.get("id", "RX"))
+            )
+            chid_tier = "B"
+            invented_meta = {
+                "chid": aresp["chosen_hypothesis_id"],
+                "template_id": "H_null_chid_fallback_Rx",
+                "non_trivial": False,
+                "downgraded_from_tier_a": False,
+            }
+            break
+
+    # v591 B19: REMOVED _b18_cold_start snap.
+    # Empirical evidence (cycle237 v590 round-7 trace): forcing M1 to
+    # adopt predicate suggested_coord destroyed exploration — cycle237
+    # reached L+2 by inventing TIER-B chids with corner/sector coords,
+    # while cycle259-263 (round-1..7 strict binding) stalled at L0.
+    # Plan v591 §4.3 deletes the cold-start snap and lets TIER-B chid
+    # validation + chosen_card region snap (above, line ~1864) handle
+    # coord-fail safely. Anti-oscillation tiers below remain.
 
     # cycle80: anti-oscillation. If the last 2 clicks were the same coord
     # (toggling 9↔8 with no progress), pick a different multicolor-neighbor
@@ -1952,7 +2022,9 @@ async def run_turn(
                 if (ax, ay) not in recent_coords:
                     cx, cy = ax, ay
                     snapped = True
-                    aresp["chosen_hypothesis_id"] = "anti_osc_marker_neighbor"
+                    aresp["chosen_hypothesis_id"] = (
+                        "H_anti_osc_marker_neighbor_" + str(r.get("id", "RX"))
+                    )
                     break
             # Tier 2 (B18 round-4): if marker_neighbor exhausted, use
             # any predicate's suggested_coord that's not in recent.
@@ -1983,7 +2055,9 @@ async def run_turn(
                     if (ax, ay) not in recent_coords:
                         cx, cy = ax, ay
                         snapped = True
-                        aresp["chosen_hypothesis_id"] = "anti_osc_multicolor"
+                        aresp["chosen_hypothesis_id"] = (
+                        "H_anti_osc_multicolor_" + str(r.get("id", "RX"))
+                    )
                         break
 
     # 3. Execute (caller-provided).
@@ -2308,6 +2382,9 @@ async def run_turn(
             "candidate_tests_emitted": new_candidates,
             "candidate_tests_for_m1": candidate_tests_for_m1,
             "candidate_verdicts_this_turn": new_verdicts,
+            # v591 B19: TIER classification + invented-chid metadata.
+            "chid_tier": chid_tier,
+            "invented_meta": invented_meta,
         }
     )
 

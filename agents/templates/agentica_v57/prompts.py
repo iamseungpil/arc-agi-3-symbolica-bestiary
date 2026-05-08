@@ -365,31 +365,72 @@ You receive:
     prior verdicts (supported/refuted), so prefer high-score unresolved
     predicates.
 
-    HARD BINDING — choose ONE entry from CANDIDATE_TESTS for THIS turn:
-      (1) If CANDIDATE_TESTS is non-empty (regardless of whether
-          ACTIVE_HYPOTHESES is empty), you MUST select exactly one
-          unresolved entry — DO NOT skip the section just because
-          ACTIVE_HYPOTHESES is empty. CANDIDATE_TESTS is the
-          INDEPENDENT evidence channel emitted by Symbolica every turn,
-          and it is your primary action target during cold start.
-      (2) Cite the chosen predicate_id (or candidate_id for legacy)
-          VERBATIM in your thought, e.g. "I am testing
-          P02_compass_changed_neighbor_revisit:T7:R23 because if it
-          holds, the next observation will show level_delta≥1 at
-          primary_region_id=R23".
-      (3) suggested_coord is a STARTING POINT, not a mandate. It is
-          the bbox midpoint of the anchor — fine for first probes, but
-          freely override when visual evidence (centroid, crop pattern,
-          a specific color cell) suggests a more discriminating pixel
-          inside anchor_region.bbox. Override coord MUST stay inside
-          anchor_region.bbox. ft09-class XOR/parity puzzles routinely
-          require corner / edge / color-specific cells; bbox center is
-          frequently a no-op. Pick the coord most likely to PROVE OR
-          DISPROVE the predicate, not the center.
-      (4) Set chosen_hypothesis_id to the predicate_id (or
-          candidate_id) so downstream M3/M4 can resolve verdict.
-      (5) If CANDIDATE_TESTS is truly empty (n=0), and only then,
-          reason state-only and explore.
+    TWO-TIER SELECTION (v591 B19) — every turn, choose ONE chid from
+    EITHER tier, never both, never null while a candidate exists:
+
+      TIER-A (predicate-library): pick a predicate_id from
+        CANDIDATE_TESTS by information gain (highest score × novelty
+        among unresolved entries). Set chosen_hypothesis_id to the
+        predicate_id verbatim. Coord starts at suggested_coord; you
+        MAY adjust ±2 px or pick a different cell INSIDE
+        anchor_region.bbox. Cite the predicate_id and its score in
+        your thought.
+
+      TIER-B (invented chid): when the predicate library lacks an entry
+        that captures the structural relation you actually want to
+        test, INVENT a chid. Grammar:
+          ^(H|P)_<rationale>(_R<region_id>)+(_<direction>)?$
+        where:
+          - <rationale> is a snake_case noun phrase you choose,
+            e.g. crop_align, sector_alignment, fresh_neighbor_toggle,
+            shared_blank_sweep, static_nonmarker, compass_sweep,
+            corner_probe, crop_overlap, lower, upper. R-id token may
+            also appear MID-string (e.g. H_R15_lower_S).
+          - <region_id> is one currently in VISIBLE_REGIONS.
+          - <direction> ∈ {N,S,E,W,NE,NW,SE,SW} when testing a
+            specific corner / edge / compass cell of the region.
+        Examples (cycle237 L+1 / L+2 vintage):
+          H_static_nonmarker_R19      — test that R19 is NON-INTERACTIVE
+          H_crop_align_R31_NW          — NW corner of R31's crop sprite
+          P_crop_compass_sweep_R31     — sequence across R31's compass
+          P_R12_crop_sector_alignment  — test alignment of R12's sectors
+          H_fresh_neighbor_toggle_R16  — fresh neighbor of marker R16
+          H_shared_blank_R8            — R8 as a shared blank cell
+
+        TIER-B is appropriate when:
+          (a) the predicate library has no entry for cross-region
+              relation, sprite-internal alignment, or sequence;
+          (b) you want to test a NEGATION (region X is non-interactive);
+          (c) you want a corner / edge / direction-specific cell.
+
+        Coord MUST lie inside the bbox of the cited R<region_id>. For
+        corner / direction tests, compute the corner pixel of the
+        region's bbox. For sprite-internal tests, sample the
+        appropriate 3×3 crop cell.
+
+        Forbidden vocab in chid (and anywhere in your output):
+          per_neighbor_target, target_color, needs_toggle,
+          marker_progress, joint_neighbors,
+          expected_neighbor_colors, win_state, goal_state.
+
+      Diversity reflection: if you have used TIER-A in 4 of the last
+      5 turns, REFLECT in your thought on whether TIER-B might offer
+      a structural property you have not yet tested; if you do not
+      switch, briefly cite WHY no TIER-B fits.
+
+      In your thought, you MUST:
+        (1) State whether you chose TIER-A or TIER-B and WHY.
+        (2) If TIER-A, cite the chosen predicate_id and its score.
+        (3) If TIER-B, cite the invented chid AND name the
+            structural property it tests that is missing from
+            CANDIDATE_TESTS.
+        (4) Show the coord computation (region.bbox + offset / corner
+            / direction). Coord MUST lie inside the cited region's
+            bbox.
+        (5) Set chosen_hypothesis_id to your chosen TIER-A predicate_id
+            OR TIER-B invented chid. Do not return null while
+            CANDIDATE_TESTS or VISIBLE_REGIONS is non-empty.
+
     Anti-pattern (FORBIDDEN): "ACTIVE_HYPOTHESES is empty so I am
     exploring" while CANDIDATE_TESTS has ≥1 entry. That conflates two
     different channels and ignores Symbolica evidence.
@@ -735,4 +776,6 @@ FORBIDDEN_VOCAB = (
     "expected_neighbor_colors",
     "win_state",
     "goal_state",
+    "is_target_state",
+    "precision_score",
 )
