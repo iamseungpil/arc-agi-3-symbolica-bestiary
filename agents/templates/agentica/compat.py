@@ -110,14 +110,22 @@ def _request_text(
     """Call TRAPI with rate-limit-aware retry.
 
     cycle265 (2026-05-08) died at action 51 with `openai.RateLimitError:
-    429 Token limit is exceeded. Try again in 1 seconds.` The library's
-    built-in retry uses 6s spacing × max_retries (default 1), which is
-    too short to clear the TPM bucket. We add a manual loop that catches
-    RateLimitError specifically and sleeps with longer exponential
-    backoff (30s, 60s, 120s, 240s — capped). This keeps multi-hour cycles
-    alive on bursty token windows.
+    429 Token limit is exceeded`. cycle266d (2026-05-08 17:14) died at
+    action 12 with `openai.InternalServerError: 503 API Configuration
+    unavailable`. Library's built-in retry uses 6-7s × max_retries=1
+    which is too short for either case (TPM reset OR TRAPI maintenance).
+    We add a manual loop that catches the full transient class
+    (RateLimitError, InternalServerError, APITimeoutError,
+    APIConnectionError) and sleeps with longer exponential backoff:
+    30s, 60s, 120s, 240s, 480s, 600s caps. Keeps multi-hour cycles
+    alive across bursty token windows AND TRAPI 5xx blips.
     """
-    from openai import RateLimitError
+    from openai import (
+        APIConnectionError,
+        APITimeoutError,
+        InternalServerError,
+        RateLimitError,
+    )
 
     deployment = _TRAPI_MODEL_MAP[_normalize_model_name(model)]
     client = _get_trapi_client()
@@ -127,6 +135,12 @@ def _request_text(
     ]
     rl_max_retries = int(os.environ.get("ARC_AGENTICA_RATE_LIMIT_RETRIES", "8"))
     backoff_base = float(os.environ.get("ARC_AGENTICA_RATE_LIMIT_BACKOFF_SEC", "30"))
+    transient_excs = (
+        RateLimitError,
+        InternalServerError,
+        APITimeoutError,
+        APIConnectionError,
+    )
     response = None
     last_exc: Exception | None = None
     for attempt in range(rl_max_retries + 1):
@@ -138,20 +152,19 @@ def _request_text(
                 max_output_tokens=max_output_tokens,
             )
             break
-        except RateLimitError as exc:
+        except transient_excs as exc:
             last_exc = exc
+            kind = type(exc).__name__
             if attempt >= rl_max_retries:
                 logger.warning(
-                    "TRAPI RateLimit retry budget exhausted (%d) — re-raising",
-                    rl_max_retries,
+                    "TRAPI %s retry budget exhausted (%d) — re-raising",
+                    kind, rl_max_retries,
                 )
                 raise
             sleep_s = min(backoff_base * (2 ** attempt), 600.0)
             logger.warning(
-                "TRAPI 429 RateLimit (attempt %d/%d) — sleeping %.0fs",
-                attempt + 1,
-                rl_max_retries,
-                sleep_s,
+                "TRAPI %s (attempt %d/%d) — sleeping %.0fs",
+                kind, attempt + 1, rl_max_retries, sleep_s,
             )
             time.sleep(sleep_s)
     if response is None:
