@@ -1,0 +1,1597 @@
+{
+  "schema_version": 1,
+  "abstract_mechanics": [
+    {
+      "id": "A1",
+      "text": "Clicking 9-colored compass-neighbor regions produces a dominant 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle173_v586_B9_1778053794",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A2",
+      "text": "Clicking a mutable compass-neighbor region produces a 9\u21928 transition of count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle173_v586_B9_1778053794",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A3",
+      "text": "Clicking a single-color compass-neighbor block toggles it between 8 and 9 with dominant_transition count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle173_v586_B9_1778053794",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A4",
+      "text": "Clicking a color-9 region produces dominant_transition 9\u21928 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A5",
+      "text": "Clicking regions in the tested compass-neighbor sweep produced 8\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A6",
+      "text": "Clicking high-state compass-neighbor regions produces a 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A7",
+      "text": "Clicks on mutable small regions can produce count 36 toggles between states 8 and 9.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A8",
+      "text": "Clicks on post-rise compass-neighbor cells toggle between 9 and 12 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A9",
+      "text": "Clicking crop-indicated neighbor regions produced a 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A10",
+      "text": "Clicks on separate marker-neighbor regions can produce 12\u21929 count36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A11",
+      "text": "A click on a region with dominant state 9 transitioned to 12, while dominant state 12 transitioned to 9, with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A12",
+      "text": "Clicks on play-zone neighbor regions toggle 9\u219412 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A13",
+      "text": "Clicking a play-zone region in color 9 or 12 toggles it to the opposite 9/12 color with dominant_transition count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle175_v586_B9_1778055251",
+      "refuted_runs": 0,
+      "promoted_at_turn": 69
+    },
+    {
+      "id": "A14",
+      "text": "Clicking a 9-colored neighboring region changes it to 8 with no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A15",
+      "text": "Clicking regions in this window produced a 9\u21928 dominant transition with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A16",
+      "text": "Clicking a high-state compass-neighbor block produces a 9\u21928 count36 transition without level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A17",
+      "text": "Clicking a high-state 36-cell mutable region produces a 9\u21928 transition with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A18",
+      "text": "Clicks on high-state neighbor regions produce 9\u21928 dominant transitions with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A19",
+      "text": "Clicks on regions in state 8 produced a dominant 8\u21929 transition with count 36 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 28
+    },
+    {
+      "id": "A20",
+      "text": "Clicking low-state compass-neighbor regions produces an 8\u21929 count36 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A21",
+      "text": "Clicking ordinary neighbor regions can produce a 36-cell dominant transition with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A22",
+      "text": "Clicking mutable compass-ring sectors can produce an 8\u21929 count36 transition without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A23",
+      "text": "Clicking small play-zone regions produced a dominant 9\u219212 transition with count 36 and no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A24",
+      "text": "Clicks on 36-cell regions in dominant state 12 produced 12\u21929 transitions with level_delta=0 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A25",
+      "text": "A click yielding a 36-cell 8\u21929 dominant transition has level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A26",
+      "text": "Clicking small compass-neighbor regions produces a 36-cell 9\u219212 transition without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A27",
+      "text": "Clicking 8/9 regions toggles them between 8 and 9 without level_delta in this window.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A28",
+      "text": "Clicking a 9-valued compass-neighbor region produces a 9\u219212 transition affecting 36 cells with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A29",
+      "text": "Clicking mutable regions toggles the dominant state between 8 and 9.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A30",
+      "text": "Clicks on single-color neighbor regions produce 36-cell 9\u219412 toggles with no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A31",
+      "text": "Clicking a 36-cell single-color region toggles it between 9 and 12.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle179_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A32",
+      "text": "Clicking high-state marker-ring neighbors produces dominant 9\u21928 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A33",
+      "text": "Clicks on sector-neighbor regions in this window produce 8\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle177_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A34",
+      "text": "Clicking a mutable 36-cell block toggles it between 8 and 9 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle178_v586_B9v2_1778063890",
+      "refuted_runs": 0,
+      "promoted_at_turn": 79
+    },
+    {
+      "id": "A35",
+      "text": "A click on a compass-neighbor region with dominant color 9 produces a 9\u21928 transition of count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 3
+    },
+    {
+      "id": "A36",
+      "text": "Clicks on distinct tested regions produced 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A37",
+      "text": "Clicks on tested marker-neighbor regions produced a 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A38",
+      "text": "Clicking a region whose dominant pre-click color is 9 produces a 9\u219212 transition affecting 36 cells.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A39",
+      "text": "Clicks on 8/9 toggle regions flip between 8 and 9 with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A40",
+      "text": "Clicking a color-9 compass-neighbor region produces a 9\u219212 transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A41",
+      "text": "Clicking regions in state 8 produced an 8\u21929 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A42",
+      "text": "Small compass-neighbor clicks toggle between 9 and 12 with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A43",
+      "text": "Multiple clicked regions sharing initial value 8 produced dominant_transition 8\u21929 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A44",
+      "text": "Clicking a color-12 compass-neighbor block produces a 12\u21929 transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A45",
+      "text": "Clicking these regions produces a 36-cell color toggle between 8 and 9.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A46",
+      "text": "Clicks on neighboring play-zone regions produce 36-cell dominant 9\u21948 toggles without immediate level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A47",
+      "text": "Clicking compass-neighbor block regions produces a 9\u219212 transition of count 36 with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A48",
+      "text": "A click on a toggleable play-zone region can produce a 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A49",
+      "text": "Clicking a state-8 region produced an 8\u21929 transition with count 36 and level_delta=0 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A50",
+      "text": "Clicking compass-neighbor blocks produces only local 9\u219412 count-36 toggles with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle182_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A51",
+      "text": "Clicking a region in state 9 changes it to state 8 with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle180_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A52",
+      "text": "Clicks on mutable play-zone regions produced 8\u21949 transitions with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A53",
+      "text": "Clicking compass-neighbor blocks advances the whole 36-cell region from color 9 to color 12 without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A54",
+      "text": "Clicking a play-zone block can toggle the whole 36-cell region from color 9 to color 12 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A55",
+      "text": "Clicking a 36-cell region in state 12 toggles it to 9 without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A56",
+      "text": "Clicking a 36-cell region currently colored 9 or 12 toggles it to the other color.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 69
+    },
+    {
+      "id": "A57",
+      "text": "Clicking low-state play-zone regions produced 9\u219212 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 74
+    },
+    {
+      "id": "A58",
+      "text": "Clicks on play-zone regions with dominant state 9 or 12 toggle between 9 and 12 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 79
+    },
+    {
+      "id": "A59",
+      "text": "Clicking a play-zone region in state 12 toggles it to state 9.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 84
+    },
+    {
+      "id": "A60",
+      "text": "Clicking tested play-zone regions toggles between states 9 and 12.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle181_v586_B10_1778067081",
+      "refuted_runs": 0,
+      "promoted_at_turn": 84
+    },
+    {
+      "id": "A61",
+      "text": "Clicking regions in this toggle class changes dominant state 9\u21928 with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A62",
+      "text": "Clicking a region in this class produces a 9\u21928 dominant transition of count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A63",
+      "text": "Clicking a visible mutable play-zone block in state 9 produces a 9\u21928 transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A64",
+      "text": "Clicking a colored neighbor region toggles its dominant state between 8 and 9 over a 36-cell area without immediate level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A65",
+      "text": "Clicking an 8/9 cell toggles it to the opposite 9/8 state with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A66",
+      "text": "Clicking low-state compass-neighbor regions produced an 8\u21929 transition with count 36 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A67",
+      "text": "Clicks on high-state compass-neighbor regions produce 9\u21928 transitions with count 36 and no level change.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A68",
+      "text": "A click on a region in state 8 produces a 36-cell transition to state 9.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A69",
+      "text": "Clicking a region at state 8 produces transition 8\u21929 with dominant count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A70",
+      "text": "A click on a 36-cell region in state 8 produces an 8\u21929 transition with no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A71",
+      "text": "A click on a 36-cell region in state 8 produces an 8\u21929 transition with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 30
+    },
+    {
+      "id": "A72",
+      "text": "Clicking regions at color 9 in the marker-neighbor sweep produces 9\u219212 transitions with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A73",
+      "text": "Clicks on 8/9 single-color neighbor regions produce 8\u21949 toggles with dominant_transition count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A74",
+      "text": "Clicks on distinct mutable regions produced dominant 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A75",
+      "text": "Clicking compass-neighbor regions produces a count-36 toggle between 9 and 12.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A76",
+      "text": "Clicking a region showing 8 or 9 toggles it to the other value with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A77",
+      "text": "Clicking distinct neighbor regions produces a 36-cell toggle between colors 9 and 12 without level increase.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A78",
+      "text": "Clicking a compass-neighbor block produces a 36-cell 9\u219412 toggle with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A79",
+      "text": "Clicking a mutable compass-neighbor region in state 8 produces an 8\u21929 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle183_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A80",
+      "text": "Clicking a 36-cell region in state 12 produces a 12\u21929 transition with no level change.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A81",
+      "text": "Clicking a mutable neighbor block in state 8 produces a count-36 8\u21929 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A82",
+      "text": "Clicking a 36-cell region in state 9 produces a 9\u219212 transition with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A83",
+      "text": "Clicking mutable play-zone regions produced a one-step 8\u21949 toggle with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle184_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A84",
+      "text": "A click on a region in state 12 produces a 36-cell 12\u21929 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle185_v586_B11_1778082831",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A85",
+      "text": "Clicking regions with dominant color 9 produced 9\u21928 transitions with count 36 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A86",
+      "text": "Clicking a region in the one-click state produces a 9\u21928 transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A87",
+      "text": "Clicking a 36-cell region with dominant color 9 changes it to 8 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A88",
+      "text": "Clicking color-8 neighbor squares toggles them to color-9 with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A89",
+      "text": "Clicks on regions in state 8 or 9 toggle to the opposite state with dominant_transition count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A90",
+      "text": "Clicking a region that transitions 9\u21928 produces a 36-cell dominant transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A91",
+      "text": "Clicking tested colored regions produced dominant_transition 8\u21929 count=36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A92",
+      "text": "Clicking affected block regions can toggle 36 cells from 9 to 8 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A93",
+      "text": "A click on a mutable play-zone neighbor with color 9 produces a 9\u21928 transition of count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A94",
+      "text": "Clicks on compact compass-neighbor regions can produce 36-cell 8\u21949 toggles.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A95",
+      "text": "Clicking comparable single-color neighbor regions produces a 36-cell 9\u219212 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A96",
+      "text": "A click on a mutable 36-cell block toggles it between 8 and 9 without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A97",
+      "text": "Clicks on distinct play-zone neighbor regions in lower state produce 8\u21929 dominant_transition count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A98",
+      "text": "Clicking marker-neighbor regions produced a dominant 12\u21929 transition with count 36 across multiple regions.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A99",
+      "text": "Clicks on non-outside regions produce 36-cell 8\u21949 transitions with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A100",
+      "text": "Clicking regions in a marker-neighbor sweep can produce 12\u21929 count-36 toggles without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A101",
+      "text": "Clicking marked-sector neighbor regions can produce 12\u21929 count36 with no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A102",
+      "text": "Clicking a region in the active toggle class produces a 9\u219412 transition with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A103",
+      "text": "Clicking 8/9 neighbor regions toggles them between 8 and 9 with dominant_transition count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle187_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A104",
+      "text": "Clicks in the tested complement compass-sector sweep produce dominant_transition 9\u219212 count 36 without level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A105",
+      "text": "Clicking non-outside regions in this window produced a 9\u219212 dominant transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A106",
+      "text": "Clicks on small single-color regions toggle their dominant color between 9 and 12 with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle186_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A107",
+      "text": "Clicking a region in state 12 produces a dominant 12\u21929 transition with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A108",
+      "text": "Clicking a region in state 9 produces a dominant 9\u219212 transition with count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A109",
+      "text": "Clicks on 36-cell regions in this window toggled between colors 9 and 12 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 69
+    },
+    {
+      "id": "A110",
+      "text": "Clicking normal non-marker regions can produce a 9\u219212 count-36 toggle with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 74
+    },
+    {
+      "id": "A111",
+      "text": "Clicking a count-36 region in state 9 or 12 toggles it to the opposite state with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle188_v587_B12B13_1778136213",
+      "refuted_runs": 0,
+      "promoted_at_turn": 79
+    },
+    {
+      "id": "A112",
+      "text": "Clicks on regions with dominant state 9 produced 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A113",
+      "text": "Clicking a compass-neighbor region in the high state produces a 9\u21928 transition with count 36 and no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A114",
+      "text": "Clicks on marker-neighbor regions produce a 9\u21928 dominant_transition count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle189_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A115",
+      "text": "Clicks on marker-neighbor blocks produce 8\u21949 dominant-cell toggles with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle189_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A116",
+      "text": "Clicking play-zone neighbor regions toggles their state between 8 and 9 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle189_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A117",
+      "text": "Clicking compass-neighbor regions in a marker-crop sweep produces a dominant 9\u21928 transition of count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A118",
+      "text": "Clicking a marker-neighbor region in state 8 produces a dominant 8\u21929 transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A119",
+      "text": "Clicks during a marker-crop compass sweep can produce dominant 8\u21929 count 36 with level_delta=0 across multiple regions.",
+      "signature": "cc_5to6|rc_0|tr_flat|kd_has_outside",
+      "confirmed_runs": 10,
+      "last_seen_run": "v57_1778180868_3399615",
+      "refuted_runs": 0,
+      "promoted_at_turn": 26,
+      "cluster_observations": [
+        "Clicks during a marker-crop compass sweep can produce dominant 8\u21929 count 36 with level_delta=0 across multiple regions.",
+        "Clicks on marker-adjacent cells produced a 9\u21928 dominant_transition with count36 and level_delta=0.",
+        "Clicks on two distinct regions produced identical 9\u21928 dominant transitions with count 36 and level_delta=0.",
+        "Clicking sampled neighbor regions produced dominant_transition 9\u21928 count 36 with level_delta=0.",
+        "Clicking a colored neighbor square produced a 9\u21928 transition with count 36 and level_delta=0 across multiple regions."
+      ]
+    },
+    {
+      "id": "A120",
+      "text": "Clicking a 36-cell mutable region in state 8 produces an 8\u21929 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A121",
+      "text": "Clicking compass-neighbor blocks in this window produced 36-cell 8\u21929 toggles with level_delta=0.",
+      "signature": "cc_5to6|rc_1|tr_flat|kd_all_non_marker",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 32,
+      "cluster_observations": [
+        "Clicking compass-neighbor blocks in this window produced 36-cell 8\u21929 toggles with level_delta=0."
+      ]
+    },
+    {
+      "id": "A122",
+      "text": "Clicks on 36-cell regions in this window produced 9\u219212 transitions with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A123",
+      "text": "Clicking fresh blue neighbor regions produces a 36-cell 9\u219212 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A124",
+      "text": "Clicks on distinct compass-neighbor regions can produce a 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A125",
+      "text": "Clicking a 36-cell compass-neighbor region toggles it between colors 9 and 12.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A126",
+      "text": "Clicking low-state compass-neighbor blocks produces a 9\u219212 transition over 36 cells with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A127",
+      "text": "Clicking 9-state binary regions produced 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle189_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A128",
+      "text": "Clicks on 36-cell compass-neighbor blocks in state 12 produce dominant_transition 12\u21929 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A129",
+      "text": "Clicking compass-neighbor regions during marker-crop plan sweeps produces a dominant 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A130",
+      "text": "Clicking marker-neighbor block regions toggles a 36-cell block between 9 and 12 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A131",
+      "text": "Clicking a 36-cell block in state 9 or 12 toggles it to the opposite state with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A132",
+      "text": "Clicking color-12 compass-neighbor regions produced dominant_transition 12\u21929 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A133",
+      "text": "Clicking a 36-cell marker-neighbor block toggles it between 9 and 12 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle190_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A134",
+      "text": "Across multiple regions, clicking produced dominant 12\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A135",
+      "text": "Clicking tested non-static regions produced dominant 12\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle191_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 59
+    },
+    {
+      "id": "A136",
+      "text": "Clicking adjacent compass-neighbor regions toggles them between 8 and 9 with dominant_transition count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle189_v587_B14_1778155086",
+      "refuted_runs": 0,
+      "promoted_at_turn": 69
+    },
+    {
+      "id": "A137",
+      "text": "Clicking regions in a compass-neighbor sweep produces a 9\u21928 transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle193_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A138",
+      "text": "Clicking regions in the same local sequence can produce a 9\u21928 transition with count 36.",
+      "signature": "cc_le4|rc_0|tr_flat|kd_all_non_marker",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle194_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 3,
+      "cluster_observations": [
+        "Clicking regions in the same local sequence can produce a 9\u21928 transition with count 36."
+      ]
+    },
+    {
+      "id": "A139",
+      "text": "Clicking post-rise marker-neighbor blocks produced dominant 9\u219212 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle194_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A140",
+      "text": "Clicking adjacent sector blocks produced 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle192_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A141",
+      "text": "A click on a 36-cell region with dominant value 9 produces dominant_transition 9\u21928 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle192_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A142",
+      "text": "Clicks on low-state blocks in the post-rise marker neighborhood produce a 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle194_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A143",
+      "text": "Clicking compass-ring block regions in a staged sweep produced dominant 9\u21928 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle193_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A144",
+      "text": "Clicking mutable single-color neighbor blocks can produce full-block 8\u21929 transitions with count 36 and no level_delta.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle193_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 34
+    },
+    {
+      "id": "A145",
+      "text": "Clicking a 36-cell block in state 9 produces a 9\u21928 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle192_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A146",
+      "text": "Clicking mutable single-color block regions can produce full-region 8\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle193_v588_B16_1778164212",
+      "refuted_runs": 0,
+      "promoted_at_turn": 39
+    },
+    {
+      "id": "A147",
+      "text": "Single clicks on distinct mutable regions produced the same 9\u21928 dominant_transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle196_v588_B16fix_1778165699",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A148",
+      "text": "Clicking a region in state 9 produced a dominant 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle197_v588_B16fix_1778165699",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A149",
+      "text": "Clicking mutable compass-neighbor regions produced a 9\u21928 count36 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle197_v588_B16fix_1778165699",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A150",
+      "text": "Clicking a mutable neighboring region produces a 9\u21928 dominant transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle210_v588_B16fix6_1778172057",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A151",
+      "text": "Clicks on neighboring fill regions produced dominant_transition 9\u21928 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle226_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A152",
+      "text": "Clicking a region whose observed dominant source is 9 produces a 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle224_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A153",
+      "text": "Clicks on distinct tested regions with value 9 produced dominant_transition 9\u219212 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle226_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A154",
+      "text": "Clicking regions in the same neighbor cluster produced a 9\u21928 dominant transition with count 36 and no level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle225_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A155",
+      "text": "Clicks in this window on multiple regions produced dominant 9\u219212 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle224_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A156",
+      "text": "Clicking post-rise unvisited regions produced dominant_transition 9\u219212 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle225_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A157",
+      "text": "Clicks on untried surrounding sectors produce dominant_transition 9\u219212 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle225_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A158",
+      "text": "Clicks on previously untested regions produced dominant_transition 9\u219212 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "cycle225_v589_B17_1778175685",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A159",
+      "text": "Clicking clean centers of colored regions produces a 9\u21928 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350758",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A160",
+      "text": "A click on an unclicked adjacent cell produced a 9\u21928 dominant_transition count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350760",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A161",
+      "text": "Clicking a region in state 9 produces dominant_transition 9\u21928 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350758",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A162",
+      "text": "Clicking distinct non-marker regions produced dominant_transition 9\u219212 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350756",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A163",
+      "text": "Clicking comparable single-color regions produced a 9\u219212 transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350756",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A164",
+      "text": "Clicking small regions in this window consistently produced dominant_transition 8\u21929 count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350760",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A165",
+      "text": "Clicks on regions with dominant_transition 9\u219212 count 36 produce level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778178992_3350756",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A166",
+      "text": "Clicking centered single-color marker-neighbor regions produced a 9\u21928 dominant transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399613",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A167",
+      "text": "A click on each tested region containing color 9 produced a 9\u21928 dominant transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399617",
+      "refuted_runs": 0,
+      "promoted_at_turn": 4
+    },
+    {
+      "id": "A168",
+      "text": "A click on a fresh region produces a 9\u219212 dominant transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399613",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A169",
+      "text": "Clicking fresh non-marker regions produced dominant transition 9\u219212 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399613",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A170",
+      "text": "Clicks on distinct non-marker regions produced dominant 9\u219212 transitions with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399617",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A171",
+      "text": "Repeat clicks on previously toggled regions produce the reverse transition 12\u21929 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399613",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A172",
+      "text": "Clicking regions in this window produced a dominant 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399615",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A173",
+      "text": "Clicking distinct regions with dominant color 9 produced a 9\u219212 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399617",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A174",
+      "text": "Clicks on distinct candidate regions produced 9\u219212 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399613",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A175",
+      "text": "Clicking marker-neighbor play-zone regions produced dominant_transition 9\u219212 count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399615",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A176",
+      "text": "Clicking a region in the play-zone produces a 36-cell dominant transition between colors 9 and 12 without level rise.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399615",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A177",
+      "text": "Clicks on tested non-static regions toggle between 9 and 12 with dominant count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399617",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A178",
+      "text": "Clicking a region currently in state 12 produces a 12\u21929 transition with dominant count 36.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778180868_3399615",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A179",
+      "text": "Clicks on tested visible marker, neighbor, and static-looking coordinates return primary_region_id=_outside_ with no dominant_transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A180",
+      "text": "Clicks on gray bridge/frame contact coordinates return primary_region_id=_outside_ and no dominant_transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 14
+    },
+    {
+      "id": "A181",
+      "text": "Clicking tested marker boundary or neighbor coordinates returns primary_region_id=_outside_ with dominant_transition=null.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 24
+    },
+    {
+      "id": "A182",
+      "text": "Clicks on fresh neighboring regions produced dominant 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A183",
+      "text": "Clicks on valid neighbor/ring regions produce count36 8\u21949 toggles.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A184",
+      "text": "Clicking small regions in the 8/9 class produces a 36-cell 8\u21949 toggle with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778257623_111653",
+      "refuted_runs": 0,
+      "promoted_at_turn": 49
+    },
+    {
+      "id": "A185",
+      "text": "Clicks on the sampled visible surfaces returned primary_region_id=_outside_ with no dominant_transition.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 9
+    },
+    {
+      "id": "A186",
+      "text": "Clicks on sampled marker/frame surfaces return primary_region_id=_outside_ with no dominant_transition and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 19
+    },
+    {
+      "id": "A187",
+      "text": "Clicking similar 9-valued neighbor regions produces a 9\u21928 transition with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 29
+    },
+    {
+      "id": "A188",
+      "text": "Clicks on neighbor tiles around a marker produced 8\u21929 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 44
+    },
+    {
+      "id": "A189",
+      "text": "Clicks on tested neighbor regions produced 9\u21928 dominant_transition count 36 with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 54
+    },
+    {
+      "id": "A190",
+      "text": "Clicks on responsive colored regions produce 8\u21949 count-36 toggles with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 64
+    },
+    {
+      "id": "A191",
+      "text": "Clicks on regions in state 8 produced a 36-cell 8\u21929 dominant transition with level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 69
+    },
+    {
+      "id": "A192",
+      "text": "Clicks on regions with dominant values 8 or 9 toggle them between 8 and 9 with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 94
+    },
+    {
+      "id": "A193",
+      "text": "Clicks on distinct tested regions produced dominant 9\u21928 transitions with count 36 and level_delta=0.",
+      "confirmed_runs": 1,
+      "last_seen_run": "v57_1778260603_177521",
+      "refuted_runs": 0,
+      "promoted_at_turn": 99
+    },
+    {
+      "id": "A194",
+      "text": "For crop-like shapes, use a compass sweep around the perimeter: after checking a northwest anchor and a west-edge anchor, continue to the adjacent side or corner rather than jumping to the center.",
+      "confirmed_runs": 1,
+      "last_seen_run": "trace2skill_cycle237",
+      "refuted_runs": 0,
+      "source": "Trace2Skill arxiv 2603.25158 distillation"
+    },
+    {
+      "id": "A195",
+      "text": "When several clicks in one region are framed as sector alignment attempts, treat them as probing the region\u2019s directional anchors; if horizontal sector probes fail, try the vertically corresponding lower anchor.",
+      "confirmed_runs": 1,
+      "last_seen_run": "trace2skill_cycle237",
+      "refuted_runs": 0,
+      "source": "Trace2Skill arxiv 2603.25158 distillation"
+    },
+    {
+      "id": "A196",
+      "text": "After a lowering or southwest-style adjustment, follow with sector-alignment clicks that preserve the same edge or column relationship, moving from lateral probes toward the lower matching position.",
+      "confirmed_runs": 1,
+      "last_seen_run": "trace2skill_cycle237",
+      "refuted_runs": 0,
+      "source": "Trace2Skill arxiv 2603.25158 distillation"
+    },
+    {
+      "id": "A197",
+      "text": "Prefer perimeter landmarks\u2014corners, side midpoints, and sector anchors\u2014over arbitrary interior clicks when a region appears to require alignment.",
+      "confirmed_runs": 1,
+      "last_seen_run": "trace2skill_cycle237",
+      "refuted_runs": 0,
+      "source": "Trace2Skill arxiv 2603.25158 distillation"
+    }
+  ]
+}
