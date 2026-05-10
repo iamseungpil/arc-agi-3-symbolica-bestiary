@@ -21,7 +21,12 @@ logger = logging.getLogger(__name__)
 
 _TRAPI_ENDPOINT = "https://trapi.research.microsoft.com/gcr/shared"
 _API_VERSION = "2025-04-01-preview"
-_MODEL_PREFERENCES = ["gpt-5.4-mini_2026-03-17", "gpt-5.4_2026-03-05"]
+# v605 arm7: prefer multimodal model first when image-mode is enabled.
+import os as _os
+if _os.environ.get("ARC_LITE_MULTIMODAL", "0") == "1":
+    _MODEL_PREFERENCES = ["gpt-4o-mini_2024-07-18", "gpt-4o_2024-11-20"]
+else:
+    _MODEL_PREFERENCES = ["gpt-5.4-mini_2026-03-17", "gpt-5.4_2026-03-05"]
 
 # Plan §4 INT04 + §3.12 fallback codes.
 _FAILURE_CODES = {"timeout", "parse_error", "schema_invalid", "llm_no_client"}
@@ -221,6 +226,31 @@ class Proposer:
             azure_ad_token_provider=_token_provider,
         )
         messages = build_messages(state)
+        # v605 arm7: append a vision content block to the user message
+        # when a raw grid is available + multimodal env var is set.
+        if _os.environ.get("ARC_LITE_MULTIMODAL", "0") == "1":
+            try:
+                from ._render_frame import render_grid_data_url
+                grid = state.get("_latest_grid") if isinstance(state, dict) else None
+                if grid:
+                    data_url = render_grid_data_url(grid)
+                    # convert last user message to multipart content
+                    last_idx = max(
+                        (i for i, m in enumerate(messages) if m.get("role") == "user"),
+                        default=-1,
+                    )
+                    if last_idx >= 0:
+                        text = messages[last_idx]["content"]
+                        messages[last_idx] = {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": text},
+                                {"type": "image_url",
+                                 "image_url": {"url": data_url}},
+                            ],
+                        }
+            except Exception as e:  # noqa: BLE001
+                logger.warning("multimodal render failed: %s", e)
         last_err: Exception | None = None
         for model in _MODEL_PREFERENCES:
             try:

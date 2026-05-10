@@ -449,4 +449,6 @@ def frame_to_state(
         "dominant_transition": dt,
         "level_delta": level_delta,
         "coord": list(last_coord) if last_coord else None,
+        # v605 arm7: expose raw grid for multimodal proposer rendering.
+        "_latest_grid": grid,
     }
