@@ -1,0 +1,796 @@
+{
+  "id": "INT03_stalemate_uniform",
+  "fixture_type": "INT03",
+  "variant": "uniform",
+  "input": {
+    "turns": [
+      {
+        "turn": 0,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 1,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 2,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 3,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 4,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 5,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 6,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 7,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 8,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 9,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 10,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      },
+      {
+        "turn": 11,
+        "visible_regions": [
+          {
+            "id": "R0",
+            "region_id": "R0",
+            "bbox": [
+              0,
+              0,
+              4,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R1",
+            "region_id": "R1",
+            "bbox": [
+              5,
+              0,
+              9,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          },
+          {
+            "id": "R2",
+            "region_id": "R2",
+            "bbox": [
+              10,
+              0,
+              14,
+              4
+            ],
+            "color": 0,
+            "is_multicolor": false,
+            "is_marker_neighbor": false,
+            "is_primary_marker": false,
+            "y_band": "play_zone"
+          }
+        ],
+        "marker_neighbor_states": [],
+        "observation": {
+          "primary_region_id": "R0",
+          "level_delta": 0,
+          "dominant_transition": {
+            "from": 0,
+            "to": 1,
+            "count": 12
+          }
+        },
+        "coord": [
+          2,
+          2
+        ],
+        "max_posterior_hint": 0.2
+      }
+    ],
+    "stalemate_K_threshold": 8,
+    "stalemate_theta_threshold": 0.45
+  },
+  "expected": {
+    "warm_up_proposer_calls": 1,
+    "stalemate_proposer_calls": 1,
+    "total_proposer_calls": 2
+  }
+}

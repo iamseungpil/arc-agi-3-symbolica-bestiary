@@ -1,0 +1,28 @@
+{
+  "id": "INT04_schema_missing_field",
+  "fixture_type": "INT04",
+  "variant": "missing_field",
+  "input": {
+    "raw_proposer_json": {
+      "candidate_predicate_id": "P_saturation_progress",
+      "expected_signature": {
+        "level_delta": 1
+      },
+      "required_pre_state": {
+        "marker_id": "M0",
+        "saturation_threshold": 7,
+        "saturation_denominator": 8
+      },
+      "confidence": 0.5
+    },
+    "visible_region_ids": [
+      "R0",
+      "R1"
+    ]
+  },
+  "expected": {
+    "schema_valid": false,
+    "error_code": "schema_missing_field",
+    "policy_proposer_output": null
+  }
+}

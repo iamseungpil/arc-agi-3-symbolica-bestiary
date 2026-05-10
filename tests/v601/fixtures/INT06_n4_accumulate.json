@@ -1,0 +1,71 @@
+{
+  "id": "INT06_n4_accumulate",
+  "fixture_type": "INT06",
+  "variant": "n4_accumulate",
+  "input": {
+    "outcomes": [
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 50,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 1,
+          "level_delta": 0,
+          "dt_count": 50
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 80,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 2,
+          "level_delta": 0,
+          "dt_count": 80
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 110,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 3,
+          "level_delta": 0,
+          "dt_count": 110
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 1,
+        "dt_count": 600,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 7,
+          "level_delta": 1,
+          "dt_count": 600
+        }
+      }
+    ],
+    "current_turn": 10,
+    "last_reflector_turn": -1
+  },
+  "expected": {
+    "stored_outcome_count": 4,
+    "no_overwrite": true
+  }
+}

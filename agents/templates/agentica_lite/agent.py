@@ -1,12 +1,12 @@
-"""ArcgenticaLite — plan v600 minimal-fast dispatcher.
+"""ArcgenticaLite — plan v601 rev C orchestrator.
 
-Hot path per turn (plan §6.2):
-  1. Update posterior from last observation.
-  2. If stalemate fires AND not yet fired this episode: one LLM call (≤45 s),
-     sandbox-install, bootstrap posterior arms.
-  3. UCB1 selection over visible (predicate × region) pairs.
-  4. Resolve coord per the predicate's coord_policy.
-60 s wall-clock per turn (plan §1.14).
+Per-turn loop (≤ 60 s wall-clock per plan §1.14):
+  Role 1 Proposer (LLM, conditional)  — warm-up / stalemate / new paired-cf
+  Role 2 Policy   (deterministic)     — UCB1 + saturation arm-key + verdict
+  Role 3 Memory writer (deterministic)— paired-cf detector + Reflector spawn
+
+Backwards-compatible with the v600 smoke test: ArcgenticaLite(game_id, seed)
++ run_turn(state) + episode_end().
 """
 
 from __future__ import annotations
@@ -18,8 +18,18 @@ from typing import Any
 
 from .llm_extender import ExtenderInput, LLMExtender
 from .memory_journal import EpisodeRecord, MemoryJournal
+from .memory_writer import MemoryWriter, Outcome
+from .policy import (
+    EpisodeState,
+    compute_saturation_status,
+    compute_verdict,
+    record_outcome,
+    select_arm,
+)
 from .predicate_library import PredicateLibrary
 from .predicate_posterior import ArmKey, PredicatePosterior
+from .proposer import Proposer, ProposerOutput, ProposerResult
+from .reflector import Reflector, ReflectorOutput
 from .stalemate_trigger import StalemateConfig, StalemateTrigger
 
 logger = logging.getLogger(__name__)
@@ -32,8 +42,14 @@ class Action:
     coord_xy: tuple[int, int]
 
 
+def _coord_xy(c: Any) -> tuple[int, int]:
+    if isinstance(c, (list, tuple)) and len(c) >= 2:
+        return (int(c[0]), int(c[1]))
+    return (-1, -1)
+
+
 class ArcgenticaLite:
-    FRAMEWORK_VERSION = "v600"
+    FRAMEWORK_VERSION = "v601"
 
     def __init__(
         self,
@@ -50,17 +66,30 @@ class ArcgenticaLite:
         self.posterior = PredicatePosterior()
         self.library = PredicateLibrary()
         self.stalemate = StalemateTrigger(stalemate_cfg)
-        self.extender = LLMExtender()
+        self.extender = LLMExtender()  # carry v600 for legacy paths
+        self.proposer = Proposer()
+        self.reflector = Reflector()
+        self.memory_writer = MemoryWriter()
         self.journal = MemoryJournal(game_id)
+        self.episode_state = EpisodeState()
         self.turns_since_L_plus = 0
         self.last_max_level = 0
         self._turn_latencies: list[float] = []
         self._turn_count = 0
         self._t_episode_start = time.time()
         self._stalemate_events = 0
+        self._proposer_calls = 0
+        self._reflector_calls = 0
         self._predicates_installed: list[dict] = []
         self._recent_failures: list[dict] = []
         self._last_visible_regions: list[Any] = []
+        # Reflector boost lifecycle (plan §3.15: 5-turn lifetime).
+        self._exploration_boost: dict[ArmKey, float] = {}
+        self._boost_expiry_turn: int = -1
+        # Last proposer output (used by next turn's Policy / verdict)
+        self._last_proposer_output: ProposerOutput | None = None
+        self._last_action_arm_key: ArmKey | None = None
+        self._last_action_expected_signature: dict | None = None
 
     @staticmethod
     def _visible_regions(state: Any) -> list[Any]:
@@ -75,8 +104,18 @@ class ArcgenticaLite:
         if state is None:
             return {}
         if isinstance(state, dict):
-            return state.get("last_observation") or {}
-        return getattr(state, "last_observation", {}) or {}
+            return state.get("last_observation") or state.get("observation") or {}
+        return (
+            getattr(state, "last_observation", None)
+            or getattr(state, "observation", None)
+            or {}
+        )
+
+    @staticmethod
+    def _markers(state: Any) -> list[dict]:
+        if isinstance(state, dict):
+            return state.get("marker_neighbor_states") or []
+        return getattr(state, "marker_neighbor_states", None) or []
 
     def _max_posterior(self, visible_regions: list[Any]) -> float:
         if not visible_regions or not self.posterior.arms:
@@ -99,9 +138,16 @@ class ArcgenticaLite:
         deadline = t0 + self.global_turn_budget_s
         visible_regions = self._visible_regions(state)
         self._last_visible_regions = visible_regions
+        obs = self._last_observation(state)
 
+        # Update posterior + memory_writer for previous action's outcome.
         try:
-            obs = self._last_observation(state)
+            if self._last_action_arm_key is not None:
+                verdict = compute_verdict(obs, self._last_action_expected_signature)
+                record_outcome(self.posterior, self._last_action_arm_key, verdict)
+                # Memory writer paired-cf detection for the previous coord.
+                prev_coord = obs.get("coord")
+                # Use the coord we issued previously (stored on Action), not the obs.
             self.posterior.update(obs)
             if int(obs.get("level_delta", 0) or 0) > 0:
                 self.turns_since_L_plus = 0
@@ -111,43 +157,132 @@ class ArcgenticaLite:
         except Exception as e:  # noqa: BLE001
             logger.warning("posterior.update failed: %s", e)
 
+        # Expire reflector boost.
+        if self._boost_expiry_turn >= 0 and self._turn_count > self._boost_expiry_turn:
+            self._exploration_boost = {}
+            self._boost_expiry_turn = -1
+
+        # Proposer trigger evaluation (warm-up / stalemate). Paired-cf-driven proposer
+        # calls happen via Memory writer below (after action verdict).
+        proposer_output: ProposerOutput | None = None
         try:
+            warm_up = self.stalemate.warm_up_fires(self._turn_count - 1)
             max_post = self._max_posterior(visible_regions)
-            if self.stalemate.fires(self.turns_since_L_plus, max_post):
-                self._stalemate_events += 1
+            stalemate_fires = self.stalemate.fires(self.turns_since_L_plus, max_post)
+            if warm_up or stalemate_fires:
+                # Build state dict for proposer
+                state_for_prop = state if isinstance(state, dict) else {}
+                visible_rids = [
+                    (r.get("region_id") or r.get("id")) if isinstance(r, dict)
+                    else (getattr(r, "region_id", None) or getattr(r, "id", None))
+                    for r in visible_regions
+                ]
+                visible_rids = [r for r in visible_rids if r]
+                time_left = max(1.0, deadline - time.monotonic() - 5.0)
+                self.proposer.llm_timeout_s = min(self.proposer.llm_timeout_s, time_left)
                 if (deadline - time.monotonic()) >= 50.0:
-                    await self._fire_extender(visible_regions, deadline)
+                    pres = await self.proposer.propose(state_for_prop, visible_rids)
+                    self._proposer_calls += 1
+                    if pres.failure_reason is None:
+                        proposer_output = pres.output
+                    else:
+                        logger.info("proposer_failure reason=%s", pres.failure_reason)
+                if warm_up:
+                    self.stalemate.mark_warm_up_done()
+                if stalemate_fires:
+                    self._stalemate_events += 1
                     self.stalemate.mark_fired()
         except Exception as e:  # noqa: BLE001
-            logger.warning("stalemate/extender path failed: %s", e)
+            logger.warning("proposer trigger path failed: %s", e)
 
+        self._last_proposer_output = proposer_output
+
+        # Policy decision.
         try:
-            pick = self.posterior.select(visible_regions, self.library)
+            decision = select_arm(
+                state if isinstance(state, dict) else {},
+                self.posterior,
+                self.library,
+                proposer_output,
+                self.episode_state,
+                exploration_boost=self._exploration_boost or None,
+            )
         except Exception as e:  # noqa: BLE001
-            logger.warning("posterior.select failed: %s", e)
-            pick = None
-        if pick is None:
+            logger.warning("policy.select_arm failed: %s", e)
+            decision = None
+
+        if decision is None:
             self._turn_latencies.append(time.monotonic() - t0)
             return None
-        pred_id, region_id = pick
-        region_obj = next(
-            (r for r in visible_regions if self.posterior._region_id(r) == region_id),
-            None,
-        )
-        try:
-            xy = self.library.resolve_coord(pred_id, region_obj or {}, state)
-        except Exception as e:  # noqa: BLE001
-            logger.warning("resolve_coord failed: %s", e)
-            xy = (0, 0)
 
-        self.posterior.record_emission([ArmKey(pred_id, region_id)])
+        self.posterior.record_emission([decision.arm_key])
+        self._last_action_arm_key = decision.arm_key
+        self._last_action_expected_signature = (
+            getattr(proposer_output, "expected_signature", None)
+            if proposer_output is not None else None
+        )
+
+        # Memory writer outcome record (uses obs from THIS turn after action).
+        # In a real env loop, the next turn's obs is the verdict; here we record the
+        # current obs's level_delta + dt count as the outcome of the LAST chosen coord.
+        try:
+            dt = obs.get("dominant_transition") or {}
+            outcome = Outcome(
+                coord=_coord_xy(decision.coord_xy),
+                primary_region_id=obs.get("primary_region_id"),
+                level_delta=int(obs.get("level_delta") or 0),
+                dt_count=int(dt.get("count", 0)),
+                pre_state_features=self._snapshot_features(state),
+                turn=self._turn_count,
+            )
+            mw_decision = self.memory_writer.record(outcome, current_turn=self._turn_count)
+            if mw_decision.spawn_reflector and (deadline - time.monotonic()) >= 20.0:
+                # Spawn Reflector (best-effort; failure is logged, not crashed)
+                contrast = {
+                    "coord": list(decision.coord_xy),
+                    "outcomes": [
+                        {
+                            "level_delta": o.level_delta,
+                            "dt_count": o.dt_count,
+                            "pre_state_features": o.pre_state_features,
+                        }
+                        for o in (mw_decision.paired_cf_entry.outcomes
+                                  if mw_decision.paired_cf_entry else [])
+                    ],
+                }
+                self._reflector_calls += 1
+                refl: ReflectorOutput | None = await self.reflector.reflect(contrast)
+                if refl is not None and refl.suggested_exploration_boost:
+                    # Apply boost for 5 turns (plan §3.15).
+                    for arm, b in refl.suggested_exploration_boost.items():
+                        self._exploration_boost[arm] = max(self._exploration_boost.get(arm, 0.0), b)
+                    self._boost_expiry_turn = self._turn_count + 5
+        except Exception as e:  # noqa: BLE001
+            logger.warning("memory_writer / reflector path failed: %s", e)
+
         latency = time.monotonic() - t0
         if latency > self.global_turn_budget_s:
             logger.warning("wall_clock_breach: %.2fs", latency)
         self._turn_latencies.append(latency)
-        return Action(pred_id, region_id, xy)
+        return Action(decision.arm_key.predicate_id, decision.arm_key.region_id, decision.coord_xy)
+
+    def _snapshot_features(self, state: Any) -> dict[str, Any]:
+        feats: dict[str, Any] = {}
+        for m in self._markers(state):
+            mid = m.get("marker_id")
+            if mid is None:
+                continue
+            clicked, _denom, _status = compute_saturation_status(m)
+            feats[f"marker_{mid}_compass_saturation_numerator"] = clicked
+        obs = self._last_observation(state)
+        dt = obs.get("dominant_transition") or {}
+        if dt:
+            feats["recent_dominant_transition_direction"] = f"{dt.get('from')}->{dt.get('to')}"
+        feats["level_delta"] = int(obs.get("level_delta") or 0)
+        return feats
 
     async def _fire_extender(self, visible_regions: list[Any], deadline: float) -> None:
+        """v600 legacy LLM extender path (kept for backward compat with existing rasi pipeline)."""
         time_left = max(1.0, deadline - time.monotonic() - 5.0)
         self.extender.llm_timeout_s = min(self.extender.llm_timeout_s, time_left)
         top10 = self.posterior.rank_top(visible_regions, self.library, k=10)
@@ -206,6 +341,11 @@ class ArcgenticaLite:
             latency_p50=p50,
             latency_p95=p95,
             latency_worst=worst,
+            extra={
+                "proposer_calls": self._proposer_calls,
+                "reflector_calls": self._reflector_calls,
+                "confidence_overrides": self.episode_state.confidence_override_count,
+            },
         )
         self.journal.append(rec)
         return rec

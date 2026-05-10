@@ -1,0 +1,64 @@
+{
+  "id": "INT02_paired_cf_R16_T8_T27",
+  "fixture_type": "INT02",
+  "source_trace": "simple_logs/ft09-9ab2447a/v57_1778180868_3399613/trace.jsonl",
+  "source_turn_a": 8,
+  "source_turn_b": 27,
+  "input": {
+    "outcome_a": {
+      "coord": [
+        38,
+        48
+      ],
+      "primary_region_id": "R16",
+      "level_delta": 0,
+      "dt_count": 36,
+      "pre_state_features": {
+        "marker_R6_compass_saturation_numerator": 0,
+        "marker_R6_compass_recent_click_direction": null,
+        "marker_R12_compass_saturation_numerator": 1,
+        "marker_R12_compass_recent_click_direction": "E",
+        "recent_dominant_transition_direction": "9->12",
+        "region_R13_click_count": 1,
+        "region_R16_click_count": 1,
+        "level_delta": 0,
+        "primary_region_id": "R16",
+        "dt_count": 36
+      }
+    },
+    "outcome_b": {
+      "coord": [
+        38,
+        48
+      ],
+      "primary_region_id": "R16",
+      "level_delta": 1,
+      "dt_count": 564,
+      "pre_state_features": {
+        "marker_R6_compass_saturation_numerator": 8,
+        "marker_R6_compass_recent_click_direction": "NW",
+        "marker_R12_compass_saturation_numerator": 8,
+        "marker_R12_compass_recent_click_direction": "N",
+        "recent_dominant_transition_direction": "4->8",
+        "level_delta": 1,
+        "primary_region_id": "R16",
+        "dt_count": 564
+      }
+    }
+  },
+  "expected": {
+    "paired_cf_triggered": true,
+    "severity": 0.9362,
+    "spawn_reflector": true,
+    "discriminator_top_feature_candidates": [
+      "marker_R6_compass_saturation_numerator",
+      "marker_R6_compass_recent_click_direction",
+      "marker_R12_compass_saturation_numerator",
+      "marker_R12_compass_recent_click_direction",
+      "recent_dominant_transition_direction",
+      "level_delta",
+      "dt_count"
+    ],
+    "discriminator_must_include": "marker_R12_compass_saturation_numerator"
+  }
+}

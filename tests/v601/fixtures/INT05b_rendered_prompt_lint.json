@@ -1,0 +1,81 @@
+{
+  "id": "INT05b_rendered_prompt_lint",
+  "fixture_type": "INT05",
+  "variant": "rendered_prompt_lint",
+  "input": {
+    "synthetic_state": {
+      "visible_regions": [
+        {
+          "id": "R12",
+          "region_id": "R12",
+          "bbox": [
+            10,
+            10,
+            14,
+            14
+          ],
+          "color": 9,
+          "is_multicolor": false,
+          "y_band": "play_zone",
+          "is_marker_neighbor": false,
+          "is_primary_marker": true
+        },
+        {
+          "id": "R16",
+          "region_id": "R16",
+          "bbox": [
+            36,
+            46,
+            41,
+            51
+          ],
+          "color": 4,
+          "is_multicolor": false,
+          "y_band": "play_zone",
+          "is_marker_neighbor": true,
+          "is_primary_marker": false
+        }
+      ],
+      "marker_neighbor_states": [
+        {
+          "marker_id": "R12",
+          "compass": {
+            "N": {
+              "region_id": "R9",
+              "current_color": null,
+              "clicks": 0
+            },
+            "E": {
+              "region_id": "R13",
+              "current_color": null,
+              "clicks": 1
+            }
+          }
+        }
+      ],
+      "observation": {
+        "primary_region_id": "R16",
+        "level_delta": 0,
+        "dominant_transition": {
+          "from": 4,
+          "to": 8,
+          "count": 564
+        }
+      }
+    },
+    "forbidden_tokens": [
+      "R6",
+      "R12",
+      "R16",
+      "R31",
+      "ft09",
+      "XOR",
+      "parity",
+      "saturation_R",
+      "marker_R12_compass"
+    ]
+  },
+  "expected": {
+    "forbidden_match_count_in_prompt_prose": 0
+  }
+}

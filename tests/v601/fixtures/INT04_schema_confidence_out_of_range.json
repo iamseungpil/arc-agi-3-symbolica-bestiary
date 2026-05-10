@@ -1,0 +1,29 @@
+{
+  "id": "INT04_schema_confidence_out_of_range",
+  "fixture_type": "INT04",
+  "variant": "confidence_out_of_range",
+  "input": {
+    "raw_proposer_json": {
+      "candidate_predicate_id": "P_saturation_progress",
+      "region_hint": "R0",
+      "expected_signature": {
+        "level_delta": 1
+      },
+      "required_pre_state": {
+        "marker_id": "M0",
+        "saturation_threshold": 7,
+        "saturation_denominator": 8
+      },
+      "confidence": 1.5
+    },
+    "visible_region_ids": [
+      "R0",
+      "R1"
+    ]
+  },
+  "expected": {
+    "schema_valid": false,
+    "error_code": "confidence_out_of_range",
+    "policy_proposer_output": null
+  }
+}

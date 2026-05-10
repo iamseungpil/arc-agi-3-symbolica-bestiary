@@ -16,11 +16,20 @@ from typing import Any
 
 @dataclass(frozen=True)
 class ArmKey:
+    """Plan v601 §3.6 (G19'): adds saturation_status dimension.
+
+    Backward-compat: old code constructs ArmKey(predicate_id, region_id) without
+    saturation_status; the field defaults to "n/a" sentinel (per §3.6 priority 4)
+    so v600 fixtures continue to pass.
+    """
     predicate_id: str
     region_id: str
+    saturation_status: str = "n/a"  # v601 §3.6: none | near_complete | complete | n/a
 
     def __repr__(self) -> str:
-        return f"ArmKey({self.predicate_id}, {self.region_id})"
+        if self.saturation_status == "n/a":
+            return f"ArmKey({self.predicate_id}, {self.region_id})"
+        return f"ArmKey({self.predicate_id}, {self.region_id}, {self.saturation_status})"
 
 
 @dataclass
@@ -33,7 +42,13 @@ class ArmStats:
 
 
 # Cold-start tiebreaker: specific families up-rank above the fallback.
+# v601 §3.9 G20: saturation_progress is the v601 mandatory predicate when a near_complete
+# marker exists; it ranks above sector_alignment so the proposer's hint is honored at
+# cold-start. Without this, all sector_alignment arms (priority 4.0) outrank the
+# proposer's saturation_progress (priority 0.0) by 4 points, far beyond the 0.05
+# tie-break window of §3.14.
 _FAMILY_PRIORITY: dict[str, float] = {
+    "saturation_progress": 5.0,
     "sector_alignment": 4.0, "marker_align": 3.0, "dominant_transition": 2.0,
     "neighbor_pair": 1.5, "unclicked_neighbor": 1.5, "compass_change": 1.5,
     "size_anchor": 1.0, "color_invariance": 1.0, "corner_align": 1.0,
@@ -118,7 +133,18 @@ class PredicatePosterior:
         explore = math.sqrt(2.0 * log_N / arm.n_emit)
         return exploit + explore
 
-    def select(self, visible_regions: list[Any], library: Any) -> tuple[str, str] | None:
+    @staticmethod
+    def _is_saturation_progress_pred(pid: str, pred: Any) -> bool:
+        """v601: P12_saturation_progress / P_saturation_progress alias detection."""
+        if pid in ("P12_saturation_progress", "P_saturation_progress"):
+            return True
+        family = getattr(pred, "family", "") if pred is not None else ""
+        return family == "saturation_progress"
+
+    def select(self, visible_regions: list[Any], library: Any,
+               state: Any = None) -> tuple[str, str] | None:
+        """v600/v601 select. v601: skip saturation_progress predicates unless
+        state carries a target_marker_id (proposer hint or fallback target)."""
         if not visible_regions:
             return None
         try:
@@ -127,6 +153,12 @@ class PredicatePosterior:
             preds = {}
         if not preds:
             return None
+        has_target = False
+        if state is not None:
+            if isinstance(state, dict):
+                has_target = bool(state.get("target_marker_id"))
+            else:
+                has_target = bool(getattr(state, "target_marker_id", None))
         N = max(1, self._total_selections())
         log_N = math.log(N + 1)
         best_key: ArmKey | None = None
@@ -136,13 +168,16 @@ class PredicatePosterior:
             if rid is None:
                 continue
             for pid, pred in preds.items():
+                if (not has_target) and self._is_saturation_progress_pred(pid, pred):
+                    continue
                 s = self._score(pid, pred, rid, log_N)
                 if s > best_score:
                     best_score = s
                     best_key = ArmKey(pid, rid)
         return (best_key.predicate_id, best_key.region_id) if best_key is not None else None
 
-    def rank_top(self, visible_regions: list[Any], library: Any, k: int = 10) -> list[tuple[str, str, float]]:
+    def rank_top(self, visible_regions: list[Any], library: Any, k: int = 10,
+                 state: Any = None) -> list[tuple[str, str, float]]:
         if not visible_regions:
             return []
         try:
@@ -151,6 +186,12 @@ class PredicatePosterior:
             preds = {}
         if not preds:
             return []
+        has_target = False
+        if state is not None:
+            if isinstance(state, dict):
+                has_target = bool(state.get("target_marker_id"))
+            else:
+                has_target = bool(getattr(state, "target_marker_id", None))
         N = max(1, self._total_selections())
         log_N = math.log(N + 1)
         rows: list[tuple[str, str, float]] = []
@@ -159,6 +200,8 @@ class PredicatePosterior:
             if rid is None:
                 continue
             for pid, pred in preds.items():
+                if (not has_target) and self._is_saturation_progress_pred(pid, pred):
+                    continue
                 rows.append((pid, rid, self._score(pid, pred, rid, log_N)))
         rows.sort(key=lambda r: r[2], reverse=True)
         return rows[:k]
@@ -217,6 +260,33 @@ class PredicatePosterior:
             return
         for pid, rid in events:
             self._ensure_arm(ArmKey(pid, rid)).alpha += weight
+
+    def split_rasi_with_saturation(self, alpha_floor: float = 1.0, beta_floor: float = 1.0) -> None:
+        """v601 §3.8 (G5/G21): split each (predicate, region) RASI arm uniformly across
+        saturation_status sub-arms with floor at 1.0 to prevent UCB1 explosion.
+
+        Operates on existing arms whose saturation_status == "n/a" (i.e., loaded by
+        load_rasi_prior in v600 mode). For each such arm, creates 3 child arms with
+        saturation_status in {"none", "near_complete", "complete"}, allocating
+        alpha/beta as max(floor, base/3).
+        """
+        new_arms: dict[ArmKey, ArmStats] = {}
+        for key, stats in list(self.arms.items()):
+            if key.saturation_status != "n/a":
+                new_arms[key] = stats
+                continue
+            for status in ("none", "near_complete", "complete"):
+                child_key = ArmKey(key.predicate_id, key.region_id, status)
+                child_stats = ArmStats(
+                    alpha=max(alpha_floor, stats.alpha / 3.0),
+                    beta=max(beta_floor, stats.beta / 3.0),
+                    n_emit=stats.n_emit,
+                    last_level_delta=stats.last_level_delta,
+                    last_emit_turn=stats.last_emit_turn,
+                )
+                new_arms[child_key] = child_stats
+            new_arms[key] = stats  # preserve sentinel
+        self.arms = new_arms
 
     def retention_score(self, key: ArmKey) -> float:
         arm = self.arms.get(key)

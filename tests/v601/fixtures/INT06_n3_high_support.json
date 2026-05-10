@@ -1,0 +1,58 @@
+{
+  "id": "INT06_n3_high_support",
+  "fixture_type": "INT06",
+  "variant": "n3_high_support",
+  "input": {
+    "outcomes": [
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 50,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 1,
+          "level_delta": 0,
+          "dt_count": 50
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 200,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 4,
+          "level_delta": 0,
+          "dt_count": 200
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 1,
+        "dt_count": 600,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 7,
+          "level_delta": 1,
+          "dt_count": 600
+        }
+      }
+    ],
+    "current_turn": 10,
+    "last_reflector_turn": -1
+  },
+  "expected": {
+    "best_pair_severity_min": 0.6,
+    "support_count_min": 2,
+    "spawn_reflector": true
+  }
+}

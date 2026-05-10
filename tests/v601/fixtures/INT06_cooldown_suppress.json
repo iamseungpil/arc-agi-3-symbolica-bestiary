@@ -1,0 +1,75 @@
+{
+  "id": "INT06_cooldown_suppress",
+  "fixture_type": "INT06",
+  "variant": "cooldown_suppress",
+  "input": {
+    "outcomes_first": [
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 50,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 1,
+          "level_delta": 0,
+          "dt_count": 50
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 1,
+        "dt_count": 600,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 7,
+          "level_delta": 1,
+          "dt_count": 600
+        }
+      }
+    ],
+    "outcomes_second": [
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 80,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 2,
+          "level_delta": 0,
+          "dt_count": 80
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 1,
+        "dt_count": 700,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 8,
+          "level_delta": 1,
+          "dt_count": 700
+        }
+      }
+    ],
+    "first_turn": 7,
+    "second_turn": 10,
+    "last_reflector_turn_before_first": -1
+  },
+  "expected": {
+    "first_spawn": true,
+    "second_spawn": false,
+    "second_suppression_reason": "cooldown_active"
+  }
+}

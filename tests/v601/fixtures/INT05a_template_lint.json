@@ -1,0 +1,31 @@
+{
+  "id": "INT05a_template_lint",
+  "fixture_type": "INT05",
+  "variant": "template_lint",
+  "input": {
+    "files_to_lint": [
+      "agents/templates/agentica_lite/proposer_prompt.py",
+      "agents/templates/agentica_lite/agent.py"
+    ],
+    "forbidden_tokens": [
+      "R6",
+      "R12",
+      "R16",
+      "R31",
+      "ft09",
+      "XOR",
+      "parity",
+      "saturation_R",
+      "marker_R12_compass"
+    ],
+    "allowed_tokens": [
+      "is_primary_marker",
+      "compass",
+      "clicks",
+      "region_id"
+    ]
+  },
+  "expected": {
+    "forbidden_match_count": 0
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "INT06_n3_outlier_low_support",
+  "fixture_type": "INT06",
+  "variant": "n3_outlier_low_support",
+  "input": {
+    "outcomes": [
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 50,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 3,
+          "level_delta": 0,
+          "dt_count": 50,
+          "recent_dominant_transition_direction": "N->S"
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 300,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 3,
+          "level_delta": 0,
+          "dt_count": 300,
+          "recent_dominant_transition_direction": "E->W"
+        }
+      },
+      {
+        "coord": [
+          10,
+          10
+        ],
+        "primary_region_id": "R0",
+        "level_delta": 0,
+        "dt_count": 320,
+        "pre_state_features": {
+          "marker_M0_compass_saturation_numerator": 10,
+          "level_delta": 0,
+          "dt_count": 320,
+          "recent_dominant_transition_direction": "E->W"
+        }
+      }
+    ],
+    "current_turn": 10,
+    "last_reflector_turn": -1
+  },
+  "expected": {
+    "spawn_reflector": false,
+    "reason": "support_count_below_2"
+  }
+}

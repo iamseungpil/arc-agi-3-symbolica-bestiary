@@ -89,6 +89,51 @@ def _stub_predicate(state: Any, t: int) -> list[RegionRef]:
     return [_to_region_ref(r) for r in _regions_of(state)]
 
 
+def _p12_saturation_progress(state: Any, t: int) -> list[RegionRef]:
+    """v601 §3.9 G20: unclicked compass slots of the target marker.
+
+    state["target_marker_id"] is injected by Proposer or fallback (G6).
+    Returns RegionRefs for visible regions whose region_id matches an
+    unclicked compass slot (clicks == 0) of the target marker.
+    """
+    if isinstance(state, dict):
+        target_marker_id = state.get("target_marker_id")
+        markers = state.get("marker_neighbor_states") or []
+        regions = state.get("visible_regions") or []
+    else:
+        target_marker_id = getattr(state, "target_marker_id", None)
+        markers = getattr(state, "marker_neighbor_states", None) or []
+        regions = getattr(state, "visible_regions", None) or []
+    if target_marker_id is None:
+        return []
+    target_marker = None
+    for m in markers:
+        if (m.get("marker_id") if isinstance(m, dict) else getattr(m, "marker_id", None)) == target_marker_id:
+            target_marker = m
+            break
+    if target_marker is None:
+        return []
+    compass = target_marker.get("compass") if isinstance(target_marker, dict) else getattr(target_marker, "compass", {})
+    if not isinstance(compass, dict):
+        return []
+    unclicked_rids: set[str] = set()
+    for slot in compass.values():
+        if not isinstance(slot, dict):
+            continue
+        if int(slot.get("clicks", 0) or 0) == 0:
+            rid = slot.get("region_id")
+            if rid:
+                unclicked_rids.add(rid)
+    out: list[RegionRef] = []
+    for r in regions:
+        rid = r.get("region_id") or r.get("id") if isinstance(r, dict) else (
+            getattr(r, "region_id", None) or getattr(r, "id", None)
+        )
+        if rid in unclicked_rids:
+            out.append(_to_region_ref(r))
+    return out
+
+
 STATIC_PREDICATES: dict[str, Predicate] = {}
 
 
@@ -115,6 +160,13 @@ for _pid, _fam in [
         "corner_top_left" if "corner" in _pid else "centroid",
         _stub_predicate, True,
     ))
+# v601 §3.9 G20: saturation-progress predicate (drives target marker to completion).
+_register(Predicate(
+    "P12_saturation_progress", "saturation_progress", "centroid",
+    _p12_saturation_progress, True,
+))
+# Alias for proposer-emitted IDs (plan §3.9 P_saturation_progress).
+STATIC_PREDICATES["P_saturation_progress"] = STATIC_PREDICATES["P12_saturation_progress"]
 
 
 P_TEST_FRAME: dict[str, Any] = {

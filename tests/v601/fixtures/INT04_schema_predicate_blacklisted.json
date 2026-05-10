@@ -1,0 +1,29 @@
+{
+  "id": "INT04_schema_predicate_blacklisted",
+  "fixture_type": "INT04",
+  "variant": "predicate_blacklisted",
+  "input": {
+    "raw_proposer_json": {
+      "candidate_predicate_id": "submit_action",
+      "region_hint": "R0",
+      "expected_signature": {
+        "level_delta": 1
+      },
+      "required_pre_state": {
+        "marker_id": "M0",
+        "saturation_threshold": 7,
+        "saturation_denominator": 8
+      },
+      "confidence": 0.5
+    },
+    "visible_region_ids": [
+      "R0",
+      "R1"
+    ]
+  },
+  "expected": {
+    "schema_valid": false,
+    "error_code": "predicate_blacklisted",
+    "policy_proposer_output": null
+  }
+}

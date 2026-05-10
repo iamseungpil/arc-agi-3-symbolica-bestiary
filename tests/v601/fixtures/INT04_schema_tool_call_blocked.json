@@ -1,0 +1,35 @@
+{
+  "id": "INT04_schema_tool_call_blocked",
+  "fixture_type": "INT04",
+  "variant": "tool_call_blocked",
+  "input": {
+    "raw_proposer_json": {
+      "candidate_predicate_id": "P_saturation_progress",
+      "region_hint": "R0",
+      "expected_signature": {
+        "level_delta": 1
+      },
+      "required_pre_state": {
+        "marker_id": "M0",
+        "saturation_threshold": 7,
+        "saturation_denominator": 8
+      },
+      "confidence": 0.5,
+      "tool_calls": [
+        {
+          "name": "submit_action",
+          "args": {}
+        }
+      ]
+    },
+    "visible_region_ids": [
+      "R0",
+      "R1"
+    ]
+  },
+  "expected": {
+    "schema_valid": false,
+    "error_code": "tool_call_blocked",
+    "policy_proposer_output": null
+  }
+}

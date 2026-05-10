@@ -26,6 +26,8 @@ class StalemateTrigger:
     def __init__(self, cfg: StalemateConfig | None = None) -> None:
         self.cfg = cfg or StalemateConfig()
         self.fired_this_episode: bool = False
+        # v601 G8: warm-up tracking — turn 0 Proposer is counted separately.
+        self.warm_up_done: bool = False
 
     def fires(self, turns_since_L_plus: int, max_posterior: float) -> bool:
         """Deterministic check (plan §1.12 hot-path)."""
@@ -36,8 +38,18 @@ class StalemateTrigger:
             and max_posterior < self.cfg.theta_threshold
         )
 
+    def warm_up_fires(self, turn_count: int) -> bool:
+        """v601 §4.3 G8: warm-up Proposer call at turn 0 (counted separately)."""
+        if self.warm_up_done:
+            return False
+        return turn_count == 0
+
+    def mark_warm_up_done(self) -> None:
+        self.warm_up_done = True
+
     def mark_fired(self) -> None:
         self.fired_this_episode = True
 
     def reset_episode(self) -> None:
         self.fired_this_episode = False
+        self.warm_up_done = False
