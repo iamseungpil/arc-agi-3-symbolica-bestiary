@@ -1,0 +1,40 @@
+{
+  "name": "INT08_cross_run_merge",
+  "description": "Cross-run merge + 1A promotion: 2 paired_cf entries from different cycles -> Reflector emits PromoteA1Patch -> applier accepts -> SKILL.md renders new 1A entry citing both pcf_offsets.",
+  "input": {
+    "starting_state": {
+      "metadata": {"schema_version": 1, "game_id": "ft09-test",
+                    "last_updated": "2026-05-10T17:00:00Z",
+                    "cross_run_imported": false},
+      "confirmed_mechanics": [],
+      "active_hypotheses": [],
+      "falsifications": [],
+      "skill_lifecycle": [],
+      "metrics": {"skills_proposed": 0, "skills_confirmed": 0,
+                   "skills_retired": 0,
+                   "proposal_to_confirmation_rate": 0.0,
+                   "median_episodes_to_confirmation": null,
+                   "skill_reuse_rate": 0.0,
+                   "successful_L_plus_with_discovered_skill_rate": 0.0,
+                   "skill_promotion_to_1A_rate": 0.0}
+    },
+    "paired_cf_entries": [
+      {"offset": 42, "run_id": "cycle237", "discriminator": "marker_M0_compass_saturation_numerator", "delta": 1},
+      {"offset": 91, "run_id": "cycle289", "discriminator": "marker_M0_compass_saturation_numerator", "delta": 1}
+    ],
+    "promote_patch": {
+      "op": "promote_1A",
+      "natural_language": "Marker compass saturation 7->8 enables L+ click.",
+      "pcf_offsets": [42, 91],
+      "evidence_runs": ["cycle237", "cycle289"],
+      "first_seen_run": "cycle237",
+      "first_seen_turn": 27
+    }
+  },
+  "expected": {
+    "confirmed_mechanics_count": 1,
+    "first_mechanic_confirmation_count": 2,
+    "first_mechanic_pcf_offsets": [42, 91],
+    "skill_md_contains_a001": true
+  }
+}

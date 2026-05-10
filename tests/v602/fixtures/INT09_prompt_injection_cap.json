@@ -1,0 +1,19 @@
+{
+  "name": "INT09_prompt_injection_cap",
+  "description": "Oversized state (50 1A + 200 F + 30 S.dynamic) -> capped prompt context fits within 4 KB and obeys top-K caps.",
+  "input": {
+    "_synthetic_recipe": {
+      "n_1A": 50,
+      "n_F": 200,
+      "n_S_dynamic": 30,
+      "n_S_static": 13
+    }
+  },
+  "expected": {
+    "max_total_bytes": 4096,
+    "max_1A_in_context": 12,
+    "max_F_in_context": 12,
+    "max_S_dynamic_in_context": 8,
+    "S_static_in_context_summary_only": true
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "name": "INT07_render_integrity",
+  "description": "Render integrity round-trip: build skill_state, render SKILL.md, write, reload, render again -> byte-identical.",
+  "input": {
+    "metadata": {
+      "schema_version": 1,
+      "game_id": "ft09-test",
+      "last_updated": "2026-05-10T18:00:00Z",
+      "cross_run_imported": false
+    },
+    "confirmed_mechanics": [
+      {
+        "id": "A001",
+        "natural_language": "Marker compass saturation gates L+ (8/8 clicks).",
+        "evidence_runs": ["cycle237", "cycle289"],
+        "first_seen_run": "cycle237",
+        "first_seen_turn": 27,
+        "confirmation_count": 3,
+        "paired_cf_offsets": [42, 91, 117]
+      },
+      {
+        "id": "A002",
+        "natural_language": "Sector alignment under near_complete enables next L+.",
+        "evidence_runs": ["cycle275"],
+        "first_seen_run": "cycle275",
+        "first_seen_turn": 12,
+        "confirmation_count": 2,
+        "paired_cf_offsets": [55, 78]
+      }
+    ],
+    "active_hypotheses": [
+      {
+        "id": "H_cycle291_T15",
+        "predicate_id": "P12_saturation_progress",
+        "region_hint": "R36",
+        "required_pre_state": {"marker_id": "M0", "saturation_threshold": 7,
+                                "saturation_denominator": 8},
+        "confidence": 0.7,
+        "status": "under_test",
+        "proposed_at_turn": 15
+      }
+    ],
+    "falsifications": [
+      {
+        "id": "F_cycle291_T8",
+        "natural_language": "Sector_alignment R31 -> click R16 -> expected level_delta+1, observed 0.",
+        "failure_mode": "wrong_state",
+        "evidence": {"coord_x": 36, "coord_y": 12, "observed_dt": 4},
+        "run_id": "cycle291",
+        "turn": 8
+      }
+    ],
+    "skill_lifecycle": [
+      {
+        "id": "S03",
+        "family": "sector_alignment",
+        "description": "P03_sector_alignment",
+        "is_static": true,
+        "install_run": null,
+        "confirmed_count": 2,
+        "falsified_count": 5,
+        "last_used_run": "cycle289",
+        "used_in_successful_L_plus": 1,
+        "status": "active"
+      },
+      {
+        "id": "Sext-a3f8",
+        "family": "extended",
+        "description": "click center of dominant 9->12 transition region",
+        "is_static": false,
+        "install_run": "cycle274",
+        "confirmed_count": 0,
+        "falsified_count": 2,
+        "last_used_run": null,
+        "used_in_successful_L_plus": 0,
+        "status": "pending_eviction"
+      }
+    ],
+    "metrics": {
+      "skills_proposed": 12,
+      "skills_confirmed": 3,
+      "skills_retired": 2,
+      "proposal_to_confirmation_rate": 0.25,
+      "median_episodes_to_confirmation": 3.0,
+      "skill_reuse_rate": 0.4,
+      "successful_L_plus_with_discovered_skill_rate": 0.18,
+      "skill_promotion_to_1A_rate": 0.33
+    }
+  }
+}
