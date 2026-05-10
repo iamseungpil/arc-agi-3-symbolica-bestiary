@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # v607: Bayesian Beta posterior fields + Reflector chid_template emit
 
 
 # =============================================================================
@@ -67,7 +67,7 @@ class Falsification:
 
 @dataclass
 class SkillRecord:
-    id: str  # S00-S12 static, Sext-<sha> dynamic
+    id: str  # S00-S12 static, Sext-<sha> dynamic, Sref-<sha> Reflector-emitted (v607)
     family: str
     description: str
     is_static: bool = True
@@ -77,6 +77,14 @@ class SkillRecord:
     last_used_run: str | None = None
     used_in_successful_L_plus: int = 0
     status: Literal["active", "pending_eviction", "retired"] = "active"
+    # v607 Arm 1 (B+C): Reflector verbal chid_template fields
+    chid_template: str = ""  # e.g. "P_<verb>_<noun>_R{region_id}"; empty for static/legacy
+    beta_alpha: float = 0.5  # Jeffreys prior; success count + 0.5
+    beta_beta: float = 0.5   # Jeffreys prior; failure count + 0.5
+    cooldown_remaining: int = 0  # turns until Reflector may re-emit related family
+    emit_count: int = 0  # how many times Proposer instantiated this template
+    emit_tokens: int = 0  # cumulative L_LLM cost attributed to this skill
+    last_emit_turn: int = -1
 
 
 @dataclass
@@ -119,7 +127,19 @@ class SkillState:
         cm = [ConfirmedMechanic(**c) for c in d.get("confirmed_mechanics", [])]
         ah = [ActiveHypothesis(**a) for a in d.get("active_hypotheses", [])]
         fals = [Falsification(**f) for f in d.get("falsifications", [])]
-        sl = [SkillRecord(**s) for s in d.get("skill_lifecycle", [])]
+        # v607: explicit field-by-field SkillRecord construction with v1 backfill
+        # so legacy v1 records (without beta_alpha/chid_template/etc.) still load.
+        sl: list[SkillRecord] = []
+        _sr_defaults = {
+            "chid_template": "", "beta_alpha": 0.5, "beta_beta": 0.5,
+            "cooldown_remaining": 0, "emit_count": 0,
+            "emit_tokens": 0, "last_emit_turn": -1,
+        }
+        for s in d.get("skill_lifecycle", []):
+            row = dict(s)
+            for k, v in _sr_defaults.items():
+                row.setdefault(k, v)
+            sl.append(SkillRecord(**row))
         m = SkillMetrics(**d.get("metrics", {}))
         return cls(metadata=meta, confirmed_mechanics=cm,
                    active_hypotheses=ah, falsifications=fals,
@@ -181,10 +201,28 @@ class MergeHypothesisPatch:
     rationale: str = ""
 
 
+@dataclass
+class EmitChidTemplatePatch:
+    """v607 Arm 1 (B+C): Reflector emits a VERBAL chid_template (no code).
+
+    Distinct from ProposeDynamicSkillPatch (Arm 2 = code-skill). This patch
+    appends a new SkillRecord with chid_template populated, Beta(0.5, 0.5)
+    Jeffreys prior, and Reflector emit cost telemetry attribution.
+    """
+    op: Literal["emit_chid_template"] = "emit_chid_template"
+    chid_template: str = ""  # e.g. "P_<verb>_<noun>_R{region_id}"
+    family: str = "reflector"
+    description: str = ""
+    emit_run: str = ""
+    emit_turn: int = -1
+    emit_tokens: int = 0  # tokens consumed by Reflector LLM call that produced this
+    cooldown: int = 5  # initial cooldown_remaining
+
+
 # Union type for documentation / type hints.
 Patch = (
     PromoteA1Patch | ProposeDynamicSkillPatch | RetireSkillPatch
-    | FalsifyPatch | MergeHypothesisPatch
+    | FalsifyPatch | MergeHypothesisPatch | EmitChidTemplatePatch
 )
 
 
@@ -297,6 +335,34 @@ def apply_patch(state: SkillState, patch: Patch) -> PatchResult:
         state.active_hypotheses = [
             h for h in state.active_hypotheses if h.id != patch.drop_id
         ]
+        state.touch()
+        return PatchResult(True, "ok")
+
+    if isinstance(patch, EmitChidTemplatePatch):
+        # v607 Arm 1 (B+C): verbal chid_template from Reflector.
+        if not patch.chid_template.strip():
+            return PatchResult(False, "missing_chid_template")
+        import hashlib
+        sha = hashlib.sha256(
+            (patch.chid_template + str(patch.emit_turn)).encode("utf-8")
+        ).hexdigest()[:8]
+        sid = f"Sref-{sha}"
+        if any(s.id == sid for s in state.skill_lifecycle):
+            return PatchResult(False, "duplicate_skill_id")
+        state.skill_lifecycle.append(SkillRecord(
+            id=sid, family=patch.family,
+            description=patch.description or patch.chid_template,
+            is_static=False, install_run=patch.emit_run,
+            confirmed_count=0, falsified_count=0,
+            status="active",
+            chid_template=patch.chid_template,
+            beta_alpha=0.5, beta_beta=0.5,  # Jeffreys prior
+            cooldown_remaining=patch.cooldown,
+            emit_count=0,
+            emit_tokens=patch.emit_tokens,
+            last_emit_turn=patch.emit_turn,
+        ))
+        state.metrics.skills_proposed += 1
         state.touch()
         return PatchResult(True, "ok")
 
