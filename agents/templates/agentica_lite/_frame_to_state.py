@@ -199,13 +199,23 @@ def _markers_from_components(
     comps: list[dict[str, Any]],
     action_history: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Identify likely markers (>=4 populated neighbors) and build their
-    compass dicts with click counts derived from action_history."""
+    """Identify likely markers and build their compass dicts.
+
+    v605 arm5: tighten heuristic to reduce false positives. ft09 markers
+    are 3x3 multicolor regions; our flood-fill splits them into many
+    single-cell components. To approximate "real markers" we require:
+      - size >= 4 cells (not a single isolated cell), AND
+      - >= 4 populated 8-direction neighbors,
+      - OR is_multicolor=True (real multicolor blocks).
+    """
     markers: list[dict[str, Any]] = []
     for c in comps:
         nbrs = c.get("neighbors_3x3") or {}
         populated = [(d, n) for d, n in nbrs.items() if n is not None]
-        if len(populated) < 4:
+        is_multi = bool(c.get("is_multicolor", False))
+        size = int(c.get("size", 0))
+        # v605 arm5 filter: must be size>=4 with >=4 neighbors, OR multicolor.
+        if not (is_multi or (size >= 4 and len(populated) >= 4)):
             continue
         compass: dict[str, dict[str, Any]] = {}
         for direction, nbr_id in populated:
