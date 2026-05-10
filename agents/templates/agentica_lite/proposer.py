@@ -237,9 +237,32 @@ class Proposer:
                 logger.info("PROPOSER_RAW model=%s len=%d raw=%r",
                             model, len(raw), raw[:600])
                 obj = json.loads(_extract_json_block(raw))
+                # v605 arm4 codex C5 fix: auto-rewrite region_hint when LLM
+                # confuses marker_id with compass slot. Use unclicked compass
+                # from state to redirect the click target to a neighbor.
+                if isinstance(obj, dict):
+                    pre = obj.get("required_pre_state") or {}
+                    mid = pre.get("marker_id") if isinstance(pre, dict) else None
+                    if mid and obj.get("region_hint") == mid:
+                        # find unclicked compass slot for this marker in state
+                        markers = state.get("marker_neighbor_states") or []
+                        target = next((m for m in markers if m.get("marker_id") == mid), None)
+                        if target:
+                            compass = target.get("compass") or {}
+                            unclicked = [
+                                slot.get("region_id")
+                                for slot in compass.values()
+                                if (slot or {}).get("clicks", 0) == 0
+                                and (slot or {}).get("region_id")
+                            ]
+                            if unclicked:
+                                logger.info(
+                                    "Proposer auto-rewrite region_hint=%s -> %s (marker_id collision)",
+                                    mid, unclicked[0],
+                                )
+                                obj["region_hint"] = unclicked[0]
                 out, err = _validate_schema(obj, visible_region_ids)
                 if err is not None:
-                    # v604.3: log schema error + raw to diagnose schema_invalid
                     logger.warning(
                         "Proposer schema_invalid err=%s model=%s raw=%r",
                         err, model, raw[:600],
