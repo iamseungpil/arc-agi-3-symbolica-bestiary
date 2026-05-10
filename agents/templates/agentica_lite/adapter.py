@@ -58,7 +58,11 @@ class ArcgenticaLiteAgent(Agent):
     ArcgenticaLite per-turn loop and translates FrameData <-> state.
     """
 
-    MAX_ACTIONS = 80
+    # Action budget for multi-level progression. Default 1500 leaves
+    # ~250 actions per level on average (over-provisioned for long-episode
+    # protocol). Override via env ARC_LITE_MAX_ACTIONS for cold-start
+    # cohorts where shorter episodes are intentional.
+    MAX_ACTIONS = int(os.environ.get("ARC_LITE_MAX_ACTIONS", "1500"))
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
