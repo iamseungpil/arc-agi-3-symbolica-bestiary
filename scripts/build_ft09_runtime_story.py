@@ -18,7 +18,7 @@ PRESENTATION_DIR = REPO_ROOT / "presentation"
 REPORTS_DIR = REPO_ROOT / "reports"
 GAME_ID = "ft09-9ab2447a"
 GAME_PREFIX = GAME_ID.split("-")[0]
-MAX_RUNS_DEFAULT = 5
+MAX_RUNS_DEFAULT = 6
 
 PALETTE = [
     "#000000",
@@ -328,12 +328,29 @@ def parse_goal_board(goal_board_path: Path) -> dict[str, Any]:
     observations = list(raw.get("observation_log", []) or [])
     skills = list(raw.get("skills", []) or [])
     cross = list(raw.get("cross_level_confirmed", []) or [])
+    active_cards = list(raw.get("active_cards", []) or [])
+    falsified_cards = list(raw.get("falsified_cards", []) or [])
+    m4_history = list(raw.get("m4_history", []) or [])
+    # cycle33 (v40) and earlier had no M4 module but stored per-turn natural-
+    # language reasoning in lesson_log entries with shape
+    #     {"what_happened": str, "delta": str}
+    # We expose this so the M4 panel in the viewer can fall back on
+    # lesson_log when m4_history is empty.
+    lesson_log = list(raw.get("lesson_log", []) or [])
+    skill_emission_turns = dict(raw.get("skill_emission_turns", {}) or {})
+    last_turn_summary = str(raw.get("last_turn_summary", "") or "")
     return {
         "raw": raw,
         "choices": choices,
         "observations": observations,
         "skills": skills,
         "cross_level_confirmed": cross,
+        "active_cards": active_cards,
+        "falsified_cards": falsified_cards,
+        "m4_history": m4_history,
+        "lesson_log": lesson_log,
+        "skill_emission_turns": skill_emission_turns,
+        "last_turn_summary": last_turn_summary,
     }
 
 
@@ -473,6 +490,30 @@ def build_bundle(run_dir: Path, *, active_ns: str | None) -> dict[str, Any] | No
         }
         for item in goal["skills"][-3:]
     ]
+    # v50+: full skill bank with emission turns (when available). Used by
+    # the top-level Skill Library panel and per-turn M3 emission markers.
+    emission_map = goal["skill_emission_turns"]
+    full_skills_data: list[dict[str, Any]] = []
+    for sk in goal["skills"]:
+        gp = str(sk.get("goal_phrase") or "")
+        full_skills_data.append(
+            {
+                "skill_type": str(sk.get("skill_type") or "unknown"),
+                "goal_phrase": gp,
+                "causal_mapping": str(sk.get("causal_mapping") or ""),
+                "schema_steps": list(sk.get("schema_steps") or []),
+                "applies_when": str(sk.get("applies_when") or ""),
+                "concrete_anchor": str(sk.get("concrete_anchor") or ""),
+                "novelty_diff": str(sk.get("novelty_diff") or ""),
+                "emission_turn": emission_map.get(gp),
+            }
+        )
+    # Build a skill_anchor lookup keyed by "S<index>" (1-based) so M2
+    # commitments referencing a skill anchor can be cross-linked. M3 emits
+    # skills to self.skills as an OrderedDict, so order matches skills[].
+    skill_anchor_lookup: dict[str, dict[str, Any]] = {}
+    for idx, sk in enumerate(full_skills_data, start=1):
+        skill_anchor_lookup[f"S{idx}"] = sk
     final_cross = [
         {
             "id": str(item.get("id") or ""),
@@ -481,6 +522,83 @@ def build_bundle(run_dir: Path, *, active_ns: str | None) -> dict[str, Any] | No
         }
         for item in goal["cross_level_confirmed"][-3:]
     ]
+
+    # Build a card lookup across active + falsified cards so per-turn M1
+    # reasoning can pull predicate / abstract_recipe / evidence_quote /
+    # precision_score / prior_plausibility for the chosen card_id. Active
+    # cards win over falsified entries when both exist (active is the
+    # current state of truth at end-of-run).
+    card_lookup: dict[str, dict[str, Any]] = {}
+    for fc in goal["falsified_cards"]:
+        cid = str(fc.get("id") or "")
+        if not cid:
+            continue
+        card_lookup[cid] = {
+            "predicate": str(fc.get("predicate") or ""),
+            "abstract_recipe": str(fc.get("abstract_recipe") or ""),
+            "evidence_quote": str(fc.get("evidence_quote") or ""),
+            "precision_score": fc.get("precision_score"),
+            "prior_plausibility": str(fc.get("prior_plausibility") or ""),
+            "expected_signature": fc.get("expected_signature") or {},
+            "status": "falsified",
+            "falsified_by": fc.get("falsified_by"),
+        }
+    for ac in goal["active_cards"]:
+        cid = str(ac.get("id") or "")
+        if not cid:
+            continue
+        card_lookup[cid] = {
+            "predicate": str(ac.get("predicate") or ""),
+            "abstract_recipe": str(ac.get("abstract_recipe") or ""),
+            "evidence_quote": str(ac.get("evidence_quote") or ""),
+            "precision_score": ac.get("precision_score"),
+            "prior_plausibility": str(ac.get("prior_plausibility") or ""),
+            "expected_signature": ac.get("expected_signature") or {},
+            "status": "active",
+        }
+
+    # Index m4_history by turn number for O(1) lookup; m4_history records
+    # the turn at which board.record_m4_turn was called (i.e. AFTER the
+    # turn's update completed, so turn key matches choice_index + 1).
+    m4_by_turn: dict[int, dict[str, Any]] = {}
+    for entry in goal["m4_history"]:
+        try:
+            tnum = int(entry.get("turn") or 0)
+        except (TypeError, ValueError):
+            continue
+        if tnum > 0:
+            m4_by_turn[tnum] = entry
+
+    # cycle33 (v40) fallback: when m4_history is empty, lesson_log carries
+    # per-turn natural-language reasoning ({"what_happened", "delta",
+    # "lesson", "retry_modification", "skill_seed"}).  cycle33 had 30
+    # lesson entries for ~80 non-confirm turns, so we walk each non-confirm
+    # turn and assign the next available lesson; if lessons run out we
+    # repeat the most recent so every non-confirm turn gets at least one
+    # piece of reasoning.
+    lesson_by_turn: dict[int, dict[str, Any]] = {}
+    if not m4_by_turn and goal.get("lesson_log"):
+        lessons = list(goal["lesson_log"])
+        idx = 0
+        last_lesson = lessons[0] if lessons else None
+        for ci, ch in enumerate(choices):
+            verdict = str(ch.get("verdict") or "")
+            if verdict not in ("falsify", "inconclusive"):
+                continue
+            if idx < len(lessons):
+                last_lesson = lessons[idx]
+                idx += 1
+            if last_lesson is not None:
+                lesson_by_turn[ci + 1] = last_lesson
+
+    # Reverse skill emission map: turn_index -> list of skill records that
+    # were promoted on that turn. Used to mark M3-emission turns.
+    skills_by_turn: dict[int, list[dict[str, Any]]] = {}
+    for sk in full_skills_data:
+        et = sk.get("emission_turn")
+        if not isinstance(et, int) or et <= 0:
+            continue
+        skills_by_turn.setdefault(et, []).append(sk)
 
     turns: list[dict[str, Any]] = []
     max_level = 0
@@ -557,10 +675,132 @@ def build_bundle(run_dir: Path, *, active_ns: str | None) -> dict[str, Any] | No
                 "m2_expected_step_diffs": "missing",
             },
         }
+        # ---- v50 viewer: per-module reasoning bundle ----
+        turn_no = choice_index + 1
+        chosen_card_id = str(choice.get("card_id") or "")
+        m1_card = card_lookup.get(chosen_card_id)
+        m1_reasoning: dict[str, Any] = {
+            "card_id": chosen_card_id,
+            "found": m1_card is not None,
+        }
+        if m1_card is not None:
+            m1_reasoning.update(
+                {
+                    "predicate": shorten(m1_card["predicate"], 360),
+                    "abstract_recipe": shorten(m1_card["abstract_recipe"], 320),
+                    "evidence_quote": shorten(m1_card["evidence_quote"], 320),
+                    "precision_score": m1_card["precision_score"],
+                    "prior_plausibility": m1_card["prior_plausibility"],
+                    "status": m1_card["status"],
+                }
+            )
+            fb = m1_card.get("falsified_by") if m1_card["status"] == "falsified" else None
+            if isinstance(fb, dict):
+                m1_reasoning["falsified_reason"] = shorten(
+                    str(fb.get("reason") or fb.get("verdict") or ""), 220
+                )
+                # cycle33 (v40) and later store the concrete signature that
+                # disproved the card: action that was tried, observed
+                # region/transition/changed_cells/level_delta. Surface it so
+                # the M1 panel can show *why* the card was rejected, not
+                # just a single-string reason.
+                fb_action = str(fb.get("action") or "")
+                fb_obs_region = str(fb.get("primary_region_id") or "")
+                fb_dom = fb.get("dominant_transition") or {}
+                fb_dom_text = ""
+                if isinstance(fb_dom, dict) and fb_dom:
+                    fb_dom_text = (
+                        f"{fb_dom.get('from')}->{fb_dom.get('to')}"
+                        f" (count {fb_dom.get('count')})"
+                    )
+                fb_changed = fb.get("changed_cells")
+                fb_ldelta = fb.get("level_delta")
+                if any([fb_action, fb_obs_region, fb_dom_text]):
+                    m1_reasoning["falsified_signature"] = {
+                        "action": fb_action,
+                        "observed_region": fb_obs_region,
+                        "observed_transition": fb_dom_text,
+                        "changed_cells": fb_changed,
+                        "level_delta": fb_ldelta,
+                    }
+
+        skill_anchor = str(choice.get("skill_anchor") or "none")
+        m2_reasoning: dict[str, Any] = {
+            "expected_outcome_rationale": shorten(
+                str(choice.get("expected_outcome_rationale") or ""), 320
+            ),
+            "skill_anchor": skill_anchor,
+            "expected_step_diffs": list(choice.get("expected_step_diffs") or []),
+            # v50+ persistence; older cycles will have empty string.
+            "prior_reflection": shorten(
+                str(choice.get("prior_reflection") or ""), 320
+            ),
+        }
+        anchor_skill = (
+            skill_anchor_lookup.get(skill_anchor)
+            if skill_anchor and skill_anchor != "none"
+            else None
+        )
+        if anchor_skill is not None:
+            m2_reasoning["anchor_skill"] = {
+                "skill_type": anchor_skill["skill_type"],
+                "goal_phrase": shorten(anchor_skill["goal_phrase"], 220),
+                "applies_when": shorten(anchor_skill["applies_when"], 240),
+            }
+
+        m3_reasoning: dict[str, Any] = {
+            "emitted_here": skills_by_turn.get(turn_no, []) or [],
+        }
+
+        m4_entry = m4_by_turn.get(turn_no)
+        m4_reasoning: dict[str, Any] = {
+            "has_m4": m4_entry is not None,
+            "entry": m4_entry,
+        }
+        # cycle33 fallback: synthesize an M4-shaped record from lesson_log
+        # so the viewer's M4 panel renders cycle33's natural-language
+        # reasoning instead of "missing".
+        if m4_entry is None and turn_no in lesson_by_turn:
+            lesson = lesson_by_turn[turn_no]
+            wh = shorten(str(lesson.get("what_happened") or ""), 600)
+            dl = shorten(str(lesson.get("delta") or ""), 600)
+            verdict = str(choice.get("verdict") or "")
+            m4_reasoning["entry"] = {
+                "turn": turn_no,
+                "hypothesis_outcome": f"{verdict}: {dl[:120]}" if verdict else dl,
+                "information_gain": wh,
+                "next_turn_focus": "(cycle33 — no per-turn M4; lesson_log fallback)",
+                "_source": "lesson_log",
+            }
+            m4_reasoning["has_m4"] = True
+            m4_reasoning["from_lesson_log"] = True
+        turn["reasoning"] = {
+            "m1": m1_reasoning,
+            "m2": m2_reasoning,
+            "m3": m3_reasoning,
+            "m4": m4_reasoning,
+        }
         turns.append(turn)
 
     if not turns:
         return None
+
+    # If no per-turn M4 history was persisted (cycle50 and earlier), use
+    # last_turn_summary as a final-turn fallback so the LAST card at least
+    # shows the most recent M4 evaluation. Earlier turns get the explicit
+    # "(not persisted in v48 — see Track B)" marker handled at render time.
+    if not goal["m4_history"] and goal["last_turn_summary"]:
+        last_turn = turns[-1]
+        last_turn["reasoning"]["m4"] = {
+            "has_m4": True,
+            "from_last_turn_summary": True,
+            "entry": {
+                "turn": last_turn["turn_index"],
+                "hypothesis_outcome": "",
+                "information_gain": shorten(goal["last_turn_summary"], 320),
+                "next_turn_focus": "",
+            },
+        }
 
     default_turn_index = max(
         (
@@ -605,6 +845,10 @@ def build_bundle(run_dir: Path, *, active_ns: str | None) -> dict[str, Any] | No
         },
         "final_skill_bank": final_skills,
         "final_cross_level": final_cross,
+        # v50+ viewer: full per-skill content for the Skill Library panel.
+        "skills_full": full_skills_data,
+        "last_turn_summary": shorten(goal["last_turn_summary"], 360),
+        "has_m4_history": bool(goal["m4_history"]),
         "stats": stats,
         "sources": {
             "goal_board": repo_rel(goal_board_path),
@@ -640,7 +884,25 @@ def choose_bundles(*, active_ns: str | None, max_runs: int) -> list[dict[str, An
 
     selected: list[dict[str, Any]] = []
     seen: set[str] = set()
-    if candidates:
+    # v50+ viewer: pin a fixed allowlist of historically curated bundles
+    # plus guarantee the highest-version v5x_cycle is always present.
+    pinned_prefixes = (
+        "v50_cycle50",
+        "v40_cycle33",
+        "v41c_cycle40",
+        "v39_cycle32",
+        "v38_cycle31",
+        "v41c_cycle38",
+    )
+    for prefix in pinned_prefixes:
+        match = next(
+            (item for item in candidates if item["id"].startswith(prefix)),
+            None,
+        )
+        if match is not None and match["id"] not in seen:
+            selected.append(match)
+            seen.add(match["id"])
+    if candidates and candidates[0]["id"] not in seen:
         selected.append(candidates[0])
         seen.add(candidates[0]["id"])
     if active_ns:
@@ -761,6 +1023,241 @@ def build_turn_facts(turn: dict[str, Any]) -> str:
         f'<div class="fact-card"><div class="fact-label">State</div><div class="fact-value">L{turn["levels_before"]} to L{turn["levels_after"]}</div></div>'
         f'<div class="fact-card"><div class="fact-label">Level delta</div><div class="fact-value">{level_chip}</div></div>'
         "</div>"
+    )
+
+
+def build_reasoning_section(turn: dict[str, Any], bundle: dict[str, Any]) -> str:
+    """v50+ viewer: per-turn reasoning panel showing M1/M2/M3/M4 details.
+
+    Each module gets its own colored sub-section (M1=blue, M2=teal,
+    M3=purple, M4=orange) inside a collapsible <details>.
+    """
+    reasoning = turn.get("reasoning") or {}
+    m1 = reasoning.get("m1") or {}
+    m2 = reasoning.get("m2") or {}
+    m3 = reasoning.get("m3") or {}
+    m4 = reasoning.get("m4") or {}
+
+    if m1.get("found"):
+        precision = m1.get("precision_score")
+        precision_text = (
+            f'{precision:.1f}' if isinstance(precision, (int, float)) else "n/a"
+        )
+        status_chip = badge(m1.get("status") or "", "neutral")
+        falsified_extra = (
+            f'<div class="reasoning-row"><dt>falsified reason</dt><dd>{html_text(m1.get("falsified_reason") or "")}</dd></div>'
+            if m1.get("falsified_reason")
+            else ""
+        )
+        # M1: also surface the concrete signature that disproved the card
+        fbs = m1.get("falsified_signature") or {}
+        if fbs:
+            fbs_text = (
+                f"action={fbs.get('action')} | observed region={fbs.get('observed_region')} "
+                f"transition={fbs.get('observed_transition')} "
+                f"changed_cells={fbs.get('changed_cells')} "
+                f"level_delta={fbs.get('level_delta')}"
+            )
+            falsified_extra += (
+                f'<div class="reasoning-row"><dt>falsified signature</dt><dd>{html_text(fbs_text)}</dd></div>'
+            )
+        m1_body = (
+            '<dl class="reasoning-defs">'
+            f'<div class="reasoning-row"><dt>predicate</dt><dd>{html_text(m1.get("predicate") or "")}</dd></div>'
+            f'<div class="reasoning-row"><dt>abstract recipe</dt><dd>{html_text(m1.get("abstract_recipe") or "(none)")}</dd></div>'
+            f'<div class="reasoning-row"><dt>evidence quote</dt><dd>{html_text(m1.get("evidence_quote") or "(none)")}</dd></div>'
+            f'<div class="reasoning-row"><dt>precision</dt><dd>{html_text(precision_text)}</dd></div>'
+            f'<div class="reasoning-row"><dt>plausibility</dt><dd>{html_text(m1.get("prior_plausibility") or "")} {status_chip}</dd></div>'
+            f'{falsified_extra}'
+            "</dl>"
+        )
+    else:
+        m1_body = (
+            '<p class="module-text muted">'
+            'Card '
+            f'{html_text(m1.get("card_id") or "?")}'
+            ' was not retained in active_cards or falsified_cards (likely level-rise survivor pruned earlier in this run).'
+            '</p>'
+        )
+
+    rationale = m2.get("expected_outcome_rationale") or "(not emitted)"
+    prior_ref = m2.get("prior_reflection") or ""
+    skill_anchor_text = m2.get("skill_anchor") or "none"
+    anchor_block = ""
+    anchor_skill = m2.get("anchor_skill")
+    if anchor_skill:
+        anchor_block = (
+            '<div class="anchor-skill-card">'
+            f'<div class="anchor-skill-kicker">{html_text(skill_anchor_text)} | {html_text(anchor_skill.get("skill_type") or "")}</div>'
+            f'<div class="anchor-skill-goal">{html_text(anchor_skill.get("goal_phrase") or "")}</div>'
+            f'<div class="anchor-skill-applies"><b>applies when:</b> {html_text(anchor_skill.get("applies_when") or "")}</div>'
+            "</div>"
+        )
+    step_diffs = m2.get("expected_step_diffs") or []
+    step_diff_text = (
+        f'{len(step_diffs)} predicted step(s)' if step_diffs else 'not persisted'
+    )
+    prior_ref_block = (
+        f'<div class="reasoning-row"><dt>prior reflection</dt><dd>{html_text(prior_ref)}</dd></div>'
+        if prior_ref
+        else '<div class="reasoning-row"><dt>prior reflection</dt><dd class="muted">not persisted in this cycle (pre-v50+ patch)</dd></div>'
+    )
+    m2_body = (
+        '<dl class="reasoning-defs">'
+        f'<div class="reasoning-row"><dt>expected outcome</dt><dd>{html_text(rationale)}</dd></div>'
+        f'<div class="reasoning-row"><dt>skill anchor</dt><dd>{html_text(skill_anchor_text)}</dd></div>'
+        f'<div class="reasoning-row"><dt>expected step diffs</dt><dd>{html_text(step_diff_text)}</dd></div>'
+        f'{prior_ref_block}'
+        "</dl>"
+        f'{anchor_block}'
+    )
+
+    emitted = m3.get("emitted_here") or []
+    if emitted:
+        def _format_steps(steps: Any) -> str:
+            if not isinstance(steps, list) or not steps:
+                return ""
+            items = "".join(
+                f'<li>{html_text(shorten(str(s), 200))}</li>' for s in steps[:6]
+            )
+            return f'<ol class="m3-skill-steps">{items}</ol>'
+
+        items = "".join(
+            '<article class="m3-skill-card">'
+            f'<div class="m3-skill-kicker">{html_text(item.get("skill_type") or "")} | turn {html_text(item.get("emission_turn"))}</div>'
+            f'<div class="m3-skill-goal">{html_text(item.get("goal_phrase") or "")}</div>'
+            f'<div class="m3-skill-causal"><b>causal:</b> {html_text(shorten(item.get("causal_mapping") or "", 360))}</div>'
+            f'<div class="m3-skill-applies"><b>applies when:</b> {html_text(shorten(item.get("applies_when") or "", 240))}</div>'
+            f'{_format_steps(item.get("schema_steps"))}'
+            f'<div class="m3-skill-anchor"><b>anchor:</b> {html_text(shorten(item.get("concrete_anchor") or "", 220))}</div>'
+            "</article>"
+            for item in emitted
+        )
+        m3_body = f'<div class="m3-emit-list">{items}</div>'
+    else:
+        if bundle.get("skills_full") and any(
+            isinstance(s.get("emission_turn"), int) for s in bundle["skills_full"]
+        ):
+            m3_body = (
+                '<p class="module-text muted">No new skills promoted on this turn.</p>'
+            )
+        else:
+            m3_body = (
+                '<p class="module-text muted">Skill emission turns are not persisted in this cycle '
+                '(skill_emission_turns map empty). See Track B patch.</p>'
+            )
+
+    if m4.get("has_m4"):
+        entry = m4.get("entry") or {}
+        from_summary = m4.get("from_last_turn_summary")
+        prefix = (
+            '<div class="m4-source muted">M4 not persisted per-turn in this cycle; '
+            'showing the run-final last_turn_summary as the closest signal.</div>'
+            if from_summary
+            else ""
+        )
+        m4_body = (
+            f'{prefix}'
+            '<dl class="reasoning-defs">'
+            f'<div class="reasoning-row"><dt>hypothesis outcome</dt><dd>{html_text(entry.get("hypothesis_outcome") or "(none)")}</dd></div>'
+            f'<div class="reasoning-row"><dt>information gain</dt><dd>{html_text(entry.get("information_gain") or "(none)")}</dd></div>'
+            f'<div class="reasoning-row"><dt>next-turn focus</dt><dd>{html_text(entry.get("next_turn_focus") or "(none)")}</dd></div>'
+            "</dl>"
+        )
+    else:
+        m4_body = (
+            '<p class="module-text muted">'
+            "(not persisted in v48 - see Track B). Pre-v50+ cycles only kept the most recent "
+            "last_turn_summary; this turn's M4 evaluation was overwritten by later turns."
+            '</p>'
+        )
+
+    return (
+        '<details class="reasoning-panel" open>'
+        '<summary class="reasoning-summary">Reasoning (M1 / M2 / M3 / M4)</summary>'
+        '<div class="reasoning-body">'
+        '<section class="reasoning-block reasoning-m1">'
+        '<div class="reasoning-label">M1 hypothesis</div>'
+        f'<div class="reasoning-content">{m1_body}</div>'
+        '</section>'
+        '<section class="reasoning-block reasoning-m2">'
+        '<div class="reasoning-label">M2 action commitment</div>'
+        f'<div class="reasoning-content">{m2_body}</div>'
+        '</section>'
+        '<section class="reasoning-block reasoning-m3">'
+        '<div class="reasoning-label">M3 skills emitted</div>'
+        f'<div class="reasoning-content">{m3_body}</div>'
+        '</section>'
+        '<section class="reasoning-block reasoning-m4">'
+        '<div class="reasoning-label">M4 evaluation</div>'
+        f'<div class="reasoning-content">{m4_body}</div>'
+        '</section>'
+        '</div>'
+        '</details>'
+    )
+
+
+def build_skill_library_html(payload: dict[str, Any]) -> str:
+    """v50+ viewer: top-level Skill Library panel listing all promoted
+    skills across every bundle, with bundle id + emission turn (if known).
+    """
+    rows: list[dict[str, Any]] = []
+    for bundle in payload["bundles"].values():
+        for sk in bundle.get("skills_full", []):
+            rows.append({**sk, "bundle_id": bundle["id"]})
+    # Sort: emission turn ascending (None last), then bundle id, then goal_phrase.
+    def _sort_key(item: dict[str, Any]) -> tuple:
+        et = item.get("emission_turn")
+        return (
+            0 if isinstance(et, int) else 1,
+            int(et) if isinstance(et, int) else 10**9,
+            str(item.get("bundle_id") or ""),
+            str(item.get("goal_phrase") or ""),
+        )
+
+    rows.sort(key=_sort_key)
+    if not rows:
+        return (
+            '<details class="skill-library-panel">'
+            '<summary class="skill-library-summary">Skill library (0 skills)</summary>'
+            '<div class="skill-library-body">'
+            '<p class="module-text muted">No promoted skills across the included bundles.</p>'
+            '</div>'
+            '</details>'
+        )
+    cards = []
+    for item in rows:
+        et = item.get("emission_turn")
+        et_chip = (
+            badge(f"turn {et}", "info") if isinstance(et, int) else badge("turn n/a", "neutral")
+        )
+        steps_html = (
+            "<ol class=\"library-steps\">"
+            + "".join(f"<li>{html_text(step)}</li>" for step in item.get("schema_steps") or [])
+            + "</ol>"
+            if item.get("schema_steps")
+            else ""
+        )
+        cards.append(
+            '<article class="library-card">'
+            '<div class="library-head">'
+            f'<span class="library-bundle">{html_text(item.get("bundle_id") or "")}</span>'
+            f'<span class="library-type">{html_text(item.get("skill_type") or "")}</span>'
+            f'{et_chip}'
+            '</div>'
+            f'<div class="library-goal">{html_text(item.get("goal_phrase") or "")}</div>'
+            f'<div class="library-causal"><b>causal:</b> {html_text(shorten(item.get("causal_mapping") or "", 280))}</div>'
+            f'<div class="library-applies"><b>applies when:</b> {html_text(shorten(item.get("applies_when") or "", 240))}</div>'
+            f'<div class="library-anchor"><b>anchor:</b> {html_text(shorten(item.get("concrete_anchor") or "", 240))}</div>'
+            f'{steps_html}'
+            "</article>"
+        )
+    return (
+        '<details class="skill-library-panel">'
+        f'<summary class="skill-library-summary">Skill library ({len(rows)} skills across {len(payload["bundles"])} bundles)</summary>'
+        '<div class="skill-library-body">'
+        + "".join(cards)
+        + '</div></details>'
     )
 
 
@@ -1388,6 +1885,203 @@ def render_trace_html(payload: dict[str, Any]) -> str:
       color: rgba(255,255,255,0.7);
       font-size: 14px;
     }}
+    .reasoning-card, .skill-library-card {{
+      margin-top: 18px;
+      padding: 18px 20px 22px;
+    }}
+    .reasoning-panel, .skill-library-panel {{
+      background: rgba(22,63,72,0.04);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 12px 14px;
+    }}
+    .reasoning-panel[open], .skill-library-panel[open] {{
+      background: rgba(22,63,72,0.05);
+    }}
+    .reasoning-summary, .skill-library-summary {{
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      list-style: none;
+      padding: 4px 0 4px 4px;
+    }}
+    .reasoning-summary::marker, .skill-library-summary::marker {{
+      content: "";
+    }}
+    .reasoning-summary::before, .skill-library-summary::before {{
+      content: "+ ";
+      color: var(--teal);
+      font-weight: 800;
+    }}
+    .reasoning-panel[open] > .reasoning-summary::before,
+    .skill-library-panel[open] > .skill-library-summary::before {{
+      content: "- ";
+    }}
+    .reasoning-body {{
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }}
+    .reasoning-block {{
+      border-left: 4px solid var(--teal);
+      background: rgba(255,255,255,0.78);
+      border-radius: 14px;
+      padding: 12px 14px 12px 16px;
+    }}
+    .reasoning-m1 {{ border-left-color: #3a78c4; }}
+    .reasoning-m2 {{ border-left-color: #1d6b72; }}
+    .reasoning-m3 {{ border-left-color: #8a4ea8; }}
+    .reasoning-m4 {{ border-left-color: #eb9b3f; }}
+    .reasoning-label {{
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }}
+    .reasoning-defs {{
+      margin: 0;
+      display: grid;
+      gap: 6px;
+    }}
+    .reasoning-row {{
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 12px;
+      align-items: start;
+    }}
+    .reasoning-row dt {{
+      margin: 0;
+      font-size: 11px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }}
+    .reasoning-row dd {{
+      margin: 0;
+      line-height: 1.5;
+      font-size: 13.5px;
+      color: var(--ink);
+    }}
+    .anchor-skill-card {{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(29,107,114,0.07);
+      border: 1px dashed rgba(29,107,114,0.25);
+    }}
+    .anchor-skill-kicker {{
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #1d6b72;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }}
+    .anchor-skill-goal {{
+      font-size: 13.5px;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }}
+    .anchor-skill-applies {{
+      font-size: 12.5px;
+      color: var(--ink-soft);
+    }}
+    .m3-emit-list {{
+      display: grid;
+      gap: 10px;
+    }}
+    .m3-skill-card {{
+      padding: 11px 13px;
+      border-radius: 14px;
+      background: rgba(138,78,168,0.06);
+      border: 1px solid rgba(138,78,168,0.24);
+    }}
+    .m3-skill-kicker {{
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #6a3784;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }}
+    .m3-skill-goal {{
+      font-size: 13.5px;
+      line-height: 1.45;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }}
+    .m3-skill-causal, .m3-skill-anchor {{
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.45;
+    }}
+    .m4-source {{
+      font-size: 12px;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(235,155,63,0.1);
+    }}
+    .skill-library-body {{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }}
+    .library-card {{
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.86);
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 6px;
+    }}
+    .library-head {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 800;
+    }}
+    .library-bundle {{
+      background: rgba(22,63,72,0.07);
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--ink);
+    }}
+    .library-type {{
+      background: rgba(138,78,168,0.12);
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #6a3784;
+    }}
+    .library-goal {{
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 600;
+      color: var(--ink);
+    }}
+    .library-causal, .library-applies, .library-anchor {{
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--ink-soft);
+    }}
+    .library-steps {{
+      margin: 4px 0 0 18px;
+      padding: 0;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+    }}
     @media (max-width: 1220px) {{
       .content-grid {{
         grid-template-columns: 1fr;
@@ -1458,6 +2152,16 @@ def render_trace_html(payload: dict[str, Any]) -> str:
         <div class="panel-kicker">Persisted module responses</div>
         <div class="module-stack" id="moduleStack">{build_module_stack(bundle, turn)}</div>
       </section>
+    </section>
+
+    <section class="panel-card reasoning-card" id="reasoningPanel">
+      <div class="panel-kicker">Per-turn reasoning</div>
+      <div id="reasoningBody">{build_reasoning_section(turn, bundle)}</div>
+    </section>
+
+    <section class="panel-card skill-library-card" id="skillLibraryPanel">
+      <div class="panel-kicker">Skill library (across all bundles)</div>
+      <div id="skillLibraryBody">{build_skill_library_html(payload)}</div>
     </section>
 
     <section class="legend-card">
@@ -1738,6 +2442,106 @@ def render_trace_html(payload: dict[str, Any]) -> str:
       ].join("");
     }}
 
+    function buildReasoningSection(turn, bundle) {{
+      const reasoning = turn.reasoning || {{}};
+      const m1 = reasoning.m1 || {{}};
+      const m2 = reasoning.m2 || {{}};
+      const m3 = reasoning.m3 || {{}};
+      const m4 = reasoning.m4 || {{}};
+      let m1Body;
+      if (m1.found) {{
+        const precisionText = (typeof m1.precision_score === "number")
+          ? m1.precision_score.toFixed(1) : "n/a";
+        const statusChip = badge(m1.status || "", "neutral");
+        const falsifiedExtra = m1.falsified_reason
+          ? `<div class="reasoning-row"><dt>falsified reason</dt><dd>${{escapeHtml(m1.falsified_reason || "")}}</dd></div>`
+          : "";
+        m1Body = `<dl class="reasoning-defs">
+          <div class="reasoning-row"><dt>predicate</dt><dd>${{escapeHtml(m1.predicate || "")}}</dd></div>
+          <div class="reasoning-row"><dt>abstract recipe</dt><dd>${{escapeHtml(m1.abstract_recipe || "(none)")}}</dd></div>
+          <div class="reasoning-row"><dt>evidence quote</dt><dd>${{escapeHtml(m1.evidence_quote || "(none)")}}</dd></div>
+          <div class="reasoning-row"><dt>precision</dt><dd>${{escapeHtml(precisionText)}}</dd></div>
+          <div class="reasoning-row"><dt>plausibility</dt><dd>${{escapeHtml(m1.prior_plausibility || "")}} ${{statusChip}}</dd></div>
+          ${{falsifiedExtra}}
+        </dl>`;
+      }} else {{
+        m1Body = `<p class="module-text muted">Card ${{escapeHtml(m1.card_id || "?")}} was not retained in active_cards or falsified_cards (likely level-rise survivor pruned earlier).</p>`;
+      }}
+      const rationale = m2.expected_outcome_rationale || "(not emitted)";
+      const priorRef = m2.prior_reflection || "";
+      const skillAnchorText = m2.skill_anchor || "none";
+      let anchorBlock = "";
+      if (m2.anchor_skill) {{
+        anchorBlock = `<div class="anchor-skill-card">
+          <div class="anchor-skill-kicker">${{escapeHtml(skillAnchorText)}} | ${{escapeHtml(m2.anchor_skill.skill_type || "")}}</div>
+          <div class="anchor-skill-goal">${{escapeHtml(m2.anchor_skill.goal_phrase || "")}}</div>
+          <div class="anchor-skill-applies"><b>applies when:</b> ${{escapeHtml(m2.anchor_skill.applies_when || "")}}</div>
+        </div>`;
+      }}
+      const stepDiffs = m2.expected_step_diffs || [];
+      const stepDiffText = stepDiffs.length ? `${{stepDiffs.length}} predicted step(s)` : "not persisted";
+      const priorRefBlock = priorRef
+        ? `<div class="reasoning-row"><dt>prior reflection</dt><dd>${{escapeHtml(priorRef)}}</dd></div>`
+        : `<div class="reasoning-row"><dt>prior reflection</dt><dd class="muted">not persisted in this cycle (pre-v50+ patch)</dd></div>`;
+      const m2Body = `<dl class="reasoning-defs">
+        <div class="reasoning-row"><dt>expected outcome</dt><dd>${{escapeHtml(rationale)}}</dd></div>
+        <div class="reasoning-row"><dt>skill anchor</dt><dd>${{escapeHtml(skillAnchorText)}}</dd></div>
+        <div class="reasoning-row"><dt>expected step diffs</dt><dd>${{escapeHtml(stepDiffText)}}</dd></div>
+        ${{priorRefBlock}}
+      </dl>${{anchorBlock}}`;
+      const emitted = m3.emitted_here || [];
+      let m3Body;
+      if (emitted.length) {{
+        m3Body = `<div class="m3-emit-list">${{emitted.map((item) => `
+          <article class="m3-skill-card">
+            <div class="m3-skill-kicker">${{escapeHtml(item.skill_type || "")}} | turn ${{escapeHtml(item.emission_turn)}}</div>
+            <div class="m3-skill-goal">${{escapeHtml(item.goal_phrase || "")}}</div>
+            <div class="m3-skill-causal"><b>causal:</b> ${{escapeHtml(shorten(item.causal_mapping || "", 240))}}</div>
+            <div class="m3-skill-anchor"><b>anchor:</b> ${{escapeHtml(shorten(item.concrete_anchor || "", 220))}}</div>
+          </article>`).join("")}}</div>`;
+      }} else {{
+        const bundleHasEmissions = (bundle.skills_full || []).some((s) => typeof s.emission_turn === "number");
+        m3Body = bundleHasEmissions
+          ? `<p class="module-text muted">No new skills promoted on this turn.</p>`
+          : `<p class="module-text muted">Skill emission turns are not persisted in this cycle (skill_emission_turns map empty). See Track B patch.</p>`;
+      }}
+      let m4Body;
+      if (m4.has_m4) {{
+        const entry = m4.entry || {{}};
+        const prefix = m4.from_last_turn_summary
+          ? `<div class="m4-source muted">M4 not persisted per-turn in this cycle; showing the run-final last_turn_summary as the closest signal.</div>`
+          : "";
+        m4Body = `${{prefix}}<dl class="reasoning-defs">
+          <div class="reasoning-row"><dt>hypothesis outcome</dt><dd>${{escapeHtml(entry.hypothesis_outcome || "(none)")}}</dd></div>
+          <div class="reasoning-row"><dt>information gain</dt><dd>${{escapeHtml(entry.information_gain || "(none)")}}</dd></div>
+          <div class="reasoning-row"><dt>next-turn focus</dt><dd>${{escapeHtml(entry.next_turn_focus || "(none)")}}</dd></div>
+        </dl>`;
+      }} else {{
+        m4Body = `<p class="module-text muted">(not persisted in v48 - see Track B). Pre-v50+ cycles only kept the most recent last_turn_summary; this turn's M4 evaluation was overwritten by later turns.</p>`;
+      }}
+      return `<details class="reasoning-panel" open>
+        <summary class="reasoning-summary">Reasoning (M1 / M2 / M3 / M4)</summary>
+        <div class="reasoning-body">
+          <section class="reasoning-block reasoning-m1">
+            <div class="reasoning-label">M1 hypothesis</div>
+            <div class="reasoning-content">${{m1Body}}</div>
+          </section>
+          <section class="reasoning-block reasoning-m2">
+            <div class="reasoning-label">M2 action commitment</div>
+            <div class="reasoning-content">${{m2Body}}</div>
+          </section>
+          <section class="reasoning-block reasoning-m3">
+            <div class="reasoning-label">M3 skills emitted</div>
+            <div class="reasoning-content">${{m3Body}}</div>
+          </section>
+          <section class="reasoning-block reasoning-m4">
+            <div class="reasoning-label">M4 evaluation</div>
+            <div class="reasoning-content">${{m4Body}}</div>
+          </section>
+        </div>
+      </details>`;
+    }}
+
     function stopPlayback() {{
       state.playing = false;
       if (state.timer) {{
@@ -1771,6 +2575,7 @@ def render_trace_html(payload: dict[str, Any]) -> str:
       $("gridTriptych").innerHTML = buildGridTriptych(turn);
       $("factGrid").innerHTML = buildFactGrid(turn);
       $("moduleStack").innerHTML = buildModuleStack(bundle, turn);
+      $("reasoningBody").innerHTML = buildReasoningSection(turn, bundle);
       for (const button of $("timelinePanel").querySelectorAll("button[data-turn]")) {{
         button.addEventListener("click", () => {{
           stopPlayback();
@@ -2044,6 +2849,29 @@ def write_review_note(payload: dict[str, Any]) -> None:
         "  recorded vs derived vs missing must be visually explicit",
         "  level progress and reflexion events must be scannable within 5 seconds",
         "  the first screen must show action, state change, and selected predicate together",
+        "",
+        "## v50 update",
+        "",
+        "- Added `v50_cycle50` bundle to the manifest (highest-version v5x_cycle is now"
+        " always pinned in the selection so newest cycles ship even when older bundles"
+        " score higher on level/coverage).",
+        "- Added per-turn **Reasoning panel** with collapsible M1/M2/M3/M4 sub-sections"
+        " (left-border colors blue/teal/purple/orange respectively).",
+        "  - M1 hypothesis: predicate, abstract_recipe, evidence_quote, precision_score,"
+        " prior_plausibility, retention status from `active_cards` / `falsified_cards`.",
+        "  - M2 action commitment: `expected_outcome_rationale`, `skill_anchor`,"
+        " `expected_step_diffs`, anchored skill goal_phrase + applies_when when present,"
+        " and `prior_reflection` when persisted.",
+        "  - M3 skill emission: shows new skill content for turns where"
+        " `skill_emission_turns` records a promotion.",
+        "  - M4 evaluation: per-turn `m4_history` entry when persisted, otherwise the"
+        " run-final `last_turn_summary` is used on the LAST turn and earlier turns are"
+        " marked `(not persisted in v48 - see Track B)`.",
+        "- Added top-level **Skill library** panel listing every promoted skill across"
+        " all bundles, sorted by emission turn when known.",
+        "- Track B persistence patches add `prior_reflection` to ChosenAction,"
+        " `m4_history` + `record_m4_turn` on GoalBoard, and `skill_emission_turns`"
+        " tagging in `add_skill`. Future cycles will populate the new fields directly.",
         "",
         "## Included Runs",
     ]

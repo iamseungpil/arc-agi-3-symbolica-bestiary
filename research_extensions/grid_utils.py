@@ -115,3 +115,122 @@ def encode_row(row: list[int], max_cols: int | None = None) -> str:
         else:
             chars.append(chr(97 + min(int(cell) - 10, 25)))
     return "".join(chars)
+
+
+def visible_latent_state(
+    frame: Any,
+    *,
+    bands: int = 8,
+    max_components: int = 8,
+) -> dict[str, Any]:
+    """Summarize visible latent structure from the current grid.
+
+    The goal is not to infer hidden state perfectly. It is to expose a
+    compact, reusable structure the LLM can plan over:
+    background colour, major connected components, coarse mass by bands,
+    and top/bottom strip statistics that often carry timer or HUD state.
+    """
+    grid = current_grid(frame)
+    if not grid:
+        return {
+            "background_color": 0,
+            "shape": [0, 0],
+            "foreground_colors": [],
+            "top_components": [],
+            "row_band_mass": [0.0] * bands,
+            "col_band_mass": [0.0] * bands,
+            "top_strip_counts": {},
+            "bottom_strip_counts": {},
+        }
+
+    rows = len(grid)
+    cols = len(grid[0]) if grid else 0
+    counts: dict[int, int] = {}
+    for row in grid:
+        for cell in row:
+            ic = int(cell)
+            counts[ic] = counts.get(ic, 0) + 1
+    background = max(counts, key=counts.get) if counts else 0
+
+    row_band_mass = [0.0] * bands
+    col_band_mass = [0.0] * bands
+    fg_total = 0.0
+    for y, row in enumerate(grid):
+        row_band = min(bands - 1, int(y * bands / max(rows, 1)))
+        for x, cell in enumerate(row):
+            if int(cell) == background:
+                continue
+            fg_total += 1.0
+            col_band = min(bands - 1, int(x * bands / max(cols, 1)))
+            row_band_mass[row_band] += 1.0
+            col_band_mass[col_band] += 1.0
+    if fg_total > 0:
+        row_band_mass = [round(v / fg_total, 4) for v in row_band_mass]
+        col_band_mass = [round(v / fg_total, 4) for v in col_band_mass]
+
+    visited = [[False for _ in range(cols)] for _ in range(rows)]
+    components: list[dict[str, Any]] = []
+    for y in range(rows):
+        for x in range(cols):
+            color = int(grid[y][x])
+            if color == background or visited[y][x]:
+                continue
+            queue = [(x, y)]
+            visited[y][x] = True
+            pts: list[tuple[int, int]] = []
+            while queue:
+                cx, cy = queue.pop()
+                pts.append((cx, cy))
+                for nx, ny in (
+                    (cx + 1, cy),
+                    (cx - 1, cy),
+                    (cx, cy + 1),
+                    (cx, cy - 1),
+                ):
+                    if nx < 0 or ny < 0 or nx >= cols or ny >= rows:
+                        continue
+                    if visited[ny][nx] or int(grid[ny][nx]) != color:
+                        continue
+                    visited[ny][nx] = True
+                    queue.append((nx, ny))
+            xs = [pt[0] for pt in pts]
+            ys = [pt[1] for pt in pts]
+            components.append(
+                {
+                    "color": color,
+                    "size": len(pts),
+                    "bbox": [min(xs), min(ys), max(xs) + 1, max(ys) + 1],
+                    "centroid": [
+                        round(sum(xs) / len(xs), 2),
+                        round(sum(ys) / len(ys), 2),
+                    ],
+                }
+            )
+    components.sort(key=lambda item: (-int(item["size"]), int(item["color"])))
+
+    strip_h = min(8, rows)
+    top_strip_counts: dict[str, int] = {}
+    bottom_strip_counts: dict[str, int] = {}
+    for y in range(strip_h):
+        for x in range(cols):
+            c = str(int(grid[y][x]))
+            top_strip_counts[c] = top_strip_counts.get(c, 0) + 1
+    for y in range(max(0, rows - strip_h), rows):
+        for x in range(cols):
+            c = str(int(grid[y][x]))
+            bottom_strip_counts[c] = bottom_strip_counts.get(c, 0) + 1
+
+    foreground_colors = [
+        color for color, _count in sorted(counts.items(), key=lambda kv: -kv[1])
+        if color != background
+    ]
+    return {
+        "background_color": int(background),
+        "shape": [rows, cols],
+        "foreground_colors": foreground_colors[:8],
+        "top_components": components[:max_components],
+        "row_band_mass": row_band_mass,
+        "col_band_mass": col_band_mass,
+        "top_strip_counts": top_strip_counts,
+        "bottom_strip_counts": bottom_strip_counts,
+    }

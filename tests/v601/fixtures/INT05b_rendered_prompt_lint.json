@@ -6,8 +6,8 @@
     "synthetic_state": {
       "visible_regions": [
         {
-          "id": "R12",
-          "region_id": "R12",
+          "id": "C12",
+          "region_id": "C12",
           "bbox": [
             10,
             10,
@@ -21,8 +21,8 @@
           "is_primary_marker": true
         },
         {
-          "id": "R16",
-          "region_id": "R16",
+          "id": "C16",
+          "region_id": "C16",
           "bbox": [
             36,
             46,
@@ -38,7 +38,7 @@
       ],
       "marker_neighbor_states": [
         {
-          "marker_id": "R12",
+          "marker_id": "C12",
           "compass": {
             "N": {
               "region_id": "R9",
@@ -54,7 +54,7 @@
         }
       ],
       "observation": {
-        "primary_region_id": "R16",
+        "primary_region_id": "C16",
         "level_delta": 0,
         "dominant_transition": {
           "from": 4,

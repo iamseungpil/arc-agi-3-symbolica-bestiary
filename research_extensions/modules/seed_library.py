@@ -37,7 +37,8 @@ These are *abstract*: they reference action families and the agent's own
 running notes rather than fixed action tuples. Because the routing logic
 in ``dreamcoder.py`` only fires on action-grounded controllers, each
 seeded entry includes one or two example ACTION tokens in its
-``action_spine`` so the routing layer recognizes them as reusable.
+``example_actions`` so the prompt stays action-grounded without turning
+abstract primitives into exact replay spines.
 """
 from __future__ import annotations
 
@@ -48,6 +49,7 @@ def _bfs_skill() -> dict[str, Any]:
     return {
         "name": "bfs-explore-grid",
         "kind": "abstract_primitive",
+        "category": "strategy",
         "description": (
             "Breadth-first exploration over observable states. From the current "
             "observable state, advance with the least-used available action, treat "
@@ -67,7 +69,7 @@ def _bfs_skill() -> dict[str, Any]:
             "4) After acting, register a one-line note about the observed family change "
             "so future runs can route here without re-exploring."
         ),
-        "action_spine": ["ACTION1", "ACTION2", "ACTION3", "ACTION4"],
+        "example_actions": ["ACTION1", "ACTION2", "ACTION3", "ACTION4"],
         "expected_effect": (
             "Reach a previously-unseen observation family within at most k steps where "
             "k = number of unseen actions from this state."
@@ -88,6 +90,7 @@ def _discover_button_semantics_skills() -> list[dict[str, Any]]:
             {
                 "name": f"discover-{action}-semantics",
                 "kind": "abstract_primitive",
+        "category": "strategy",
                 "description": (
                     f"Characterize what {action} does in this game. The agent does not "
                     f"know in advance whether {action} is a move, a toggle, a rotate, "
@@ -107,7 +110,7 @@ def _discover_button_semantics_skills() -> list[dict[str, Any]]:
                     f"`semantic[{action}] = <label>` so subsequent skills can compose "
                     "on top of the named meaning."
                 ),
-                "action_spine": [action],
+                "example_actions": [action],
                 "expected_effect": (
                     f"World-model notes gain a `semantic[{action}]` entry and the agent "
                     "can subsequently reference that label in higher-level skill bodies."
@@ -127,6 +130,7 @@ def _rival_discriminator_skill() -> dict[str, Any]:
     return {
         "name": "probe-rival-discriminator",
         "kind": "abstract_primitive",
+        "category": "strategy",
         "description": (
             "When two or more rival world hypotheses fit the observations equally, take "
             "the action that would falsify the stronger of the two. This is the "
@@ -145,7 +149,7 @@ def _rival_discriminator_skill() -> dict[str, Any]:
             "3) Submit that action and register the outcome as either "
             "`falsified <rival_name>` or `supported <rival_name>` in world notes."
         ),
-        "action_spine": ["ACTION1", "ACTION2", "ACTION3", "ACTION4"],
+        "example_actions": ["ACTION1", "ACTION2", "ACTION3", "ACTION4"],
         "expected_effect": (
             "Either the leading hypothesis is falsified (rare but high-value) or it is "
             "promoted to `supported`. In either case, the world-model draft becomes "
@@ -162,6 +166,7 @@ def _commit_validated_opening_wrapper() -> dict[str, Any]:
     return {
         "name": "commit-validated-opening",
         "kind": "abstract_primitive",
+        "category": "strategy",
         "description": (
             "Wrapper around the highest-scoring validated exact spine. Reuse the "
             "stored opening on a fresh run, but compare its observed effect to "
@@ -180,7 +185,7 @@ def _commit_validated_opening_wrapper() -> dict[str, Any]:
             "3) If 2 consecutive steps are weaker than expected, abort and switch to "
             "`probe-rival-discriminator`."
         ),
-        "action_spine": ["ACTION1", "ACTION2"],
+        "example_actions": ["ACTION1", "ACTION2"],
         "expected_effect": (
             "Land in the same opening checkpoint region as a prior validated run "
             "while leaving the agent free to branch the moment evidence diverges."
@@ -193,6 +198,85 @@ def _commit_validated_opening_wrapper() -> dict[str, Any]:
     }
 
 
+def initial_goals(level_tag: str) -> list[dict[str, Any]]:
+    """Return seed goal-hypothesis payloads for a fresh level.
+
+    Seeded hypotheses carry the strong prior that a winning sequence
+    must exist (ARC-AGI-3 guarantees a solvable game), plus one
+    structural mechanic claim the agent will either confirm or
+    refute quickly. The payload schema matches
+    :meth:`HypothesisStore.propose_hypothesis_strict` — each entry
+    passes trigger-grammar, helper-whitelist, and sandbox-validate.
+
+    Parameters
+    ----------
+    level_tag:
+        Free-form string (e.g. ``"L0"``) appended to each claim so
+        goals from different levels do not collide on identical
+        claim text. The current store dedupes on ``claim`` verbatim.
+
+    Returns
+    -------
+    list[dict]
+        Payloads that are directly usable as
+        ``HypothesisStore.propose_hypothesis(payload)`` arguments.
+    """
+    tag = str(level_tag or "L0").strip() or "L0"
+    return [
+        {
+            "claim": (
+                f"[{tag}] A sequence of available actions reaches state WIN "
+                f"from the current level start."
+            ),
+            "trigger": "every_step",
+            "check_code": (
+                # P17 (plan v4.2 §P17): past a turn budget without reaching
+                # WIN, disconfirm. Before that, either confirm on WIN or
+                # stay ambiguous. Avoids dict.get — uses bracket access with
+                # membership check so the sandbox AST whitelist accepts it.
+                "status = env_state['status'] if isinstance(env_state, dict) else env_state\n"
+                "status_text = str(status)\n"
+                "turn = env_state['turn'] if (isinstance(env_state, dict) and 'turn' in env_state) else 0\n"
+                "budget = env_state['goal_budget'] if (isinstance(env_state, dict) and 'goal_budget' in env_state) else 60\n"
+                "if 'WIN' in status_text:\n"
+                "    result = True\n"
+                "elif turn >= budget:\n"
+                "    result = False\n"
+                "else:\n"
+                "    result = None\n"
+            ),
+            "helpers_used": [],
+            "min_preconditions": "True",
+            "category": "strategy",
+            "source": "seed",
+            "is_goal": True,
+        },
+        {
+            "claim": (
+                f"[{tag}] At least one non-RESET action from the starting "
+                f"state produces a visible grid change."
+            ),
+            "trigger": "every_step",
+            "check_code": (
+                "if action == 'RESET':\n"
+                "    result = None\n"
+                "else:\n"
+                "    before_counts = frame_color_counts(before)\n"
+                "    after_counts = frame_color_counts(after)\n"
+                "    if before_counts != after_counts:\n"
+                "        result = True\n"
+                "    else:\n"
+                "        result = None\n"
+            ),
+            "helpers_used": ["frame_color_counts"],
+            "min_preconditions": "True",
+            "category": "mechanic",
+            "source": "seed",
+            "is_goal": False,
+        },
+    ]
+
+
 def abstract_primitive_seeds() -> list[dict[str, Any]]:
     """Return the full ordered list of seed payloads.
 
@@ -200,7 +284,7 @@ def abstract_primitive_seeds() -> list[dict[str, Any]]:
     structured skills near the top of the prompt overlay when scores tie.
     BFS comes first because it is the safest default for a fresh game,
     then per-button discovery, then the rival discriminator and the
-    opening wrapper."""
+    generic opening wrapper."""
     seeds: list[dict[str, Any]] = [_bfs_skill()]
     seeds.extend(_discover_button_semantics_skills())
     seeds.append(_rival_discriminator_skill())

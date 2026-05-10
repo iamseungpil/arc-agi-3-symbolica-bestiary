@@ -69,8 +69,8 @@ def test_render_user_prompt_with_markers():
     assert "number of markers visible: 1" in prompt
     # 2 saturated of 4
     assert "compass clicks 2/4" in prompt
-    # primary alias placed in prose
-    assert "primary region alias: region_primary" in prompt
+    # primary id placed in prose (v604.4 onwards: real id, not alias)
+    assert "primary region:" in prompt
     # Step-0 reminder appended
     assert "Step-0" in prompt or "saturation" in prompt.lower()
 
@@ -90,24 +90,24 @@ def test_render_user_prompt_without_markers():
 
 # ---------- 4. R-aliasing -----------------------------------------------------
 
-def test_render_aliases_raw_region_ids():
-    """Raw region_id values like 'R36'/'R12' are aliased to neutral labels in prose."""
+def test_render_passes_real_region_ids():
+    """v604.4 onwards: real C-prefix region_ids are passed through to LLM
+    so it can use them in `region_hint`. The C{idx} naming is spatial-rank
+    and game-agnostic; lint forbids only ft09-specific tokens (R6/R12/R16/R31)."""
     state = {
         "marker_neighbor_states": [
             {"is_primary_marker": True, "compass": {
-                "N": {"region_id": "R36", "clicks": 0},
-                "E": {"region_id": "R12", "clicks": 1},
+                "N": {"region_id": "C36", "clicks": 0},
+                "E": {"region_id": "C12", "clicks": 1},
             }},
         ],
-        "observation": {"primary_region_id": "R_primary_999"},
+        "observation": {"primary_region_id": "C_primary_999"},
     }
     prompt = render_user_prompt(state)
-    # raw region ids should NOT appear in user prose (R36 / R12 / R_primary_999)
-    # Note: marker_id 'M0' might leak through; the lint specifically forbids region ids.
-    # Only the neutral alias 'region_primary' should be present.
-    assert "region_primary" in prompt
-    # Compass slots should be aliased to slot_N
-    assert "slot_" in prompt
+    # primary id passed through
+    assert "C_primary_999" in prompt
+    # unclicked compass slot region ids passed through
+    assert "C36" in prompt
 
 
 # ---------- 5. top-K-cap (build_messages size budget) ------------------------

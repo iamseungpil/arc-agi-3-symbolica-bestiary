@@ -2,7 +2,7 @@
 
 Date: 2026-04-16
 Predecessor: `PLAN_ls20_observation_progress_falsification_2026_04_16.md` (v2.4)
-Status: v3.1 — self-critique round 1 applied
+Status: v3.1 — self-critique round 1 applied; active execution-repair work is tracked in `PLAN_ls20_alignment_repair_2026_04_19.md`
 LLM: gpt-5.3-codex via TRAPI (Azure OpenAI Responses API)
 
 ## 1. Intent

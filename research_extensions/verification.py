@@ -17,6 +17,8 @@ FORBIDDEN_PROMPT_MARKERS = (
     "multi_step",
     "restore_snapshot",
     "adapter.snapshot",
+    "ls20",
+    "plan ls20 repair",
 )
 
 
@@ -35,6 +37,8 @@ def verify_prompt_contract() -> dict[str, Any]:
         "mentions_open_skill_schema": "You choose the shape of that object and the terms " in prompt,
         "mentions_submit_action": "`submit_action` is this host's action commit tool" in prompt,
         "mentions_winning_source": "source='winning'" in prompt,
+        "mentions_visible_latent_state": "`visible_latent_state`" in prompt,
+        "mentions_goal_progress_prediction": "`goal_progress_prediction`" in prompt,
     }
     forbidden_hits = [marker for marker in FORBIDDEN_PROMPT_MARKERS if marker in prompt]
     return {
@@ -220,6 +224,30 @@ def analyze_meta_harness_state(path: Path) -> dict[str, Any]:
     }
 
 
+def analyze_run_log(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"present": False, "ok": False, "reason": "missing run log"}
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        return {"present": True, "ok": False, "reason": f"unreadable log: {exc}"}
+
+    forbidden_markers = [
+        marker
+        for marker in (
+            "Wake injected local exact-route candidate",
+            "Wake overriding chosen candidate with local exact route",
+            "local_exact_route_to_goal",
+        )
+        if marker in text
+    ]
+    return {
+        "present": True,
+        "ok": not forbidden_markers,
+        "forbidden_markers": forbidden_markers,
+    }
+
+
 def verify_run_intent(
     *,
     repo_root: Path,
@@ -282,6 +310,9 @@ def verify_run_intent(
         checks["world_model"] = analyze_world_model_state(shared_dir / "world_model.json")
     if "meta_harness" in active_modules:
         checks["meta_harness"] = analyze_meta_harness_state(shared_dir / "meta_harness.json")
+    checks["run_log"] = analyze_run_log(
+        repo_root / "experiment_logs" / "run_logs" / f"{namespace}.log"
+    )
 
     module_checks = [
         value.get("ok", True)

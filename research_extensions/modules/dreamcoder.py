@@ -13,6 +13,19 @@ Philosophy (Ellis et al. 2021 adapted):
 
 This module is fully independent: it can run alone, or alongside the
 world-model module. The two communicate only via the shared bridge.
+
+Architectural note (M5 life-cycle + restart semantics)
+------------------------------------------------------
+`watchdog_ttl_turn` is an absolute-turn stamp produced against the
+module's in-memory `_turn_counter`. The counter is NOT persisted across
+process restarts — on reload we rebuild the library from
+`dreamcoder_library.json` but `_turn_counter` starts at 0 again. To
+avoid an immortal watchdog (pre-restart TTL=185 vs. post-restart
+counter=0 would never satisfy `counter >= TTL`), any watchdog record
+loaded from disk has its TTL clamped to `current + 100` — i.e. a fresh
+100-turn grace period to prove it is still needed. Callers MUST NOT
+rely on pre-restart TTL persistence; restart is an explicit reset
+point for the watchdog clock.
 """
 from __future__ import annotations
 
@@ -21,7 +34,10 @@ import re
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..hypothesis_store import HypothesisStore
 
 from ..bridge import (
     Observation,
@@ -63,6 +79,20 @@ class SkillRecord:
     depth: int = 0  # LLM can set this; otherwise we infer from body references
     created_at: float = field(default_factory=time.time)
     last_updated_at: float = field(default_factory=time.time)
+    # --- M5: skill life-cycle (plan v4.final §1.3 + §3.3.5) ---------------
+    # `status` is orthogonal to `kind` (which lives inside `payload`). The
+    # life-cycle is: provisional → committed | retired,
+    # committed → watchdog | retired, watchdog → committed | retired,
+    # with retired as the terminal sink.
+    status: Literal["provisional", "committed", "watchdog", "retired"] = "provisional"
+    verified_hypothesis_ids: list[str] = field(default_factory=list)
+    # Absolute turn at which a watchdog TTL expires. None except for watchdog.
+    watchdog_ttl_turn: int | None = None
+    # Turn index when the record was added to the library.
+    created_turn: int = 0
+    # Turn index when `status` first became "provisional" (=== created_turn
+    # for freshly added skills; used by expire_provisional).
+    provisional_since_turn: int | None = 0
 
     @property
     def kind(self) -> str:
@@ -123,6 +153,11 @@ class DreamCoderModule:
         self.skills: list[SkillRecord] = []
         self._proposal_cursor = 0
         self._surprise_cursor = 0
+        # M5: turn counter driving skill life-cycle transitions (TTL for
+        # watchdog, grace period for provisional). `advance_turn` is called
+        # from registry/test harness; `consolidate_experience` also ticks
+        # the counter defensively so stale states cannot pile up.
+        self._turn_counter: int = 0
         self._pending_sleep_cues: list[str] = []
         self._last_sleep_at: float = 0.0
         self._informative_actions_since_proposal: int = 0
@@ -139,7 +174,34 @@ class DreamCoderModule:
         if self._state_path.exists():
             try:
                 raw = json.loads(self._state_path.read_text(encoding="utf-8"))
-                self.skills = [SkillRecord(**item) for item in raw]
+                loaded: list[SkillRecord] = []
+                for item in raw:
+                    # M5: records serialised before the life-cycle field was
+                    # added default to ``provisional`` via the dataclass —
+                    # but a persisted record is not "freshly committed". If
+                    # the raw dict is missing ``status`` entirely we treat
+                    # the record as already ``committed`` so the grace-period
+                    # expiry does not retire previously trusted skills on
+                    # first load after the upgrade.
+                    legacy = isinstance(item, dict) and "status" not in item
+                    rec = SkillRecord(**item)
+                    if legacy:
+                        rec.status = "committed"
+                        rec.provisional_since_turn = None
+                    # M5 restart safety: the persisted ``watchdog_ttl_turn``
+                    # is stamped against the previous process's
+                    # ``_turn_counter``. On reload ``_turn_counter`` restarts
+                    # at 0, so a stale TTL like 185 would never satisfy
+                    # ``counter >= TTL`` and the watchdog would become
+                    # immortal. Clamp to ``current + 100`` — a fresh grace
+                    # period for the skill to prove it is still needed.
+                    if (
+                        rec.status == "watchdog"
+                        and rec.watchdog_ttl_turn is not None
+                    ):
+                        rec.watchdog_ttl_turn = self._turn_counter + 100
+                    loaded.append(rec)
+                self.skills = loaded
                 self._synchronize_wrappers_for_spines()
             except Exception:
                 self.skills = []
@@ -150,11 +212,18 @@ class DreamCoderModule:
     # -- Hook surface -----------------------------------------------------
     def prompt_overlay(self) -> str:
         lines: list[str] = []
+        # M5 §1.3: retired (terminal) and watchdog (hibernating safety-net)
+        # skills must not be surfaced to the LLM. Build a visible view once
+        # and reuse it for every downstream section so no block can leak a
+        # hidden status through.
+        visible = [
+            r for r in self.skills if r.status not in ("retired", "watchdog")
+        ]
         # [Observed Laws] — most actionable section, surfaced FIRST so the
         # LLM sees consolidated empirical knowledge before proposing new
         # hypotheses. Each law compresses n-observation statistics into a
         # single implication string.
-        laws = [r for r in self.skills if str(r.payload.get("kind", "")) == "observed_law"]
+        laws = [r for r in visible if str(r.payload.get("kind", "")) == "observed_law"]
         if laws:
             lines.append("[Observed Laws] (consolidated from real transitions — trust these over guesses)")
             for record in sorted(
@@ -179,7 +248,7 @@ class DreamCoderModule:
             )
             lines.append("")
         lines.append("[Skill Library]")
-        primitives = [r for r in self.skills if r.is_abstract_primitive()]
+        primitives = [r for r in visible if r.is_abstract_primitive()]
         if primitives:
             lines.append(
                 "[Abstract Primitives] (always available — compose with these by "
@@ -203,12 +272,16 @@ class DreamCoderModule:
                 "instead of restating raw ACTIONk loops every run."
             )
             lines.append("[Free-form skills]")
-        if not self.skills:
+        if not visible:
             lines.append(
                 "No skills yet. If you notice a useful pattern, you may propose one."
             )
         else:
-            free_form = [r for r in self.skills if not r.is_abstract_primitive()]
+            free_form = [
+                r for r in visible
+                if not r.is_abstract_primitive()
+                and str(r.payload.get("kind", "")).strip() != "observed_law"
+            ]
             for record in sorted(
                 free_form,
                 key=lambda r: (-r.score(), -r.last_updated_at),
@@ -330,7 +403,7 @@ class DreamCoderModule:
             "subskills=['skill:exact-opening-spine']; controller='run the stored opening, then branch only if the observed effect is weaker than expected'; "
             "expected_effect='lands in the same checkpoint region more reliably than ad-hoc probing'."
         )
-        if self.skills:
+        if visible:
             lines.append(
                 "If an earlier skill lacks an action-grounded body, revise that skill now instead "
                 "of adding another abstract paraphrase."
@@ -396,10 +469,373 @@ class DreamCoderModule:
             encoding="utf-8",
         )
 
+    # -- M5: skill life-cycle (plan v4.final §1.3 + §3.3.5) ----------------
+    def advance_turn(self) -> None:
+        """Increment the internal turn counter.
+
+        Called by the registry once per real-env step so that
+        ``expire_provisional`` / ``expire_watchdog_ttl`` can measure ages in
+        turns. ``consolidate_experience`` also ticks this defensively so the
+        life-cycle still progresses even if the registry forgets to call it.
+        """
+        self._turn_counter += 1
+
+    @property
+    def turn(self) -> int:
+        """Current absolute turn counter used by the life-cycle."""
+        return self._turn_counter
+
+    def _add_skill_to_library(
+        self,
+        record: "SkillRecord",
+        *,
+        target: list["SkillRecord"] | None = None,
+    ) -> "SkillRecord":
+        """Central add path that stamps M5 life-cycle metadata on a record.
+
+        Every entry in the library flows through this helper so we can keep
+        ``status`` / ``provisional_since_turn`` / ``created_turn`` in lockstep
+        with the module's turn counter. The ``target`` argument lets
+        ``sleep_refactor`` stage a provisional record into its local ``rest``
+        list before the final reassignment to ``self.skills`` — semantics are
+        identical.
+        """
+        # Only overwrite life-cycle stamps when they are at dataclass
+        # defaults. Callers that want a non-provisional seed (e.g. existing
+        # library entries on reload) may pre-set the fields.
+        if record.status == "provisional":
+            record.created_turn = self._turn_counter
+            record.provisional_since_turn = self._turn_counter
+        if target is None:
+            self.skills.append(record)
+        else:
+            target.append(record)
+        return record
+
+    def adopt_carryover(self, skill: dict[str, Any]) -> str | None:
+        """Rev R P68: ingest a prior-run skill, preserving counters.
+
+        ``skill`` is the serialized :class:`SkillRecord` dict shape emitted
+        by :meth:`on_run_end` (``asdict(SkillRecord)``). This method skips
+        the normal proposal quotas and preserves the prior run's score
+        heuristics (``observed_support``, ``informative_hits``,
+        ``times_referenced`` …) plus ``status`` so committed/watchdog
+        skills do not silently regress to ``provisional`` on reload.
+
+        The payload is tagged ``source="carryover_from_prior_run"`` (in the
+        inner payload dict, which is free-form) so downstream telemetry
+        can distinguish carried-over skills from newly proposed ones.
+
+        Returns the skill name on success, ``None`` if the payload is
+        malformed.
+        """
+        try:
+            if not isinstance(skill, dict):
+                return None
+            payload = skill.get("payload")
+            if not isinstance(payload, dict):
+                return None
+            name = str(payload.get("name", "")).strip()
+            if not name:
+                return None
+            # Reject duplicates: later-run behaviour already de-duped in
+            # the loader, but callers may invoke this directly.
+            if self._find_by_name(name) is not None:
+                return None
+            payload = dict(payload)
+            payload["source"] = "carryover_from_prior_run"
+            # Drop internal loader scratch field if present.
+            skill = {
+                k: v for k, v in skill.items() if k != "_carryover_score"
+            }
+            skill["payload"] = payload
+            # Strip keys not on SkillRecord so stale-schema snapshots load.
+            allowed = {
+                "payload", "times_referenced", "times_linked_to_surprise",
+                "observed_support", "informative_hits", "novel_signature_hits",
+                "novel_family_hits", "branch_escape_hits",
+                "surprise_recovery_hits", "falsification_utility_hits",
+                "times_selected", "reset_intercepts",
+                "last_matched_trajectory", "revision_count", "depth",
+                "created_at", "last_updated_at", "status",
+                "verified_hypothesis_ids", "watchdog_ttl_turn",
+                "created_turn", "provisional_since_turn",
+            }
+            filtered = {k: v for k, v in skill.items() if k in allowed}
+            rec = SkillRecord(**filtered)
+            # Rev S P72: low-verify-score skepticism. A skill promoted to
+            # ``committed`` on <0.3 verify score was likely a small-sample
+            # confirmation; downgrade to ``provisional`` so the current run
+            # must earn the commitment back before it rejoins the library's
+            # core. Missing ``verify_score`` leaves status untouched.
+            try:
+                raw_vs = payload.get("verify_score")
+                if raw_vs is not None and rec.status == "committed":
+                    vs = float(raw_vs)
+                    if vs < 0.3:
+                        rec.status = "provisional"
+            except (TypeError, ValueError):
+                pass
+            # Carryover skills are already past the provisional grace
+            # period — if the prior run committed them, keep them committed.
+            # Provisional carryovers get a fresh grace window.
+            if rec.status == "provisional":
+                rec.provisional_since_turn = self._turn_counter
+                rec.created_turn = self._turn_counter
+            # Watchdog TTL restart safety: mirror the reload-time clamp
+            # so a stale TTL does not immediately expire.
+            if rec.status == "watchdog" and rec.watchdog_ttl_turn is not None:
+                rec.watchdog_ttl_turn = self._turn_counter + 100
+            self.skills.append(rec)
+            return name
+        except Exception:
+            return None
+
+    def auto_link_owner(
+        self,
+        skill: "SkillRecord",
+        store: "HypothesisStore",
+    ) -> bool:
+        """Link ``skill`` to any active/confirmed hypothesis whose trigger
+        matches ``skill``'s first executable action and promote the skill to
+        ``status="committed"``.
+
+        Returns ``True`` iff at least one link was formed. Idempotent: a
+        hypothesis id is only appended once; a skill already in a non-
+        provisional status is left alone (the link still flows in, but the
+        status stays where it is — that matches the plan's "committed OR
+        abstraction validated" branch).
+        """
+        body = self._extract_executable_body(skill.payload)
+        if not body:
+            return False
+        head = body[0]
+        linked = False
+        try:
+            candidates = list(store.all())
+        except Exception:
+            return False
+        for h in candidates:
+            if getattr(h, "status", None) not in ("active", "confirmed"):
+                continue
+            trigger_str = getattr(h.verification_method, "trigger", "") or ""
+            # Cheap trigger match: "after <ACTION>" must equal `head`.
+            parts = trigger_str.strip().split()
+            if len(parts) == 2 and parts[0] == "after" and parts[1] == head:
+                if h.id not in skill.verified_hypothesis_ids:
+                    skill.verified_hypothesis_ids.append(h.id)
+                    linked = True
+        if linked and skill.status == "provisional":
+            skill.status = "committed"
+            skill.last_updated_at = time.time()
+        return linked
+
+    def expire_provisional(self, max_age_turns: int = 30) -> list[str]:
+        """Retire any provisional skill that has spent ``max_age_turns`` or
+        more turns without gaining an owner hypothesis.
+
+        Abstract primitives and observed-law records are preserved — they
+        represent curated vocabulary / consolidated empirical knowledge and
+        are never retired solely on age. Returns the list of retired skill
+        names.
+        """
+        retired: list[str] = []
+        for record in self.skills:
+            if record.status != "provisional":
+                continue
+            kind = str(record.payload.get("kind", "")).strip()
+            if record.is_abstract_primitive() or kind == "observed_law":
+                continue
+            since = record.provisional_since_turn
+            if since is None:
+                continue
+            age = self._turn_counter - since
+            if age >= max_age_turns:
+                record.status = "retired"
+                record.last_updated_at = time.time()
+                name = str(record.payload.get("name", "")).strip()
+                retired.append(name)
+        return retired
+
+    def promote_to_watchdog(
+        self,
+        skill_id: str,
+        store: "HypothesisStore",
+    ) -> bool:
+        """Promote a committed skill to ``watchdog`` when every hypothesis it
+        verified is now ``confirmed``.
+
+        Sets ``watchdog_ttl_turn = self._turn_counter + 100`` (plan §1.3 TTL).
+        No-op if the skill is not found, not committed, or has no verified
+        hypotheses. Returns ``True`` on successful transition.
+        """
+        record = self._find_by_name(skill_id)
+        if record is None:
+            return False
+        if record.status != "committed":
+            return False
+        if not record.verified_hypothesis_ids:
+            return False
+        try:
+            for h_id in record.verified_hypothesis_ids:
+                h = store.get(h_id)
+                if h is None:
+                    return False
+                if getattr(h, "status", None) != "confirmed":
+                    return False
+        except Exception:
+            return False
+        record.status = "watchdog"
+        record.watchdog_ttl_turn = self._turn_counter + 100
+        record.last_updated_at = time.time()
+        return True
+
+    def on_hypothesis_demoted(self, h_id: str) -> list[str]:
+        """Handle a hypothesis demotion callback from the WM engine.
+
+        Any watchdog skill that verified ``h_id`` returns to ``committed`` —
+        the hypothesis is active again, so the skill is actively useful,
+        not merely a safety net. Returns the list of affected skill names.
+        """
+        returned: list[str] = []
+        for record in self.skills:
+            if record.status != "watchdog":
+                continue
+            if h_id not in record.verified_hypothesis_ids:
+                continue
+            record.status = "committed"
+            record.watchdog_ttl_turn = None
+            record.last_updated_at = time.time()
+            returned.append(str(record.payload.get("name", "")).strip())
+        return returned
+
+    def expire_watchdog_ttl(self) -> list[str]:
+        """Retire watchdog skills whose TTL has elapsed.
+
+        Returns the list of retired skill names.
+        """
+        retired: list[str] = []
+        for record in self.skills:
+            if record.status != "watchdog":
+                continue
+            ttl = record.watchdog_ttl_turn
+            if ttl is None:
+                continue
+            if self._turn_counter >= ttl:
+                record.status = "retired"
+                record.watchdog_ttl_turn = None
+                record.last_updated_at = time.time()
+                retired.append(str(record.payload.get("name", "")).strip())
+        return retired
+
+    def selectable_skills(self) -> list["SkillRecord"]:
+        """Return the subset of skills eligible for execution.
+
+        Plan v4.final §1.3: ``retired`` and ``watchdog`` skills are NOT
+        executable; ``provisional`` skills ARE (the grace period lets a
+        freshly committed skill prove itself before an owner hypothesis is
+        linked).
+        """
+        return [r for r in self.skills if r.status not in ("retired", "watchdog")]
+
     # -- Agent tool ---------------------------------------------------------
-    def record_agent_proposal(self, payload: dict[str, Any]) -> ProposedSkill:
-        """The agent's LLM response contained a propose_skill block."""
-        return self.bridge.record_proposed_skill(payload)
+    def record_agent_proposal(
+        self, payload: dict[str, Any]
+    ) -> tuple[ProposedSkill | None, dict[str, Any] | None]:
+        """The agent's LLM response contained a propose_skill block.
+
+        Plan v4.2 §P2: enforce a two-category vocabulary. Payloads must
+        carry ``category ∈ {'mechanic', 'strategy'}``. ``mechanic`` must
+        reference a confirmed hypothesis id (P6 will tighten this); for
+        now we accept ``hypothesis_id`` present or allow if DC has no
+        store attached yet.
+
+        Returns ``(record, None)`` on accept, ``(None, error)`` on
+        refusal. ``error`` uses the same reason-shape as
+        :meth:`HypothesisStore.propose_hypothesis_strict`.
+        """
+        raw = str(payload.get("category", "")).strip().lower()
+        if raw in ("mechanic", "strategy"):
+            category = raw
+        elif raw == "" and not self.params.get("strict_category", False):
+            # Legacy payloads without a category default to strategy so
+            # pre-P2 callers (tests, existing skill templates) continue
+            # to work. When ``strict_category=True`` is set in the YAML,
+            # the legacy path is closed off.
+            category = "strategy"
+        else:
+            self._register_category_refusal(raw, reason="bad_category")
+            return None, {
+                "reason": "bad_category",
+                "detail": (
+                    f"category={raw!r} not in {{'mechanic','strategy'}}"
+                ),
+            }
+        payload["category"] = category
+        record = self.bridge.record_proposed_skill(payload)
+        self._consecutive_category_refusals = 0
+        return record, None
+
+    def flag_skills_for_review(
+        self, trajectory_suffix: list[str]
+    ) -> list[str]:
+        """Plan v4.2 §R7.3: mark skills for review on a wake surprise.
+
+        A skill is affected if its action-spine ends with (or contains)
+        the ``trajectory_suffix`` — i.e., the agent took exactly those
+        actions and reality still disagreed with prediction. Affected
+        provisional / committed skills are moved to ``watchdog`` so they
+        cannot be committed again until the next abstraction pass. The
+        method is idempotent: already-watchdog skills stay put.
+        """
+        if not trajectory_suffix:
+            return []
+        flagged: list[str] = []
+        tail = [str(a).strip() for a in trajectory_suffix if a]
+        if not tail:
+            return []
+        for record in list(self.skills):
+            status = str(getattr(record, "status", "committed"))
+            if status in ("retired", "watchdog"):
+                continue
+            body = list(
+                getattr(record, "action_spine", None)
+                or record.payload.get("action_spine")
+                or record.payload.get("body")
+                or []
+            )
+            body = [str(a).strip() for a in body if a]
+            # Match if suffix is a contiguous subsequence of the body.
+            match = False
+            for i in range(len(body) - len(tail) + 1):
+                if body[i : i + len(tail)] == tail:
+                    match = True
+                    break
+            if match:
+                record.status = "watchdog"
+                name = str(record.payload.get("name", "")).strip() or record.payload.get("name")
+                flagged.append(name or f"skill#{id(record)}")
+        return flagged
+
+    def _register_category_refusal(self, category: str, *, reason: str) -> None:
+        """Track consecutive refusals so the fallback cap (§R1.3) can fire."""
+        streak = int(getattr(self, "_consecutive_category_refusals", 0)) + 1
+        self._consecutive_category_refusals = streak
+        log = self.bridge.shared_hints.setdefault(
+            "category_refusal_fallback_log", []
+        )
+        log.append({"category": category, "reason": reason, "streak": streak})
+        if len(log) > 32:
+            del log[:-32]
+        self.bridge.shared_hints["category_refusal_fallback_log"] = log
+        if streak >= 3:
+            # Cap hit; next acceptance is forced (handled by caller that
+            # chooses whether to bypass on its own). We log a counter in
+            # shared_hints so MetaHarness can pick it up.
+            self.bridge.shared_hints["category_refusal_cap_hits"] = int(
+                self.bridge.shared_hints.get("category_refusal_cap_hits", 0)
+            ) + 1
+            self._consecutive_category_refusals = 0
 
     def list_skills(self) -> list[dict[str, Any]]:
         return [
@@ -439,7 +875,16 @@ class DreamCoderModule:
         """Start executing `skill_record` as an option in the real env.
 
         Returns the SkillExecutionState already pushed onto the bridge, or
-        None if the skill has no executable body."""
+        None if the skill has no executable body.
+
+        M5 (plan v4.final §1.3): retired and watchdog skills are NOT
+        executable — watchdog skills are kept around as safety nets for
+        possible hypothesis demotions, not for active use, and retired is
+        terminal. Provisional skills remain executable (grace period).
+        """
+        status = getattr(skill_record, "status", "committed")
+        if status in ("retired", "watchdog"):
+            return None
         body = self._extract_executable_body(skill_record.payload)
         if not body:
             return None
@@ -566,7 +1011,7 @@ class DreamCoderModule:
                 continue
             record = SkillRecord(payload=payload, depth=0)
             record.observed_support = 1  # synthesised "1 simulator support"
-            self.skills.append(record)
+            self._add_skill_to_library(record)
             self._remember_skill(record, event="mcts_proposed")
             added.append(record)
         return added
@@ -652,6 +1097,16 @@ class DreamCoderModule:
         `memories.add([Observed Law] ...)` so the next turn sees it.
         """
         summary: dict[str, Any] = {"laws_added": 0, "laws_updated": 0}
+        # M5 life-cycle tick: even if world_model is absent, we still want
+        # provisional/watchdog skills to age and expire. Order: age first,
+        # then expire, then advance turn so new skills committed during
+        # this consolidation do not count this turn against themselves.
+        retired_prov = self.expire_provisional()
+        retired_ttl = self.expire_watchdog_ttl()
+        if retired_prov or retired_ttl:
+            summary["retired_provisional"] = retired_prov
+            summary["retired_watchdog_ttl"] = retired_ttl
+        self.advance_turn()
         if world_model is None:
             return summary
         transitions = getattr(world_model, "transitions", {})
@@ -725,7 +1180,7 @@ class DreamCoderModule:
             else:
                 record = SkillRecord(payload=payload, depth=1)
                 record.observed_support = int(n)
-                self.skills.append(record)
+                self._add_skill_to_library(record)
                 summary["laws_added"] += 1
             if self._memories is not None:
                 self._memories.add(
@@ -826,7 +1281,7 @@ class DreamCoderModule:
             }
             wrapper = SkillRecord(payload=wrapper_payload, depth=1)
             wrapper.observed_support = 1
-            rest.append(wrapper)
+            self._add_skill_to_library(wrapper, target=rest)
             counts["wrappers_created"] += 1
 
         # (b) demote low-reward
@@ -923,7 +1378,7 @@ class DreamCoderModule:
                 self._remember_skill(record, event="revised")
             else:
                 record = SkillRecord(payload=payload, depth=depth)
-                self.skills.append(record)
+                self._add_skill_to_library(record)
                 self._remember_skill(record, event="added")
             self._pending_sleep_cues.append(
                 f"Registered proposal '{payload.get('name', '(unnamed)')}' at depth {depth}."
@@ -952,6 +1407,13 @@ class DreamCoderModule:
         if not self.skills:
             return
         self._synchronize_wrappers_for_spines()
+        # M5 §1.3: retired is terminal. Drop retired records outright before
+        # the keep/drop decision so they do not consume a slot against
+        # ``max_skills``. Watchdog records are still eligible for keep —
+        # they are hibernating safety nets, not dead.
+        self.skills = [r for r in self.skills if r.status != "retired"]
+        if not self.skills:
+            return
         # Always keep abstract-primitive seeds AND observed-law records —
         # they form the agent's composable vocabulary + consolidated
         # empirical knowledge. Pruning would force the next run to
@@ -1014,18 +1476,31 @@ class DreamCoderModule:
             name = str(payload.get("name", "")).strip()
             if not name or name in existing_names:
                 continue
+            # Seeded abstract primitives are pre-validated curated
+            # vocabulary — they start ``committed`` (not provisional) so
+            # they bypass the 30-turn grace-period retirement and become
+            # watchdog-eligible as soon as hypothesis linkage happens.
             record = SkillRecord(
                 payload=dict(payload),
                 depth=int(payload.get("depth", 1)),
+                status="committed",
+                provisional_since_turn=None,
+                created_turn=self._turn_counter,
             )
             # Give seeds a tiny bit of synthetic support so they appear
             # in the prompt overlay on turn 1 instead of waiting for the
             # agent to reference them. Without this, the agent never sees
             # the seeded vocabulary on the very first turn and falls
             # back to ad-hoc probing.
-            record.observed_support = 1
-            self.skills.append(record)
+            record.observed_support = int(payload.get("seed_observed_support", 1))
+            record.informative_hits = int(payload.get("seed_informative_hits", 0))
+            record.times_selected = int(payload.get("seed_times_selected", 0))
+            record.times_linked_to_surprise = int(
+                payload.get("seed_times_linked_to_surprise", 0)
+            )
+            self._add_skill_to_library(record)
             existing_names.add(name)
+            self._ensure_wrapper_for_spine(record)
 
     def _remember_skill(self, record: SkillRecord, *, event: str) -> None:
         if self._memories is None:
@@ -1049,9 +1524,15 @@ class DreamCoderModule:
         self._memories.add(f"[Skill] {name}", details)
 
     def _publish_skill_context(self) -> None:
-        top = sorted(
-            self.skills,
-            key=self._display_priority_key,
+        top = self._ordered_skills_for_routing()[:3]
+        observed_laws = [
+            record
+            for record in self.skills
+            if str(record.payload.get("kind", "")).strip() == "observed_law"
+        ]
+        observed_laws = sorted(
+            observed_laws,
+            key=lambda r: (-r.observed_support, -r.last_updated_at),
         )[:3]
         self.bridge.update_hint(
             "dreamcoder",
@@ -1065,7 +1546,15 @@ class DreamCoderModule:
                         "depth": record.depth,
                     }
                     for record in top
-                ]
+                ],
+                "observed_laws": [
+                    {
+                        "name": str(record.payload.get("name", "")).strip(),
+                        "score": round(record.score(), 2),
+                        "preview": self._payload_preview(record.payload),
+                    }
+                    for record in observed_laws
+                ],
             },
         )
 
@@ -1109,7 +1598,7 @@ class DreamCoderModule:
         record.observed_support = 3
         record.informative_hits = 2
         record.times_selected = 1
-        self.skills.append(record)
+        self._add_skill_to_library(record)
         self._remember_skill(record, event="validated_spine")
         self._ensure_wrapper_for_spine(record)
 
@@ -1145,7 +1634,7 @@ class DreamCoderModule:
         wrapper.times_referenced = 1
         wrapper.observed_support = max(1, spine_record.observed_support // 2)
         wrapper.informative_hits = max(1, spine_record.informative_hits // 2)
-        self.skills.append(wrapper)
+        self._add_skill_to_library(wrapper)
         self._remember_skill(wrapper, event="auto_wrapper")
 
     @staticmethod
@@ -1186,6 +1675,59 @@ class DreamCoderModule:
                 continue
             spine.append(action)
         return spine[-6:]
+
+    def suggest_fresh_opening_action(
+        self, available_actions: list[str]
+    ) -> str | None:
+        """Return the next action of the best exact opening prior, if any.
+
+        The exploration warmup previously ignored seeded exact spines and
+        always defaulted to least-tried probing. That made fresh-run opening
+        priors inert even when the library contained a strong validated
+        opening. We only use this helper while the current post-RESET action
+        history is still a strict prefix of a known exact spine.
+        """
+        if not available_actions:
+            return None
+        prefix: list[str] = []
+        for action in reversed(list(self.bridge.recent_actions or [])):
+            token = str(action).strip()
+            if token == "RESET":
+                break
+            if token:
+                prefix.append(token)
+        prefix.reverse()
+
+        candidates: list[SkillRecord] = []
+        for record in self._ordered_skills_for_routing():
+            payload = record.payload
+            plan = self._resolve_action_plan(record)
+            if (
+                plan
+                and len(plan) >= 4
+                and (
+                    str(payload.get("kind", "")).strip() == "exact_spine"
+                    or str(payload.get("name", "")).strip().lower().startswith(
+                        "validated exact spine "
+                    )
+                )
+            ):
+                candidates.append(record)
+        if not candidates:
+            return None
+
+        for record in candidates:
+            plan = self._resolve_action_plan(record)
+            if len(prefix) >= len(plan):
+                continue
+            if prefix and plan[: len(prefix)] != prefix:
+                continue
+            next_action = plan[len(prefix)]
+            if next_action in available_actions:
+                record.times_selected += 1
+                record.last_updated_at = time.time()
+                return next_action
+        return None
 
     def _route_action(
         self, action_name: str, available_actions: list[str]
@@ -1302,8 +1844,17 @@ class DreamCoderModule:
         return None
 
     def _ordered_skills_for_routing(self) -> list[SkillRecord]:
+        # M5: skip non-executable life-cycle states. retired/watchdog must
+        # never be chosen for routing, even though watchdog records remain
+        # in the library as safety nets.
+        executable = [
+            r
+            for r in self.skills
+            if getattr(r, "status", "committed") not in ("retired", "watchdog")
+            and str(r.payload.get("kind", "")).strip() != "observed_law"
+        ]
         return sorted(
-            self.skills,
+            executable,
             key=lambda r: (
                 *self._display_priority_key(r),
                 -r.novel_family_hits,
@@ -1456,9 +2007,15 @@ class DreamCoderModule:
                 spine_preview = self._body_preview(payload.get("action_spine"))
                 if spine_preview and spine_preview not in preview:
                     return f"{preview} | action_spine: {spine_preview}"
+            if payload.get("example_actions"):
+                example_preview = self._body_preview(payload.get("example_actions"))
+                if example_preview and example_preview not in preview:
+                    return f"{preview} | example_actions: {example_preview}"
             return preview
         if payload.get("action_spine"):
             return self._body_preview(payload.get("action_spine"))
+        if payload.get("example_actions"):
+            return self._body_preview(payload.get("example_actions"))
         return self._body_preview(self._payload_action_refs(payload))
 
     @classmethod
@@ -1649,6 +2206,7 @@ class DreamCoderModule:
             "policy",
             "usage",
             "action_spine",
+            "example_actions",
             "observed_mapping",
             "controller",
             "failure_recovery",

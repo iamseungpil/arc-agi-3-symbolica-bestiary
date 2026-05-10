@@ -21,6 +21,14 @@ class ResearchConfig:
     world_model: ModuleConfig = field(default_factory=ModuleConfig)
     meta_harness: ModuleConfig = field(default_factory=ModuleConfig)
     planner: ModuleConfig = field(default_factory=ModuleConfig)
+    # B1: default ModuleConfig has ``enabled=False`` but the store is
+    # treated as enabled-by-default when this field is *absent* (legacy
+    # behaviour); the explicit flag lets callers opt out via
+    # ``hypothesis_store.enabled=False``. ``ModuleRegistry.load`` reads
+    # ``config.hypothesis_store.enabled`` with a ``True`` default.
+    hypothesis_store: ModuleConfig = field(
+        default_factory=lambda: ModuleConfig(enabled=True, params={})
+    )
     log_dir: str = "research_logs"
 
     @classmethod
@@ -37,6 +45,14 @@ class ResearchConfig:
                         params=dict(value.get("params", {})),
                     ),
                 )
+        # hypothesis_store follows the same shape but defaults to enabled=True
+        # when absent, so existing YAML configs keep the M1–M7 chain live.
+        if "hypothesis_store" in data:
+            hs_value = data["hypothesis_store"] or {}
+            cfg.hypothesis_store = ModuleConfig(
+                enabled=bool(hs_value.get("enabled", True)),
+                params=dict(hs_value.get("params", {})),
+            )
         cfg.log_dir = str(data.get("log_dir", cfg.log_dir))
         return cfg
 

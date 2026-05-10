@@ -8,7 +8,74 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any, Callable, Literal
+
+if TYPE_CHECKING:
+    from .hypothesis_store import EvalResult, HypothesisStore
+
+
+class _FrameProxy(dict):
+    """Dict-shaped view over a raw FrameData / rich Frame.
+
+    Plan v4.2 §P19: agent-authored check_code frequently assumes
+    ``before['grid']`` / ``after['signature']`` style access. The
+    original store passed the raw object, which is not subscriptable
+    — every such snippet silently failed and counted ambiguous. This
+    proxy exposes the dict keys *and* keeps the original object as
+    ``._frame`` so Symbolica helpers (which call ``.color_counts()``
+    on Frame-shaped inputs) still work.
+    """
+
+    __slots__ = ("_frame",)
+
+    @property
+    def frame(self) -> Any:
+        """Legacy attribute access path used by helper fallbacks."""
+        layers = getattr(self, "_frame", None)
+        layers = getattr(layers, "frame", None)
+        return layers
+
+
+def _wrap_frame_for_sandbox(raw: Any) -> Any:
+    """Return a FrameProxy exposing dict keys the agent expects."""
+    if raw is None:
+        return None
+    if isinstance(raw, _FrameProxy):
+        return raw
+    grid = None
+    layers = getattr(raw, "frame", None) or []
+    if layers:
+        grid = layers[-1]
+    else:
+        g = getattr(raw, "grid", None)
+        if g is not None:
+            grid = [list(row) for row in g]
+    state = getattr(raw, "state", None)
+    state_text = getattr(state, "name", None) or str(state) if state is not None else ""
+    try:
+        avail_ids = list(getattr(raw, "available_actions", []) or [])
+    except Exception:
+        avail_ids = []
+    # Signature proxy for claim snippets — cheap hash of top-left 8x8 so
+    # LLM claims like ``before['signature'] != after['signature']`` work.
+    sig = ""
+    if grid:
+        try:
+            top = tuple(tuple(int(c) & 0xFF for c in row[:8]) for row in grid[:8])
+            sig = str(hash(top) & 0xFFFFFFFF)
+        except Exception:
+            sig = ""
+    proxy = _FrameProxy(
+        {
+            "grid": grid if grid is not None else [],
+            "signature": sig,
+            "state": state_text,
+            "available_actions": avail_ids,
+            "levels_completed": int(getattr(raw, "levels_completed", 0) or 0),
+        }
+    )
+    object.__setattr__(proxy, "_frame", raw)
+    return proxy
 
 
 @dataclass(slots=True)
@@ -22,6 +89,11 @@ class Prediction:
     recommendation_rationale: str = ""
     rival_predictions: list[str] = field(default_factory=list)
     expected_signature: str | None = None
+    # Rev V (H5/H6): when the LLM's predict_effect payload omits the now-required
+    # latent_state_prediction and/or goal_progress_prediction keys, the
+    # WorldModel normalizer sets this flag True so downstream scorers can
+    # demote the prediction without crashing legacy drafts.
+    latent_missing: bool = False
 
 
 @dataclass(slots=True)
@@ -42,14 +114,21 @@ class Observation:
     free_form_note: str = ""
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class SurpriseEvent:
-    """Emitted when a prediction does not match the observation."""
+    """Emitted when a prediction does not match the observation.
+
+    ``kw_only=True`` to lock construction to keyword form; all callsites in
+    the repo already use keyword arguments (bridge, dreamcoder, tests).
+    """
     action: str
     predicted: Prediction | None
     observation: Observation
     recent_trajectory: list[str] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
+    kind: Literal["confirm", "disconfirm", "legacy"] = "legacy"
+    h_id: str | None = None
+    gain: float = 0.0
 
 
 @dataclass(slots=True)
@@ -129,6 +208,14 @@ class SharedBridge:
         # payload that DC.propose_from_mcts will turn into a SkillRecord.
         # Kept on the bridge so planner can run before DC sees it.
         self.pending_mcts_proposals: list[dict[str, Any]] = []
+        # M1: primary hypothesis index. Remains None until milestone wiring.
+        self.hypothesis_store: "HypothesisStore | None" = None
+        # W3: cumulative counters consumed by MetaHarness.RunMetrics via a
+        # start-of-run snapshot / end-of-run delta. They are advanced by
+        # ``clear_committed_skill`` (abort) and ``queue_wake_trigger``
+        # (wake) so the metric wiring is non-invasive for other modules.
+        self.total_option_aborts: int = 0
+        self.total_wake_triggers: int = 0
 
     # -- Writing ----------------------------------------------------------
     def record_prediction(self, prediction: Prediction) -> None:
@@ -206,6 +293,125 @@ class SharedBridge:
         self.proposed_skills.append(skill)
         return skill
 
+    def emit_hypothesis_surprise(
+        self,
+        eval_result: "EvalResult",
+        observation: Observation,
+        prediction: Prediction | None = None,
+    ) -> SurpriseEvent | None:
+        """Append a SurpriseEvent tagged with hypothesis id/kind/gain (M1)."""
+        if eval_result.kind not in ("confirm", "disconfirm"):
+            return None
+        event = SurpriseEvent(
+            action=observation.action,
+            predicted=prediction,
+            observation=observation,
+            recent_trajectory=list(self.recent_actions),
+            kind=eval_result.kind,
+            h_id=eval_result.h_id,
+            gain=eval_result.gain,
+        )
+        self.surprises.append(event)
+        if len(self.surprises) > 64:
+            self.surprises = self.surprises[-64:]
+        return event
+
+    # -- M2: bidirectional surprise wiring --------------------------------
+    def evaluate_hypotheses(
+        self,
+        action: str,
+        before: Any,
+        after: Any,
+        env_state: Any,
+        helpers: dict[str, Callable[[Any], Any]],
+    ) -> list[SurpriseEvent]:
+        """Run all active hypotheses and emit typed SurpriseEvents (plan v4 §3.1).
+
+        No-op if ``self.hypothesis_store is None``.
+
+        For each :class:`EvalResult`:
+          * ``confirm`` / ``disconfirm``  → emit SurpriseEvent via
+            :meth:`emit_hypothesis_surprise`, queue onto
+            ``pending_wake_triggers`` (32-cap, already enforced by
+            :meth:`queue_wake_trigger`).
+          * ``ambiguous``                 → append a short entry to
+            ``shared_hints["hypothesis_ambiguous_log"]`` with the reason, so
+            the agent (and human dashboards) can see what was indeterminate.
+          * ``skipped``                   → silently ignored (budget pressure,
+            not informative).
+
+        The returned list contains only the emitted SurpriseEvents (i.e.
+        confirm/disconfirm). Caller typically feeds the list into
+        :meth:`apply_abort_policy` to decide whether to abort an active skill.
+        """
+        if self.hypothesis_store is None:
+            return []
+        observation = self.last_observation
+        if observation is None:
+            # Fallback observation: we still want hypothesis evaluation to
+            # produce SurpriseEvents even when the legacy record_observation
+            # path didn't emit one (e.g. matched prediction). Synthesise a
+            # minimal Observation so downstream consumers get non-empty
+            # fields.
+            observation = Observation(
+                action=action,
+                before_signature="",
+                after_signature="",
+                diff_magnitude=0.0,
+            )
+        # P19 (plan v4.2 rev D): wrap raw FrameData as a dict proxy so
+        # agent-authored check_code can use natural ``before['grid']`` /
+        # ``after['signature']`` access without triggering TypeError
+        # (FrameData is a pydantic object, not subscriptable). The proxy
+        # keeps identity for ``is`` comparisons by attaching the original
+        # object under ``_frame``; existing helpers still receive the
+        # raw frame.
+        before_proxy = _wrap_frame_for_sandbox(before)
+        after_proxy = _wrap_frame_for_sandbox(after)
+        eval_results = self.hypothesis_store.evaluate_all(
+            action=action,
+            before=before_proxy,
+            after=after_proxy,
+            env_state=env_state,
+            helpers=helpers,
+        )
+        emitted: list[SurpriseEvent] = []
+        for r in eval_results:
+            if r.kind in ("confirm", "disconfirm"):
+                event = self.emit_hypothesis_surprise(r, observation)
+                if event is not None:
+                    emitted.append(event)
+                    # Respect the 32-cap on pending_wake_triggers via the
+                    # dedicated helper.
+                    self.queue_wake_trigger(event)
+            elif r.kind == "ambiguous":
+                # Surface ambiguous verdicts for observability, bounded to
+                # the most recent 16 entries.
+                log = self.shared_hints.setdefault("hypothesis_ambiguous_log", [])
+                log.append({
+                    "h_id": r.h_id,
+                    "action": action,
+                    "reason": r.reason,
+                })
+                self.shared_hints["hypothesis_ambiguous_log"] = log[-16:]
+            # "skipped" -> no-op (budget-pressure skip; not informative).
+        return emitted
+
+    @staticmethod
+    def apply_abort_policy(events: list["SurpriseEvent"]) -> str | None:
+        """Plan v4 §3.1 abort policy for the active skill.
+
+        Returns ``"disconfirm"`` if any event is a disconfirm — the caller
+        is expected to abort the currently-executing skill (by calling
+        :meth:`clear_committed_skill` with a meaningful reason).
+
+        Otherwise returns ``None`` (confirm / ambiguous / empty list → continue).
+        """
+        for event in events:
+            if event.kind == "disconfirm":
+                return "disconfirm"
+        return None
+
     # -- Reading ----------------------------------------------------------
     def recent_surprises(self, limit: int = 5) -> list[SurpriseEvent]:
         return self.surprises[-limit:]
@@ -229,10 +435,12 @@ class SharedBridge:
     def clear_committed_skill(self, reason: str | None = None) -> None:
         if self.current_skill_in_execution is not None and reason is not None:
             self.current_skill_in_execution.aborted_reason = reason
+            self.total_option_aborts += 1
         self.current_skill_in_execution = None
 
     def queue_wake_trigger(self, event: SurpriseEvent) -> None:
         self.pending_wake_triggers.append(event)
+        self.total_wake_triggers += 1
         if len(self.pending_wake_triggers) > 32:
             self.pending_wake_triggers = self.pending_wake_triggers[-32:]
 

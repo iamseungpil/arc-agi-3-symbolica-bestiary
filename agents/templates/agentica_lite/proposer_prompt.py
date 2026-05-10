@@ -53,57 +53,64 @@ def _alias_slot(idx: int) -> str:
     return f"slot_{idx}"
 
 
-def _summarize_marker(marker: dict, alias: str) -> dict:
-    """Render a marker into prompt-safe form using neutral aliases."""
+def _summarize_marker(marker: dict) -> dict:
+    """Render a marker with REAL ids (C1, C2, ...) so the LLM can use them
+    in `region_hint`. The C{idx} naming is spatial-rank-based and game-agnostic,
+    so passing it does not leak any task-specific identifier."""
     compass = marker.get("compass") or {}
     saturated = sum(1 for c in compass.values() if (c or {}).get("clicks", 0) >= 1)
     denom = len(compass)
+    unclicked = [
+        (slot or {}).get("region_id")
+        for slot in compass.values()
+        if (slot or {}).get("clicks", 0) == 0 and (slot or {}).get("region_id") is not None
+    ]
     return {
-        "alias": alias,
+        "marker_id": marker.get("marker_id"),
         "is_primary_marker": bool(marker.get("is_primary_marker", False)),
         "compass_saturation_numerator": saturated,
         "compass_denominator": denom,
-        "compass_unclicked_slot_aliases": [
-            _alias_slot(i)
-            for i, slot in enumerate(compass.values())
-            if (slot or {}).get("clicks", 0) == 0
-        ],
+        "unclicked_compass_region_ids": unclicked,
     }
 
 
 def render_user_prompt(state: dict[str, Any]) -> str:
-    """Render the user-facing prompt body from structured state.
+    """Render the user-facing prompt body using REAL region_ids.
 
-    The output is game-agnostic prose: no raw region_id values appear in the
-    prompt prose; only neutral aliases (marker_0, region_primary, slot_N).
-    The agent's structured input is passed via the structured fields below
-    (which the LLM client serializes separately into JSON content).
+    The C{idx} ids in our adapter are spatial-rank-based (deterministic by
+    top-row,left-col), so they are game-agnostic. The Proposer must respond
+    with `region_hint` matching one of the visible region_ids; using real
+    ids here lets the validator accept the response. Game-specific identifier
+    tokens still never appear because the adapter only ever generates
+    C{idx}-format ids.
     """
     markers = state.get("marker_neighbor_states") or []
     obs = state.get("observation") or {}
-    summarized: list[dict] = []
-    for i, m in enumerate(markers):
-        summarized.append(_summarize_marker(m, _alias_marker(i)))
-    primary_alias = _alias_region_primary() if obs.get("primary_region_id") else None
+    summarized = [_summarize_marker(m) for m in markers]
+    primary_id = obs.get("primary_region_id")
     dt = obs.get("dominant_transition") or {}
     dt_summary = (
         f"dominant_transition.count = {int(dt.get('count', 0))}"
         if dt else "dominant_transition = (none)"
     )
+    visible_regions = state.get("visible_regions") or []
+    visible_ids = [r.get("region_id") or r.get("id") for r in visible_regions if r]
     lines: list[str] = []
     lines.append("State summary:")
-    if primary_alias is not None:
-        lines.append(f"  primary region alias: {primary_alias}")
+    if primary_id:
+        lines.append(f"  primary region: {primary_id}")
     lines.append(f"  observation: {dt_summary}; level_delta = {int(obs.get('level_delta') or 0)}")
+    lines.append(f"  visible region ids: {visible_ids}")
     lines.append(f"  number of markers visible: {len(summarized)}")
     for ms in summarized:
         lines.append(
-            f"  {ms['alias']}: is_primary_marker={ms['is_primary_marker']}; "
+            f"  marker {ms['marker_id']}: is_primary_marker={ms['is_primary_marker']}; "
             f"compass clicks {ms['compass_saturation_numerator']}/{ms['compass_denominator']} ; "
-            f"unclicked slot aliases: {ms['compass_unclicked_slot_aliases']}"
+            f"unclicked compass region ids: {ms['unclicked_compass_region_ids']}"
         )
     lines.append("")
     lines.append("Reminder: cite the Step-0 saturation expression in your thought.")
+    lines.append("region_hint MUST be one of the visible region ids listed above.")
     return "\n".join(lines)
 
 

@@ -89,6 +89,37 @@ class RunMetrics:
     repeated_family_penalty: int = 0
     branch_escape_count: int = 0
     unresolved_rival_count: int = 0
+    # W3: hypothesis-wiring metrics. Counts are deltas across the current
+    # run; ``None`` means "signal not produced during this run".
+    hypotheses_proposed: int = 0
+    # P13/P14/P16 semantic-coverage counters (rev C).
+    goal_shaped_count: int = 0
+    budget_shaped_count: int = 0
+    spatial_shaped_count: int = 0
+    hypotheses_confirmed: int = 0
+    hypotheses_disconfirmed: int = 0
+    hypotheses_ambiguous: int = 0
+    wake_trigger_count: int = 0
+    option_abort_count: int = 0
+    mcts_vs_bfs_advantage: float | None = None
+    # Rev N P50: phase-reward telemetry (rolling last-20).
+    wake_reward_mean: float = 0.0
+    wake_reward_std: float = 0.0
+    wake_reward_last_20: list[float] = field(default_factory=list)
+    sleep_reward_mean: float = 0.0
+    sleep_reward_std: float = 0.0
+    sleep_reward_last_20: list[float] = field(default_factory=list)
+    abstraction_reward_mean: float = 0.0
+    abstraction_reward_std: float = 0.0
+    abstraction_reward_last_20: list[float] = field(default_factory=list)
+    # Rev N P50 / R25.3: per-Wake reward spread across candidates (rolling mean).
+    wake_candidate_reward_spread: float = 0.0
+    wake_candidate_reward_spread_last_20: list[float] = field(default_factory=list)
+    # Rev N P49-hardening Fix 4: count of Wake-phase hypothesis submissions
+    # that made it through the strict-store gate this run. Independent of
+    # the ``hypotheses_proposed`` store-delta metric so the two signals
+    # can be cross-checked in post-run analysis.
+    wake_synth_proposed_count: int = 0
     active_overlay_keys: list[str] = field(default_factory=list)
 
     def score(self) -> float:
@@ -305,6 +336,26 @@ class MetaHarnessModule:
     def _snapshot_bridge_cursors(self) -> None:
         self._surprise_cursor_at_start = len(self.bridge.surprises)
         self._proposal_cursor_at_start = len(self.bridge.proposed_skills)
+        # W3: snapshot cumulative counters for delta computation at run end.
+        self._option_abort_cursor = getattr(self.bridge, "total_option_aborts", 0)
+        self._wake_trigger_cursor = getattr(self.bridge, "total_wake_triggers", 0)
+        store = getattr(self.bridge, "hypothesis_store", None)
+        if store is not None:
+            self._hyp_proposed_cursor = len(store._items)
+            self._hyp_support_cursor = sum(
+                h.supporting_count for h in store._items.values()
+            )
+            self._hyp_falsify_cursor = sum(
+                h.falsifying_count for h in store._items.values()
+            )
+            self._hyp_ambiguous_cursor = sum(
+                h.ambiguous_count for h in store._items.values()
+            )
+        else:
+            self._hyp_proposed_cursor = 0
+            self._hyp_support_cursor = 0
+            self._hyp_falsify_cursor = 0
+            self._hyp_ambiguous_cursor = 0
 
     def _score_run(self) -> RunMetrics:
         non_reset = [a for a in self._run_actions if a != "RESET"]
@@ -316,6 +367,103 @@ class MetaHarnessModule:
         proposals_added = max(
             0, len(self.bridge.proposed_skills) - self._proposal_cursor_at_start
         )
+        option_aborts = max(
+            0,
+            getattr(self.bridge, "total_option_aborts", 0)
+            - getattr(self, "_option_abort_cursor", 0),
+        )
+        wake_triggers = max(
+            0,
+            getattr(self.bridge, "total_wake_triggers", 0)
+            - getattr(self, "_wake_trigger_cursor", 0),
+        )
+        store = getattr(self.bridge, "hypothesis_store", None)
+        if store is not None:
+            import re as _re
+            _SPATIAL_RE = _re.compile(
+                r"\b(row|col(umn)?|top|bottom|left|right|center|centre|corner|edge|border)\b"
+                r"|\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)",
+                _re.IGNORECASE,
+            )
+            _BUDGET_RE = _re.compile(
+                r"\b(turn|turns|budget|within|steps|horizon|actions)\b",
+                _re.IGNORECASE,
+            )
+            _GOAL_RE = _re.compile(
+                r"\b(win|winning|goal|objective|solved|terminal|victory)\b",
+                _re.IGNORECASE,
+            )
+            agent_items = [h for h in store._items.values() if h.source == "agent"]
+            goal_n = sum(
+                1 for h in agent_items
+                if h.is_goal or _GOAL_RE.search(h.claim or "")
+            )
+            budget_n = sum(1 for h in agent_items if _BUDGET_RE.search(h.claim or ""))
+            # Spatial coverage combines regex match OR helpers_used with
+            # geometric helper.
+            def _spatial(h) -> bool:
+                if _SPATIAL_RE.search(h.claim or ""):
+                    return True
+                helpers = set(getattr(h.verification_method, "helpers_used", []) or [])
+                return bool(
+                    helpers
+                    & {
+                        "frame_bounding_box",
+                        "frame_find",
+                        "frame_render",
+                        "frame_color_counts",
+                    }
+                )
+            spatial_n = sum(1 for h in agent_items if _spatial(h))
+            hyp_proposed = max(0, len(store._items) - self._hyp_proposed_cursor)
+            confirmed = max(
+                0,
+                sum(h.supporting_count for h in store._items.values())
+                - self._hyp_support_cursor,
+            )
+            disconfirmed = max(
+                0,
+                sum(h.falsifying_count for h in store._items.values())
+                - self._hyp_falsify_cursor,
+            )
+            ambiguous = max(
+                0,
+                sum(h.ambiguous_count for h in store._items.values())
+                - self._hyp_ambiguous_cursor,
+            )
+        else:
+            hyp_proposed = confirmed = disconfirmed = ambiguous = 0
+            goal_n = budget_n = spatial_n = 0
+        advantage_samples = self.bridge.read_hint("mcts_vs_bfs_advantage_samples", [])
+        if isinstance(advantage_samples, list) and advantage_samples:
+            numeric = [float(x) for x in advantage_samples if isinstance(x, (int, float))]
+            mcts_adv = sum(numeric) / len(numeric) if numeric else None
+        else:
+            mcts_adv = None
+        # Rev N P50: read the per-phase reward telemetry hint published by
+        # the agent at run_end. Missing keys default to zeros / empty lists.
+        phase_rt = self.bridge.read_hint("phase_reward_telemetry", {}) or {}
+        if not isinstance(phase_rt, dict):
+            phase_rt = {}
+
+        def _flt(k: str) -> float:
+            v = phase_rt.get(k, 0.0)
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return 0.0
+
+        def _fltlist(k: str) -> list[float]:
+            v = phase_rt.get(k, [])
+            if not isinstance(v, list):
+                return []
+            out: list[float] = []
+            for x in v:
+                try:
+                    out.append(float(x))
+                except (TypeError, ValueError):
+                    continue
+            return out
         return RunMetrics(
             total_actions=len(self._run_actions),
             non_reset_actions=len(non_reset),
@@ -330,6 +478,30 @@ class MetaHarnessModule:
             repeated_family_penalty=self._repeated_family_penalty,
             branch_escape_count=self._branch_escape_count,
             unresolved_rival_count=0,
+            hypotheses_proposed=hyp_proposed,
+            goal_shaped_count=goal_n,
+            budget_shaped_count=budget_n,
+            spatial_shaped_count=spatial_n,
+            hypotheses_confirmed=confirmed,
+            hypotheses_disconfirmed=disconfirmed,
+            hypotheses_ambiguous=ambiguous,
+            wake_trigger_count=wake_triggers,
+            option_abort_count=option_aborts,
+            mcts_vs_bfs_advantage=mcts_adv,
+            wake_reward_mean=_flt("wake_reward_mean"),
+            wake_reward_std=_flt("wake_reward_std"),
+            wake_reward_last_20=_fltlist("wake_reward_last_20"),
+            sleep_reward_mean=_flt("sleep_reward_mean"),
+            sleep_reward_std=_flt("sleep_reward_std"),
+            sleep_reward_last_20=_fltlist("sleep_reward_last_20"),
+            abstraction_reward_mean=_flt("abstraction_reward_mean"),
+            abstraction_reward_std=_flt("abstraction_reward_std"),
+            abstraction_reward_last_20=_fltlist("abstraction_reward_last_20"),
+            wake_candidate_reward_spread=_flt("wake_candidate_reward_spread"),
+            wake_candidate_reward_spread_last_20=_fltlist(
+                "wake_candidate_reward_spread_last_20"
+            ),
+            wake_synth_proposed_count=int(_flt("wake_synth_proposed_count")),
             active_overlay_keys=list(self.active_keys),
         )
 

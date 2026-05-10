@@ -1,359 +1,409 @@
-\documentclass{beamer}
+\documentclass[aspectratio=169]{beamer}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{fancyvrb}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{tikz}
-\usetikzlibrary{positioning, arrows.meta, shapes, shapes.geometric, calc, fit, backgrounds}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc}
 \usetheme{metropolis}
+\usefonttheme{professionalfonts}
 \setbeamertemplate{footline}[frame number]
-\setbeamerfont{frametitle}{size=\normalsize}
+\setbeamerfont{frametitle}{size=\large}
+\setbeamertemplate{navigation symbols}{}
 
-\title{Implementation walkthrough}
-\subtitle{WorldCoder + DreamCoder + MCTS on ARC-AGI-3 ls20}
-\date{2026-04-17}
-\author{ARC-AGI-3 Research}
+\title{ARC-AGI-3 Symbolica Research}
+\subtitle{Runtime flow and current failure mode on \texttt{ls20}}
+\author{ARC-AGI-3 Symbolica Research}
+\date{}
+
+\definecolor{BlueA}{HTML}{1F4E79}
+\definecolor{BlueB}{HTML}{DCEAF7}
+\definecolor{GreenA}{HTML}{2D7D46}
+\definecolor{GreenB}{HTML}{E3F3E7}
+\definecolor{OrangeA}{HTML}{B56A1E}
+\definecolor{OrangeB}{HTML}{F7E9D6}
+\definecolor{RedA}{HTML}{A33636}
+\definecolor{RedB}{HTML}{F7DEDE}
+\definecolor{GrayA}{HTML}{5F6368}
+\definecolor{GrayB}{HTML}{EEF1F4}
 
 \tikzset{
-  box/.style={draw, rounded corners, align=center, font=\scriptsize,
-              minimum height=0.75cm, minimum width=2.3cm},
-  decision/.style={draw, diamond, aspect=2, align=center, font=\scriptsize,
-                   minimum height=0.6cm, inner sep=1pt},
-  arr/.style={-{Latex[length=1.6mm]}, thick},
-  arrd/.style={-{Latex[length=1.6mm]}, thick, dashed},
+  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=0.95cm, inner sep=4pt},
+  soft/.style={fill=GrayB, draw=black!35},
+  wm/.style={fill=BlueB, draw=BlueA},
+  dc/.style={fill=GreenB, draw=GreenA},
+  rt/.style={fill=OrangeB, draw=OrangeA},
+  bad/.style={fill=RedB, draw=RedA},
+  arr/.style={-{Latex[length=1.7mm]}, thick},
+  note/.style={draw, rounded corners=2pt, fill=white, align=left, font=\scriptsize, inner sep=4pt}
 }
 
 \begin{document}
 
-\begin{frame}[plain]\titlepage\end{frame}
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
 
-% ============================================================
-% PART 1 — OVERVIEW (the big loop + module map)
-% ============================================================
-\section{Part 1: The big loop}
-
-\begin{frame}{The big loop}
+\begin{frame}{Why this framework was added}
 \centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=1.1cm and 1.8cm,
-  phase/.style={draw, rounded corners, align=center, font=\small,
-                minimum height=1.5cm, minimum width=3.0cm}]
-  \node[phase,fill=blue!8]  (wm) {\textbf{WorldCoder}\\\scriptsize imagines the next grid\\\scriptsize (Python \texttt{predict\_effect})};
-  \node[phase,fill=green!8,right=of wm] (dc) {\textbf{DreamCoder}\\\scriptsize plans on that sim\\\scriptsize (MCTS $\to$ skill)};
-  \node[phase,fill=black!5,right=of dc] (env){\textbf{Env}\\\scriptsize real ls20\\\scriptsize (arcengine)};
-  \node[phase,fill=orange!15,below=1.6cm of dc] (sur){surprise? predicted $\neq$ observed};
-  \draw[arr] (wm.east) -- node[above,font=\scriptsize]{simulator} (dc.west);
-  \draw[arr] (dc.east) -- node[above,font=\scriptsize]{commit action} (env.west);
-  \draw[arr] (env.south) |- node[right,font=\scriptsize,pos=0.3]{observation} (sur.east);
-  \draw[arr] (sur.west) -| node[below,font=\scriptsize,pos=0.25]{Wake: rewrite sim} (wm.south);
-  \draw[arrd] ([xshift=-0.3cm]sur.north) -- node[right,font=\scriptsize,align=left,pos=0.4]{Sleep (every 10):\\rebuild skills} ([xshift=-0.3cm]dc.south);
-\end{tikzpicture}}
-\vspace{0.3em}
+\begin{tikzpicture}[node distance=0.8cm and 0.8cm]
+  \node[box,bad,text width=0.25\textwidth] (p1) {\textbf{Problem 1}\\single-step acting forgets why a branch matters};
+  \node[box,bad,below=of p1,text width=0.25\textwidth] (p2) {\textbf{Problem 2}\\no persistent simulator means no multi-step planning};
+  \node[box,bad,below=of p2,text width=0.25\textwidth] (p3) {\textbf{Problem 3}\\useful action fragments are rediscovered, not reused};
 
-{\scriptsize
-WorldCoder imagines. DreamCoder plans on that imagination using MCTS
-and stores the winning plan as a skill. We commit to the real env.
-On surprise, \textbf{Wake} rewrites the imagination; every 10 turns
-\textbf{Sleep} rebuilds the skill library.}
+  \node[box,wm,right=1.1cm of p1,text width=0.24\textwidth] (m1) {\textbf{Wake--Sleep}\\explicit hypotheses\\+ world rewrites};
+  \node[box,wm,below=of m1,text width=0.24\textwidth] (m2) {\textbf{World Model}\\\texttt{predict\_effect}\\+ \texttt{simulate\_step}};
+  \node[box,dc,below=of m2,text width=0.24\textwidth] (m3) {\textbf{DreamCoder}\\skill library\\+ wrappers / laws};
+
+  \node[box,soft,right=1.1cm of m2,text width=0.27\textwidth] (goal) {\textbf{Target behavior}\\make a falsifiable guess\\plan on the draft model\\reuse what repeatedly helps};
+
+  \draw[arr] (p1) -- (m1);
+  \draw[arr] (p2) -- (m2);
+  \draw[arr] (p3) -- (m3);
+  \draw[arr] (m1) -- (goal);
+  \draw[arr] (m2) -- (goal);
+  \draw[arr] (m3) -- (goal);
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Module map (no MetaHarness in drawing)}
+\begin{frame}{Runtime map in code}
 \centering
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[node distance=0.7cm and 1.1cm,
-  box/.style={draw, rounded corners, align=center, font=\scriptsize,
-              minimum height=0.85cm, minimum width=2.5cm},
-  bus/.style={draw, rounded corners, align=center, font=\small,
-              minimum height=0.7cm, minimum width=10cm, fill=black!10}]
-  \node[box,fill=black!5] (agent) {agent\\\scriptsize arcgentica\_research};
-  \node[box,fill=black!5,left=1.8cm of agent]  (env)  {env\\\scriptsize arcengine ls20};
-  \node[box,fill=black!5,right=1.8cm of agent] (trapi){TRAPI\\\scriptsize gpt-5.3-codex};
-  \node[bus,below=1.1cm of agent] (br){SharedBridge};
-  \node[box,fill=blue!8,below=1.2cm of br,xshift=-3.5cm]   (wm) {WorldCoder\\\scriptsize (WorldModel)};
-  \node[box,fill=green!8,below=1.2cm of br,xshift=0cm]     (dc) {DreamCoder};
-  \node[box,below=1.2cm of br,xshift=3.5cm]  (pl) {MCTSPlanner};
-  \draw[arr]  (env)   -- node[above,font=\tiny]{FrameData} (agent);
-  \draw[arrd] (agent) -- node[below,font=\tiny]{GameAction} (env);
-  \draw[arr]  (agent) -- node[above,font=\tiny]{user\_msg}  (trapi);
-  \draw[arrd] (trapi) -- node[below,font=\tiny]{tool\_call} (agent);
-  \draw[arr] (agent.south) -- (br.north);
-  \draw[arrd] (wm.north) -- node[right,font=\tiny]{unit\_tests} (wm.north|-br.south);
-  \draw[arrd] (dc.north) -- node[right,font=\tiny]{skills}     (dc.north|-br.south);
-  \draw[arrd] (pl.north) -- node[right,font=\tiny]{proposals}  (pl.north|-br.south);
-  % inter-module (below the modules)
-  \node[coordinate,below=1.4cm of wm] (vw) {};
-  \node[coordinate,below=1.4cm of pl] (vp) {};
-  \node[coordinate,below=0.8cm of dc] (vd) {};
-  \node[coordinate,below=0.8cm of pl] (vd2) {};
-  \draw[arr,<->] (wm.south) |- node[pos=0.8,above,font=\tiny]{simulate\_step} (vw) -- (vp) -| (pl.south);
-  \draw[arr,<->] (dc.south) |- node[pos=0.8,above,font=\tiny]{commit} (vd) -- (vd2) -| (pl.south);
-\end{tikzpicture}}
+\begin{tikzpicture}[node distance=0.75cm and 0.75cm]
+  \node[box,soft,text width=0.23\textwidth] (agent) {\textbf{Host loop}\\\texttt{agent.py}\\phase control, prompt assembly, env actions};
+  \node[box,soft,right=of agent,text width=0.2\textwidth] (registry) {\textbf{Bridge + registry}\\\texttt{registry.py}\\shared state, hook fan-out};
+  \node[box,wm,right=of registry,text width=0.18\textwidth] (wake) {\textbf{Wake planner}\\\texttt{wake\_planner.py}};
+  \node[box,wm,below=of wake,text width=0.18\textwidth] (sleep) {\textbf{Sleep handler}\\\texttt{sleep\_handler.py}};
+  \node[box,dc,below=of registry,text width=0.2\textwidth] (dcmod) {\textbf{DreamCoder}\\skills / wrappers / laws};
+  \node[box,wm,left=of dcmod,text width=0.23\textwidth] (wmmod) {\textbf{WorldModel}\\transition buckets, scoring, simulator draft};
+  \node[box,rt,right=of dcmod,text width=0.18\textwidth] (meta) {\textbf{MetaHarness}\\overlay scoring + telemetry};
+  \node[box,soft,below=of dcmod,text width=0.72\textwidth] (persist) {\textbf{Persistent artifacts}\\hypothesis store, world draft, skill library, planner state, meta-harness metrics};
+
+  \draw[arr] (agent) -- (registry);
+  \draw[arr] (registry) -- (wake);
+  \draw[arr] (registry) -- (sleep);
+  \draw[arr] (registry) -- (wmmod);
+  \draw[arr] (registry) -- (dcmod);
+  \draw[arr] (registry) -- (meta);
+  \draw[arr] (wmmod) -- (persist);
+  \draw[arr] (dcmod) -- (persist);
+  \draw[arr] (meta) -- (persist);
+  \draw[arr] (sleep) -- (persist);
+\end{tikzpicture}
 \end{frame}
 
-% ============================================================
-% PART 2 — Each piece
-% ============================================================
-\section{Part 2: What each piece does}
+\begin{frame}{One online cycle}
+\centering
+\begin{tikzpicture}[node distance=0.7cm and 0.55cm]
+  \node[box,soft,text width=0.18\textwidth] (s1) {\textbf{1. Observe}\\current grid\\available actions};
+  \node[box,wm,right=of s1,text width=0.18\textwidth] (s2) {\textbf{2. Wake prompt}\\top skills\\active hypotheses\\WM source + diff patch};
+  \node[box,wm,right=of s2,text width=0.18\textwidth] (s3) {\textbf{3. Wake reply}\\3--5 candidate sequences\\+ new hypotheses};
+  \node[box,rt,right=of s3,text width=0.18\textwidth] (s4) {\textbf{4. Rollout score}\\simulate candidates\\choose one sequence};
 
-\begin{frame}[fragile]{WorldCoder — the simulator the LLM writes}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-A Python function the LLM emits in its world_update side channel:
+  \node[box,rt,below=of s4,text width=0.18\textwidth] (s5) {\textbf{5. Real env}\\record prediction\\take one action at a time};
+  \node[box,wm,left=of s5,text width=0.18\textwidth] (s6) {\textbf{6. After-action hooks}\\WM score\\meta metrics\\skill evidence};
+  \node[box,wm,left=of s6,text width=0.18\textwidth] (s7) {\textbf{7. Divergence?}\\if mismatch, enter Sleep};
+  \node[box,dc,left=of s7,text width=0.18\textwidth] (s8) {\textbf{8. Sleep / Abs}\\rewrite WM?\\refactor skills?};
 
-  def predict_effect(action, observation) -> dict:
-      # observation carries the current 64x64 grid
-      # return predicted next grid + headline fields
+  \draw[arr] (s1) -- (s2);
+  \draw[arr] (s2) -- (s3);
+  \draw[arr] (s3) -- (s4);
+  \draw[arr] (s4) -- (s5);
+  \draw[arr] (s5) -- (s6);
+  \draw[arr] (s6) -- (s7);
+  \draw[arr] (s7) -- node[below,font=\tiny]{yes} (s8);
+  \draw[arr] (s8) |- (s2);
+  \draw[arr] (s7.north) |- node[pos=0.25,right,font=\tiny]{no, continue sequence} (s4.south);
+\end{tikzpicture}
 
-The world coder is RE-SCORED every turn against a ring buffer of the
-last 200 real transitions (unit_tests). The fraction that pass is the
-transition_accuracy; when it crosses 0.4 MCTS is allowed to run on it.
-\end{Verbatim}
+\vspace{0.35em}
+\small
+This is the active path in \texttt{ArcgenticaResearch}: online control is Wake $\rightarrow$ real env $\rightarrow$ Sleep, not pure MCTS.
 \end{frame}
 
-\begin{frame}[fragile]{DreamCoder — the skill library}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-A list of skill records. Each skill is a dict:
-  { "name":            natural-language label,
-    "precondition":    free-form sentence,
-    "controller":      short action sequence (or free-form step list),
-    "expected_effect": free-form sentence,
-    "revises":         optional name of skill it supersedes }
-
-The skills enter the library from three places:
-  (i)   the agent's propose_skill side channel on a turn
-  (ii)  MCTS top path after an imagination call
-  (iii) consolidation every 10 real turns from transition stats
-
-Sleep refactor merges skills that share a 2-action prefix.
-\end{Verbatim}
+\begin{frame}{What enters one Wake call}
+\small
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.5\textwidth}
+\begin{block}{Input blocks from code}
+\begin{itemize}
+\item current grid snapshot
+\item available action names
+\item top-3 retrieved skills
+\item active hypotheses from the frontier
+\item world-model source summary
+\item last divergence summary
+\item movement summary + changed cells
+\item initial-frame summary + amplified diff patch
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{block}{Expected Wake output}
+\begin{itemize}
+\item candidate sequences
+\item rationale
+\item referenced skills
+\item 0--3 new falsifiable hypotheses
+\end{itemize}
+\end{block}
+\vspace{0.4em}
+\begin{block}{Why this matters}
+The prompt is no longer ``what action next?''\\
+It is ``what sequence and what hypothesis should the runtime test next?''
+\end{block}
+\end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{MCTS — planning on the simulator}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-class MCTSPlanner:                 # modules/planner.py
-    max_depth = 4
-    n_simulations = 64
-    ucb_c = 1.4
-    mcts_gate_threshold = 0.4      # only plan if sim is good enough
+\begin{frame}{What happens after one real action}
+\centering
+\begin{tikzpicture}[node distance=0.68cm and 0.5cm]
+  \node[box,soft,text width=0.18\textwidth] (a1) {\textbf{before}\\current frame\\current grid};
+  \node[box,wm,right=of a1,text width=0.18\textwidth] (a2) {\textbf{prediction bridge}\\create pre-action expectation};
+  \node[box,rt,right=of a2,text width=0.18\textwidth] (a3) {\textbf{env step}\\\texttt{take\_action}};
+  \node[box,soft,right=of a3,text width=0.18\textwidth] (a4) {\textbf{after}\\new frame\\new grid};
 
-    def plan(world_model, root_signature, available_actions):
-        # UCB1 tree. Each rollout calls
-        # world_model.simulate_step(sig, action, obs) -- pure Python.
-        # Leaf reward:
-        #     3 * new_family + 2 * branch_escape + 1 * accuracy
-        #   - 1 * repeat_penalty - 2 * exception
-        # Also runs a length-matched random-BFS for a baseline.
-        return {top_paths, advantage = mcts_top - bfs_mean}
-\end{Verbatim}
+  \node[box,wm,below=of a2,text width=0.18\textwidth] (a5) {\textbf{WorldModel.after}\\transition bucket\\structured score\\unit test};
+  \node[box,dc,below=of a3,text width=0.18\textwidth] (a6) {\textbf{DreamCoder.after}\\trace evidence\\law / wrapper support};
+  \node[box,rt,below=of a4,text width=0.18\textwidth] (a7) {\textbf{MetaHarness.after}\\new family\\branch escape\\repeat penalty};
+  \node[box,bad,left=of a5,text width=0.18\textwidth] (a8) {\textbf{Divergence monitor}\\predicted grid vs real grid};
+
+  \draw[arr] (a1) -- (a2);
+  \draw[arr] (a2) -- (a3);
+  \draw[arr] (a3) -- (a4);
+  \draw[arr] (a4) |- (a5);
+  \draw[arr] (a4) -- (a7);
+  \draw[arr] (a4) |- (a6);
+  \draw[arr] (a4) |- (a8);
+\end{tikzpicture}
+
+\vspace{0.35em}
+\small
+The key fix in recent code was to restore this prediction bridge on the Rev M path so WorldModel can score expected vs actual transitions.
 \end{frame}
 
-\begin{frame}[fragile]{Wake — on surprise, rewrite the simulator}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-Trigger:      predicted != observed transition (any turn)
-Recorded in:  bridge.pending_wake_triggers + memories [Wake]
-
-Next turn's user_msg includes:
-  [Wake] action=ACTIONk expected='...' observed diff=NN
-         Per-action aggregate: A1 mean_diff=48.5 ...
-         Current best draft excerpt: <first 600 chars of predict_effect>
-         Goal: minimal edit — tighten one branch so the surprise above
-         would not fire again.
-
-The LLM responds with a new predict_effect in world_update, which
-becomes the new best WorldDraft. Unit tests are re-scored.
-\end{Verbatim}
+\begin{frame}{Online action selection vs optional MCTS}
+\small
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.49\textwidth}
+\begin{block}{Actual online path now}
+\begin{itemize}
+\item Wake LLM sees grid, hypotheses, skills, diff patch
+\item it proposes 3--5 action sequences
+\item runtime scores those sequences on the current world draft
+\item chosen sequence is executed in the real environment
+\end{itemize}
+\end{block}
+\begin{block}{Meaning}
+The online agent is already much closer to\\
+\textbf{``LLM writes the test sequence''}\\
+than to classical tree search.
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Optional MCTS side path}
+\begin{itemize}
+\item lives in \texttt{planner.py}
+\item opens only when WM gate says the draft is good enough
+\item still uses UCB1 selection on the search tree
+\item may commit top paths into DreamCoder as skills
+\end{itemize}
+\end{block}
+\begin{block}{Meaning}
+UCB is still present, but it is \textbf{not} the main online control path.
+\end{block}
+\end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{Sleep — every 10 turns, rebuild skills}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-Trigger 1: periodic, every 10 non-reset actions
-  -> dc.consolidate_experience(wm)
-     Aggregate per-action stats from transitions into
-     "observed law" skill records (mean_diff, new_family rate, etc.)
+\begin{frame}{Module inputs and outputs}
+\centering
+\begin{tikzpicture}[node distance=0.8cm and 0.8cm]
+  \node[box,wm,text width=0.27\textwidth] (wm) {\textbf{WorldModel}\\input: real transitions, predictions, surprises\\output: simulator draft, scores, prompt overlay};
+  \node[box,dc,right=of wm,text width=0.27\textwidth] (dc) {\textbf{DreamCoder}\\input: traces, MCTS proposals, observed laws\\output: reusable skills, wrappers, library state};
+  \node[box,rt,right=of dc,text width=0.27\textwidth] (mh) {\textbf{MetaHarness}\\input: run metrics, repeated-family signals\\output: overlay guidance, harness scores};
 
-Trigger 2: right after MCTS commits a skill
-  -> dc.sleep_refactor()
-     - N-gram prefix merge: two skills sharing a length-2 prefix are
-       wrapped into a new parent skill
-     - demote skills whose simulator reward is negative
-     - prune down to max_skills
-\end{Verbatim}
+  \node[box,soft,below=of wm,text width=0.27\textwidth] (h1) {\textbf{shared bridge}\\current prediction\\seen families\\recent actions};
+  \node[box,soft,below=of dc,text width=0.27\textwidth] (h2) {\textbf{hypothesis store}\\claims, triggers, Beta counts};
+  \node[box,soft,below=of mh,text width=0.27\textwidth] (h3) {\textbf{persistent files}\\JSON state under shared namespace};
+
+  \draw[arr] (wm) -- (h1);
+  \draw[arr] (dc) -- (h1);
+  \draw[arr] (mh) -- (h1);
+  \draw[arr] (wm) -- (h2);
+  \draw[arr] (dc) -- (h2);
+  \draw[arr] (wm) -- (h3);
+  \draw[arr] (dc) -- (h3);
+\draw[arr] (mh) -- (h3);
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{What the agent can actively call (tools)}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-history(n, wins_only)                   # last n (action, frame) pairs
-memories_summaries / get / add / query  # persistent notes
+\begin{frame}{Real hypothesis examples from the store}
+\scriptsize
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.5\textwidth}
+\begin{block}{Example A: generic seed goal}
+\textbf{Claim}\\
+\texttt{[L0] A sequence of available actions reaches WIN.}
 
-frame_render(keys, gap, y_ticks, x_ticks, crop)
-frame_diff(margin)       frame_change_summary(margin)
-frame_render_diff(keys, gap, crop='auto')
-frame_find(values)       frame_bounding_box(values)
-frame_color_counts()
+\vspace{0.25em}
+\textbf{Status}\\
+active, \texttt{is\_goal=True}, support 0 / falsify 7
 
-submit_action(action_name,
-              predict?, world_update?,
-              propose_skill?, env_note?)
-\end{Verbatim}
+\vspace{0.25em}
+\textbf{Why it is weak}\\
+It states the existence of a solve path, but says nothing about the actual mechanic.
+\end{block}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{block}{Example B: currently common mechanic hypothesis}
+\textbf{Claim}\\
+\texttt{ACTION4 typically causes a large grid change.}
+
+\vspace{0.25em}
+\textbf{Trigger}\\
+\texttt{after ACTION4}
+
+\vspace{0.25em}
+\textbf{Meaning}\\
+This is measurable and often confirmed, but it explains redraw magnitude, not goal progress.
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.35em}
+\begin{block}{Short check-code example}
+\texttt{if action != 'ACTION4': result = None}\\
+\texttt{else: compare before/after summaries and treat large remap as support}
+\end{block}
 \end{frame}
 
-\begin{frame}[fragile]{What goes into the user\_msg}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-Game ls20 | Level i/j | budget k/160
-State NOT_FINISHED | Available {A1..A4, RESET}
-Last action: ACTION3 -> grid changed 52 cells
+\begin{frame}[fragile]{Real world-model code example}
+\scriptsize
+\begin{block}{Persisted \texttt{predict\_effect(action, observation)} draft}
+\begin{verbatim}
+def predict_effect(action, observation):
+    sig = observation.get('signature', '')
+    if sig == 'd2072020114e7cd91549' and action in ('ACTION2','ACTION4'):
+        return {
+            'expect_change': True,
+            'expected_diff_band': 'large',
+            'expected_next_grid': new_grid,
+            'latent_state_prediction': {...},
+            'goal_progress_prediction': {'progress_delta': 0.0}
+        }
+\end{verbatim}
+\end{block}
 
-grid (64x64):         Symbolica Frame.render
- 0  1  2 ... 63
-0: <hex digit per cell, rows separated by \n>
-...
-63: ...
-
-[Wake]               last surprise detail
-[Observed-Law ...]   per-action mean_diff_cells from last 32 transitions
-[Skill Library]      top-8 skills by score with body preview
-[Persistent Notes]   category-balanced slice of memories
-\end{Verbatim}
+\begin{block}{What this tells us}
+The draft is executable code and already emits latent / goal fields, but the logic is still mostly empirical replay of observed deltas, not a compact mechanic simulator.
+\end{block}
 \end{frame}
 
-% ============================================================
-% PART 3 — real skills the agent wrote
-% ============================================================
-\section{Part 3: Real skills the agent wrote}
-
-\begin{frame}[fragile]{"Blocked-ACTION2 escape via ACTION4"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     Last ACTION2 produced 0 changed cells (local stall)
-controller       ACTION4 -> ACTION1
-expected_effect  Leave blocked ACTION2 state and resume large
-                 deterministic transition family.
-\end{Verbatim}
+\begin{frame}{What changed from the naive world model}
+\small
+\centering
+\begin{tabular}{p{0.29\textwidth} p{0.29\textwidth} p{0.29\textwidth}}
+\toprule
+\textbf{Before} & \textbf{Now} & \textbf{Meaning} \\
+\midrule
+one-step diff note & executable \texttt{predict\_effect} draft & planning can call the simulator \\
+free-form notes & explicit hypotheses + strict checks & failure becomes local and patchable \\
+action retry loops & Wake sequence + Sleep rewrite + abstraction & search has memory across turns \\
+\bottomrule
+\end{tabular}
 \end{frame}
 
-\begin{frame}[fragile]{"blocked-repeat-breaker"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     Most recent directional action had zero cell changes
-                 (local blocked boundary).
-controller       Do not repeat the same blocked action immediately.
-                 Use a different directional key (priority:
-                 least-used among ACTION1-4).
-expected_effect  Restores nonzero transitions after local no-op
-                 collisions and reduces repeated-family loops.
-\end{Verbatim}
+\begin{frame}{Plan lens: intent, hypothesis, verification}
+\scriptsize
+\centering
+\begin{tabular}{p{0.23\textwidth} p{0.34\textwidth} p{0.34\textwidth}}
+\toprule
+\textbf{Intent} & \textbf{Hypothesis} & \textbf{Verification} \\
+\midrule
+Wake should test mechanics & richer input yields better sequences + falsifiable hypotheses & candidate count, accepted hypotheses, startup stability \\
+World model should learn mechanics & prediction bridge + Sleep rewrite activate empirical scoring & structured prediction count, scored matches, world update \\
+Planner should matter only after WM quality rises & optional MCTS stays gated until the draft is useful & gate reason, planner state, MCTS vs BFS advantage \\
+Skill library should store reusable control & DreamCoder promotes wrappers / controllers, not raw fragments & skill mix: wrappers, laws, executable leaves \\
+\bottomrule
+\end{tabular}
 \end{frame}
 
-\begin{frame}[fragile]{"Least-used directional discriminator"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     stuck in same family with all arrows,
-                 no interact action available
-controller       ACTION3 -> ACTION4 -> ACTION1 -> ACTION2
-expected_effect  at least one step may deviate from the dominant loop;
-                 if not, confirms hard lock under movement-only controls
-\end{Verbatim}
+\begin{frame}{Recent bounded results mapped to the plan}
+\small
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{block}{What the recent runs did prove}
+\begin{itemize}
+\item Wake startup is stable again
+\item rate limiting is not the current blocker
+\item goal/state hypotheses survive early turns more often
+\item helper / whitelist mismatches were reduced
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{What the recent runs did \emph{not} prove}
+\begin{itemize}
+\item no level-up yet on \texttt{ls20}
+\item no stable world-model rewrite handoff
+\item no reliable structured-prediction scoring loop yet
+\item MCTS is still mostly irrelevant online because the gate stays cold
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.4em}
+\begin{block}{Direct readout from reports}
+\begin{itemize}
+\item \texttt{state\_goal} runs: \texttt{startup\_stalled=false}, \texttt{rate\_limited=false}
+\item \texttt{worldscore\_20260420a}: \texttt{startup\_stalled=true}
+\end{itemize}
+\end{block}
 \end{frame}
 
-\begin{frame}[fragile]{"right-stall vertical discriminator"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     last move into a horizontal boundary gives 0-cell change
-                 or repeated same-family remaps
-controller       ACTION1 -> ACTION2 -> ACTION3
-expected_effect  tests whether vertical-first breaks the remap loop;
-                 if not, performs lateral contrast to falsify
-                 boundary-lock hypothesis
-\end{Verbatim}
+\begin{frame}{Why \texttt{ls20} still stalls}
+\centering
+\begin{tikzpicture}[node distance=0.72cm and 0.55cm]
+  \node[box,wm,text width=0.2\textwidth] (b1) {Wake finds a decent opening};
+  \node[box,bad,right=of b1,text width=0.2\textwidth] (b2) {structured prediction / WM scoring still too weak in many runs};
+  \node[box,bad,right=of b2,text width=0.2\textwidth] (b3) {Sleep often keeps\\\texttt{world\_update=False}};
+  \node[box,bad,right=of b3,text width=0.2\textwidth] (b4) {planner never gets a reliable mechanic model};
+  \draw[arr] (b1) -- (b2);
+  \draw[arr] (b2) -- (b3);
+  \draw[arr] (b3) -- (b4);
+\end{tikzpicture}
+
+\vspace{0.45em}
+\small
+So the runtime is better instrumented than before, but still fails at the exact handoff that should turn a good opening into a useful simulator rewrite.
 \end{frame}
 
-\begin{frame}[fragile]{"Triad-advance with ACTION2 as state-check"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     Directional-only loop is repeating and no branch
-                 escape yet.
-controller       ACTION1 -> ACTION3 -> ACTION4 -> ACTION2
-expected_effect  Maintains progress while explicitly testing the mixed
-                 ACTION2 branch without collapsing it into triad
-                 behavior.
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{"GAME\_OVER directional inertness short-circuit"}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-precondition     state == GAME_OVER and available actions are
-                 only ACTION1-4
-controller       ACTION1 -> ACTION2 -> ACTION3 -> ACTION4
-expected_effect  No grid change for any directional action; use as a
-                 stop-condition to avoid wasting remaining actions.
-\end{Verbatim}
-\end{frame}
-
-% ============================================================
-% PART 4 — a real turn
-% ============================================================
-\section{Part 4: A real turn}
-
-\begin{frame}[fragile]{Real turn IN (user\_msg, v3.15.1, turn 16)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-Game ls20 | Level 0/6 | budget 15/160
-State NOT_FINISHED | Available {ACTION1..ACTION4, RESET}
-Last action: ACTION3 -> grid changed 52 cells
-
-grid (64x64):        <Symbolica Frame.render with y_ticks+x_ticks>
-
-[Wake]
-  action=ACTION3 expected 'EXPECT_CHANGE: small local shift'
-  observed diff=52  new_family=False  branch_escape=False
-
-[Observed-Law Details]
-  ACTION1: n=4  mean_diff=48.5  new_family=0%  branch_escape=0%
-  ACTION3: n=4  mean_diff=49.0  new_family=0%  branch_escape=0%
-
-[Skill Library]  (top-8 by score)
-  Blocked-repeat-breaker (score 2.5) ...
-  Least-used directional discriminator (score 2.1) ...
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Real turn OUT (submit\_action, turn 16)}
-\begin{Verbatim}[fontsize=\tiny,frame=single]
-action_name = "ACTION1"
-
-world_update = """
-  # focus: terminal-inert short-circuit precedence
-  def predict_effect(action, observation):
-      g = observation['grid']
-      state = observation.get('state')
-      avail = set(observation.get('available_actions', []))
-      if state == 'GAME_OVER' and avail.issubset({A1..A4}):
-          return {expect_change: False, expected_next_grid: g}
-      return {expect_change: False, expected_next_grid: g}  # fallback
-"""
-
-propose_skill = {
-  "name": "Least-used direction loop-break probe",
-  "precondition": "recent 2-3 arrows all caused similar ~52-cell remaps",
-  "controller": ["least-used arrow", "then probe for block"],
-  "expected_effect": "reveal directional escape, else confirm loop-lock"
-}
-
-env_note = "grid not changing family; try non-directional action next"
-\end{Verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Artifact paths}
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-code:
-  research_extensions/
-    modules/  world_model.py  dreamcoder.py  planner.py
-              seed_library.py
-    bridge.py  registry.py
-  agents/templates/arcgentica_research/agent.py
-
-per-run (research_logs/shared/ls20-cb3b57cc/<ns>/):
-  world_model.json  dreamcoder_library.json
-  planner_state.json  memories.json
-
-viz & talk:
-  presentation/bestiary.html
-  presentation/trace_viewer_<ns>.html
-  reports/v3_mcts_wake_sleep_talk.pdf
-\end{Verbatim}
+\begin{frame}{Next repair loop}
+\small
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.33\textwidth}
+\begin{block}{Intent}
+Make the online loop produce a scored world-model correction, not just better telemetry.
+\end{block}
+\end{column}
+\begin{column}{0.33\textwidth}
+\begin{block}{Hypothesis}
+If Rev M records structured predictions on the live action path, Sleep will finally receive evidence strong enough to rewrite the simulator draft.
+\end{block}
+\end{column}
+\begin{column}{0.33\textwidth}
+\begin{block}{Verification}
+\begin{itemize}
+\item \texttt{startup\_stalled = false}
+\item structured prediction count moves above zero
+\item empirical match/mismatch counts move
+\item \texttt{world\_update = true} appears at least once
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
 \end{frame}
 
 \end{document}

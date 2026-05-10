@@ -5,17 +5,17 @@ dreamcoder:
     body_preview_items: 32
     sleep_trajectory_window: 16
     surprise_match_suffix: 4
-    proposal_cadence: 2
-    routing_min_score: 0.75
+    proposal_cadence: 1
+    routing_min_score: 0.55
     routing_max_skills: 6
     reset_intercept_enabled: true
-    route_on_stall_enabled: false
+    route_on_stall_enabled: true
     stall_window: 4
-    # Seed the library with abstract primitives (BFS, per-button
-    # semantic discovery, rival-discriminator, opening wrapper) so the
-    # agent inherits a composable vocabulary instead of re-deriving it
-    # every run. See modules/seed_library.py.
-    seed_abstract_primitives: true
+    # Disable generic abstract-primitive seeding in the main all-on
+    # profile so live runs grow the library from grounded evidence and
+    # level-advancing traces rather than being dominated by scaffold
+    # skills like bfs-explore-grid / discover-ACTIONk-semantics.
+    seed_abstract_primitives: false
 
 world_model:
   enabled: true
@@ -23,9 +23,10 @@ world_model:
     signature_mode: "observable_generalized"
     generalize_max_distance: 0.18
     generalize_max_neighbors: 6
+    action_prior_enabled: false
     override_min_count: 1.5
     override_min_value: 1.0
-    exploration_override_enabled: true
+    exploration_override_enabled: false
     exploration_stall_window: 4
     # CWM (Lehrach et al. 2025) unit-test refinement. Each observed
     # transition is stored; the best simulator draft is replayed
@@ -44,7 +45,7 @@ planner:
   # Plan v3 §4 P0: MCTS on world_model.simulate_step (imagination only).
   enabled: true
   params:
-    max_depth: 4
+    max_depth: 6
     n_simulations: 64
     ucb_c: 1.4
     time_budget_seconds: 10.0
@@ -65,7 +66,10 @@ planner:
     # Exploration-first gate: MCTS stays off until enough real-env data.
     # v3.13: longer exploration (30 vs 15) so WM has more data before
     # MCTS starts relying on predict_effect. Also min_families=2 ok for ls20.
-    exploration_min_transitions: 30
-    exploration_min_families: 2
+    # rev F tune-down: 30 turn warmup starved LLM of any call when
+    # ls20 only exposes one family. Use 12 transitions + 1 family so
+    # the agent sees a populated per_action_delta_hints on first LLM turn.
+    exploration_min_transitions: 6
+    exploration_min_families: 1
 
 log_dir: "research_logs"
