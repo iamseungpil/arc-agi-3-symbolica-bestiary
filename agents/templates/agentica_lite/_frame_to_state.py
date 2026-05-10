@@ -100,12 +100,18 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
     # and merge them into one multicolor super-component.
     raw_comps = _merge_multicolor_clusters(raw_comps)
 
-    # Stable order: by top-left corner.
+    # v606.2 codex r14-r15: Sig-B greedy cross-turn matching.
+    # Each component is matched to the prev-turn region with the highest IoU
+    # among compatible candidates (same color OR both multicolor). Reuse the
+    # prior region_id on match; allocate a fresh C{idx} from a monotonic
+    # per-episode counter on miss. This preserves region identity across
+    # split/merge/move events so the LLM can accumulate per-region evidence.
     raw_comps.sort(key=lambda c: (c["bbox"][1], c["bbox"][0]))
     out: list[dict[str, Any]] = []
-    for idx, c in enumerate(raw_comps, start=1):
-        # WHITELIST: clause 3 (generic deterministic ID, no game-specific names).
-        rid = f"C{idx}"
+    state = _STABILITY_STATE
+    used_prev: set[str] = set()
+    for c in raw_comps:
+        rid = _match_or_assign(c, state, used_prev)
         out.append(
             {
                 "id": rid,
@@ -119,7 +125,66 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
                 "y_band": _y_band(c["bbox"]),
             }
         )
+    # Update memory of prev_signatures for next turn
+    state["prev"] = [
+        {
+            "id": r["region_id"],
+            "bbox": r["bbox"],
+            "color": r["color"],
+            "is_multicolor": r["is_multicolor"],
+            "size": r["size"],
+        }
+        for r in out
+    ]
     return out
+
+
+# Module-level state: stays alive for the duration of one episode (process).
+# adapter.reset_episode() must call _reset_stability_state() to clear.
+_STABILITY_STATE: dict[str, Any] = {"prev": [], "next_idx": 1}
+
+
+def _reset_stability_state() -> None:
+    """Called at start of each new episode (per adapter contract)."""
+    _STABILITY_STATE["prev"] = []
+    _STABILITY_STATE["next_idx"] = 1
+
+
+def _iou_xyxy(a: list[int], b: list[int]) -> float:
+    ax0, ay0, ax1, ay1 = a[0], a[1], a[2], a[3]
+    bx0, by0, bx1, by1 = b[0], b[1], b[2], b[3]
+    ix0, iy0 = max(ax0, bx0), max(ay0, by0)
+    ix1, iy1 = min(ax1, bx1), min(ay1, by1)
+    if ix1 < ix0 or iy1 < iy0:
+        return 0.0
+    inter = (ix1 - ix0 + 1) * (iy1 - iy0 + 1)
+    area_a = (ax1 - ax0 + 1) * (ay1 - ay0 + 1)
+    area_b = (bx1 - bx0 + 1) * (by1 - by0 + 1)
+    union = area_a + area_b - inter
+    return inter / max(union, 1)
+
+
+def _compatible(c: dict, p: dict) -> bool:
+    # Same color OR both multicolor — informative match constraint.
+    if c.get("is_multicolor") and p.get("is_multicolor"):
+        return True
+    return c.get("color") == p.get("color")
+
+
+def _match_or_assign(c: dict, state: dict, used: set[str]) -> str:
+    best_id, best_iou = None, 0.0
+    for p in state["prev"]:
+        if p["id"] in used or not _compatible(c, p):
+            continue
+        s = _iou_xyxy(c["bbox"], p["bbox"])
+        if s > best_iou:
+            best_iou, best_id = s, p["id"]
+    if best_id is not None and best_iou >= 0.3:
+        used.add(best_id)
+        return best_id
+    rid = f"C{state['next_idx']}"
+    state["next_idx"] += 1
+    return rid
 
 
 def _merge_multicolor_clusters(raw_comps: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -171,6 +171,9 @@ class ArcgenticaLiteAgent(Agent):
             self._action_history = []
             self._prev_levels_completed = 0
             self._prev_grid = None
+            # v606.2: also reset cross-turn region-id stability state
+            from ._frame_to_state import _reset_stability_state
+            _reset_stability_state()
 
     def _run_lite_turn_sync(self, state: dict[str, Any]) -> Action | None:
         """Contract C4: dispatch async run_turn into a sync call safely.
