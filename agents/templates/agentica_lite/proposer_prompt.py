@@ -33,10 +33,13 @@ SYSTEM_PROMPT = (
     "      'P_R12_crop_sector_alignment' or another region-anchored chid).\n"
     "      This branch is not required to be saturation-based, but it must still\n"
     "      produce valid JSON and remain compatible with the same schema.\n"
-    "TIER-B chids that match a visible marker region id in the current prompt\n"
-    "(for example P_R28_*, P_R31_*, P_R8_*, or P_R11_*) are PREFERRED over\n"
-    "generic saturation_progress when both are plausible. If you can justify a\n"
-    "visible-marker-anchored TIER-B option, choose it instead of P_saturation_progress.\n\n"
+    "TIER-B chids that are anchored to one of the visible marker ids in\n"
+    "marker_neighbor_states (form: P_<visible_marker_id>_<rationale_tag>, e.g.\n"
+    "P_<marker_id>_crop_sector_alignment) are PREFERRED over generic\n"
+    "saturation_progress when both are plausible. Substitute <visible_marker_id>\n"
+    "with an actual marker_id from the user prompt's marker list. If you can\n"
+    "justify a visible-marker-anchored TIER-B option, choose it instead of\n"
+    "P_saturation_progress.\n\n"
     "Output schema (strict JSON):\n"
     "  candidate_predicate_id: str (e.g., 'P_saturation_progress',\n"
     "    'P_R12_crop_sector_alignment')\n"
@@ -131,6 +134,16 @@ def render_user_prompt(state: dict[str, Any]) -> str:
             f"unclicked compass region ids: {ms['unclicked_compass_region_ids']}"
         )
     lines.append("")
+    # codex r11: inject dynamic TIER-B examples using the actual marker ids
+    # the LLM sees this turn (prefix-agnostic; works for C-prefix, R-prefix, etc.)
+    marker_ids_visible = [ms["marker_id"] for ms in summarized if ms.get("marker_id")]
+    if marker_ids_visible:
+        tier_b_examples = ", ".join(
+            f"'P_{mid}_crop_sector_alignment'" for mid in marker_ids_visible[:3]
+        )
+        lines.append(
+            f"TIER-B candidate examples for this turn (using your visible markers): {tier_b_examples}"
+        )
     lines.append("Reminder: cite the Step-0 saturation expression in your thought.")
     lines.append("region_hint MUST be one of the visible region ids listed above.")
     return "\n".join(lines)
