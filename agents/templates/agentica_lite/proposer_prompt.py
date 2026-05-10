@@ -134,6 +134,25 @@ def render_user_prompt(state: dict[str, Any]) -> str:
             f"unclicked compass region ids: {ms['unclicked_compass_region_ids']}"
         )
     lines.append("")
+    # codex r20 option B: rolling click+observation history for multi-step
+    # planning (cycle237 evidence: L+1 requires 7-step sequence, not 1 click)
+    rtd = state.get("recent_turn_diffs") or []
+    if rtd:
+        lines.append("Recent click history (most recent last; use this to plan multi-step):")
+        for d in rtd:
+            t = d.get("turn_offset")
+            coord = d.get("coord")
+            r = d.get("click_region_id")
+            ld = d.get("level_delta", 0)
+            adv = d.get("did_advance", False)
+            dt_d = d.get("dominant_transition") or {}
+            from_c, to_c, cnt = dt_d.get("from"), dt_d.get("to"), dt_d.get("count", 0)
+            trans_s = f"trans={from_c}→{to_c}(n={cnt})" if from_c is not None else "trans=none"
+            advance_s = " [LEVEL_ADVANCED!]" if adv else ""
+            lines.append(
+                f"  T{t}: click={coord} region={r} {trans_s} level_delta={ld}{advance_s}"
+            )
+        lines.append("")
     # codex r11: inject dynamic TIER-B examples using the actual marker ids
     # the LLM sees this turn (prefix-agnostic; works for C-prefix, R-prefix, etc.)
     marker_ids_visible = [ms["marker_id"] for ms in summarized if ms.get("marker_id")]
@@ -146,6 +165,10 @@ def render_user_prompt(state: dict[str, Any]) -> str:
         )
     lines.append("Reminder: cite the Step-0 saturation expression in your thought.")
     lines.append("region_hint MUST be one of the visible region ids listed above.")
+    lines.append(
+        "If recent click history shows no level_delta advance after several "
+        "tries on the same region, try a DIFFERENT region this turn."
+    )
     return "\n".join(lines)
 
 

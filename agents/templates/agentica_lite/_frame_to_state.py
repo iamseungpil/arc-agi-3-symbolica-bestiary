@@ -99,6 +99,12 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
     # components. Detect tight clusters of 4+ small components in a 3x3 bbox
     # and merge them into one multicolor super-component.
     raw_comps = _merge_multicolor_clusters(raw_comps)
+    # v606.3 codex r19: scan 3x3 grid windows for multi-color non-bg patches.
+    # Some markers have 3x3 patches with 3-4 cells per color, which the
+    # size<=4 cluster filter still misses if components are too spread out.
+    # This pass adds any unmatched 3x3 window with ≥2 distinct non-bg colors
+    # as a new multicolor super-component.
+    # disabled v606.3 3x3 scan (too lax; 290 patches; [38,54] isn't multicolor)
 
     # v606.2 codex r14-r15: Sig-B greedy cross-turn matching.
     # Each component is matched to the prev-turn region with the highest IoU
@@ -171,6 +177,62 @@ def _compatible(c: dict, p: dict) -> bool:
     return c.get("color") == p.get("color")
 
 
+def _add_3x3_multicolor_patches(
+    raw_comps: list[dict[str, Any]], grid: list[list[int]]
+) -> list[dict[str, Any]]:
+    """v606.3 codex r19: detect 3x3 non-bg multicolor patches and emit as
+    super-components. Each detected patch becomes one multicolor component
+    that overlays the splits the flood-fill produced. The original splits
+    remain; the new super-component coexists.
+
+    Stays game-agnostic: no hardcoded color/size constants beyond the
+    universal 'non-zero color = non-background' assumption.
+    """
+    if not grid or not grid[0]:
+        return raw_comps
+    H = len(grid)
+    W = len(grid[0])
+    # Track cells already inside an existing multicolor super-component
+    # (from arm6 merge) to avoid double-counting.
+    already_multi: set[tuple[int, int]] = set()
+    for c in raw_comps:
+        if c.get("is_multicolor"):
+            for cell in c.get("_cells", []):
+                already_multi.add(cell)
+    added: list[dict[str, Any]] = []
+    seen_patches: set[tuple[int, int]] = set()
+    for r0 in range(H - 2):
+        for c0 in range(W - 2):
+            colors: set[int] = set()
+            cells: list[tuple[int, int]] = []
+            for dr in range(3):
+                for dc in range(3):
+                    r, c = r0 + dr, c0 + dc
+                    v = grid[r][c]
+                    if v != 0:
+                        colors.add(v)
+                    cells.append((r, c))
+            non_bg = [c for c in cells if grid[c[0]][c[1]] != 0]
+            if len(colors) >= 2 and len(non_bg) >= 4 and all(c not in already_multi for c in non_bg):
+                # avoid emitting overlapping windows
+                key = (r0, c0)
+                if key in seen_patches:
+                    continue
+                seen_patches.add(key)
+                added.append({
+                    "_seed_color": grid[non_bg[0][0]][non_bg[0][1]],
+                    "_cells": non_bg,
+                    "bbox": [c0, r0, c0 + 2, r0 + 2],
+                    "size": len(non_bg),
+                    "color": grid[non_bg[0][0]][non_bg[0][1]],
+                    "is_multicolor": True,
+                })
+                # Mark these cells consumed for subsequent passes.
+                for cell in non_bg:
+                    already_multi.add(cell)
+    return raw_comps + added
+
+
 def _match_or_assign(c: dict, state: dict, used: set[str]) -> str:
     best_id, best_iou = None, 0.0
     for p in state["prev"]:
@@ -197,8 +259,10 @@ def _merge_multicolor_clusters(raw_comps: list[dict[str, Any]]) -> list[dict[str
     """
     if not raw_comps:
         return raw_comps
-    small = [c for c in raw_comps if c["size"] <= 2 and c["_seed_color"] != 0]
-    other = [c for c in raw_comps if not (c["size"] <= 2 and c["_seed_color"] != 0)]
+    # v606.3 codex r19: relax size<=2 to size<=4 to catch ft09 3x3 multicolor
+    # patches whose per-color sub-components are size 3-4 (not <=2).
+    small = [c for c in raw_comps if c["size"] <= 4 and c["_seed_color"] != 0]
+    other = [c for c in raw_comps if not (c["size"] <= 4 and c["_seed_color"] != 0)]
     used = [False] * len(small)
     merged: list[dict[str, Any]] = []
     for i, c in enumerate(small):
@@ -501,6 +565,35 @@ def frame_to_state(
         for c in comps
     ]
 
+    # v606.3 codex r20 option B: build rolling click+observation history for
+    # Proposer multi-step planning. Per cycle237 evidence, L+1 requires a
+    # 7-step click sequence (not single click). Without this rolling view the
+    # LLM cannot accumulate per-region evidence or plan multi-step paths.
+    recent_turn_diffs: list[dict] = []
+    for i, entry in enumerate(action_history[-7:]):
+        ec = entry.get("coord_xy")
+        ld = int(entry.get("level_delta", 0) or 0)
+        pg = entry.get("prev_grid")
+        cg = entry.get("curr_grid") or grid
+        dti = _dominant_transition(pg, cg)
+        # which region (in current segmentation) contains this past click
+        click_rid = None
+        if ec is not None:
+            cx, cy = ec
+            for r in visible_regions:
+                x0, y0, x1, y1 = r["bbox"]
+                if x0 <= cx <= x1 and y0 <= cy <= y1:
+                    click_rid = r["region_id"]
+                    break
+        recent_turn_diffs.append({
+            "turn_offset": -(len(action_history[-7:]) - i),
+            "coord": list(ec) if ec else None,
+            "click_region_id": click_rid,
+            "dominant_transition": dti,
+            "level_delta": ld,
+            "did_advance": ld >= 1,
+        })
+
     return {
         "visible_regions": visible_regions,
         "marker_neighbor_states": markers,
@@ -514,6 +607,8 @@ def frame_to_state(
         "dominant_transition": dt,
         "level_delta": level_delta,
         "coord": list(last_coord) if last_coord else None,
+        # v606.3 rolling history for multi-step planning
+        "recent_turn_diffs": recent_turn_diffs,
         # v605 arm7: expose raw grid for multimodal proposer rendering.
         "_latest_grid": grid,
     }
