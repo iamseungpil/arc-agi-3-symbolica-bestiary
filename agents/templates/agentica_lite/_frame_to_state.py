@@ -403,9 +403,10 @@ def _markers_from_components(
         # v605 arm5 filter: must be size>=4 with >=4 neighbors, OR multicolor.
         if not (is_multi or (size >= 4 and len(populated) >= 4)):
             continue
-        # v606.4: exclude background color=0 huge component from markers
-        # (it always has 8 neighbors and size > 1000, polluting marker list).
-        if c.get("color") == 0 and size > 100:
+        # v606.4: exclude any huge component (size > 500 = background) from
+        # markers regardless of color. ft09 bg may be 0 OR 5; both are too
+        # large to be a real marker.
+        if size > 500:
             continue
         compass: dict[str, dict[str, Any]] = {}
         for direction, nbr_id in populated:
