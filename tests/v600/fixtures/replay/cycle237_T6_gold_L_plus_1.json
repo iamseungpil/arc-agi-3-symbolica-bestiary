@@ -1,0 +1,1377 @@
+{
+  "id": "F0_gold_L_plus_1-v57_1778180868_3399613-T6",
+  "failure_mode": "F0_gold_L_plus_1",
+  "pool": "replay",
+  "source_trace": "simple_logs/ft09-9ab2447a/v57_1778180868_3399613/trace.jsonl",
+  "source_turn": 6,
+  "input": {
+    "turn": 6,
+    "visible_regions": [
+      {
+        "id": "R28",
+        "bbox": [
+          12,
+          44,
+          17,
+          49
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": "R22",
+          "NE": "R23",
+          "E": "R29",
+          "SE": "R35",
+          "S": "R34",
+          "SW": "R33",
+          "W": "R27",
+          "NW": "R21"
+        },
+        "crop": [
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            2,
+            2,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            2,
+            2,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      {
+        "id": "R31",
+        "bbox": [
+          44,
+          44,
+          49,
+          49
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": "R25",
+          "NE": "R26",
+          "E": "R32",
+          "SE": "R38",
+          "S": "R37",
+          "SW": "R36",
+          "W": "R30",
+          "NW": "R24"
+        },
+        "crop": [
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        ]
+      },
+      {
+        "id": "R8",
+        "bbox": [
+          12,
+          10,
+          17,
+          15
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "top_strip",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": "R2",
+          "NE": null,
+          "E": "R16",
+          "SE": "R15",
+          "S": "R14",
+          "SW": "R13",
+          "W": null,
+          "NW": "R1"
+        },
+        "crop": [
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      {
+        "id": "R11",
+        "bbox": [
+          46,
+          10,
+          51,
+          15
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "top_strip",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": null,
+          "NE": null,
+          "E": null,
+          "SE": "R18",
+          "S": "R17",
+          "SW": "R16",
+          "W": "R15",
+          "NW": null
+        },
+        "crop": [
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            2,
+            2,
+            0,
+            0,
+            2,
+            2,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      {
+        "id": "R13",
+        "bbox": [
+          4,
+          18,
+          9,
+          23
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R14",
+        "bbox": [
+          12,
+          18,
+          17,
+          23
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R15",
+        "bbox": [
+          20,
+          18,
+          25,
+          23
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R16",
+        "bbox": [
+          38,
+          18,
+          43,
+          23
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R17",
+        "bbox": [
+          46,
+          18,
+          51,
+          23
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R18",
+        "bbox": [
+          54,
+          18,
+          59,
+          23
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R21",
+        "bbox": [
+          4,
+          36,
+          9,
+          41
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R22",
+        "bbox": [
+          12,
+          36,
+          17,
+          41
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R23",
+        "bbox": [
+          20,
+          36,
+          25,
+          41
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R24",
+        "bbox": [
+          36,
+          36,
+          41,
+          41
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R25",
+        "bbox": [
+          44,
+          36,
+          49,
+          41
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R26",
+        "bbox": [
+          52,
+          36,
+          57,
+          41
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R27",
+        "bbox": [
+          4,
+          44,
+          9,
+          49
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R29",
+        "bbox": [
+          20,
+          44,
+          25,
+          49
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R30",
+        "bbox": [
+          36,
+          44,
+          41,
+          49
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R32",
+        "bbox": [
+          52,
+          44,
+          57,
+          49
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R33",
+        "bbox": [
+          4,
+          52,
+          9,
+          57
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R34",
+        "bbox": [
+          12,
+          52,
+          17,
+          57
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R35",
+        "bbox": [
+          20,
+          52,
+          25,
+          57
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R36",
+        "bbox": [
+          36,
+          52,
+          41,
+          57
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R37",
+        "bbox": [
+          44,
+          52,
+          49,
+          57
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R38",
+        "bbox": [
+          52,
+          52,
+          57,
+          57
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R19",
+        "bbox": [
+          32,
+          32,
+          37,
+          37
+        ],
+        "size": 20,
+        "color": 2,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R20",
+        "bbox": [
+          56,
+          32,
+          61,
+          37
+        ],
+        "size": 20,
+        "color": 2,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R1",
+        "bbox": [
+          4,
+          2,
+          9,
+          7
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "top_strip",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R2",
+        "bbox": [
+          12,
+          2,
+          17,
+          7
+        ],
+        "size": 36,
+        "color": 8,
+        "is_multicolor": false,
+        "y_band": "top_strip",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      }
+    ],
+    "visible_region_ids": [
+      "R28",
+      "R31",
+      "R8",
+      "R11",
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R21",
+      "R22",
+      "R23",
+      "R24",
+      "R25",
+      "R26",
+      "R27",
+      "R29",
+      "R30",
+      "R32",
+      "R33",
+      "R34",
+      "R35",
+      "R36",
+      "R37",
+      "R38",
+      "R19",
+      "R20",
+      "R1",
+      "R2"
+    ],
+    "active_hypotheses": [],
+    "candidate_tests": [
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T2:R21",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R21",
+          "bbox": {
+            "min_x": 4,
+            "min_y": 36,
+            "max_x": 9,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          6,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 2,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T2:R22",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R22",
+          "bbox": {
+            "min_x": 12,
+            "min_y": 36,
+            "max_x": 17,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          14,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 2,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T2:R23",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R23",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 36,
+            "max_x": 25,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 2,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P10_marker_no_recent_compass_change:T2:R21",
+        "template_id": "P10_marker_no_recent_compass_change",
+        "anchor_region": {
+          "region_id": "R21",
+          "bbox": {
+            "min_x": 4,
+            "min_y": 36,
+            "max_x": 9,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          6,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 2,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P10_marker_no_recent_compass_change:T2:R13",
+        "template_id": "P10_marker_no_recent_compass_change",
+        "anchor_region": {
+          "region_id": "R13",
+          "bbox": {
+            "min_x": 4,
+            "min_y": 18,
+            "max_x": 9,
+            "max_y": 23
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          6,
+          20
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 2,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P07_repeat_click_parity_revert:T4:R24",
+        "template_id": "P07_repeat_click_parity_revert",
+        "anchor_region": {
+          "region_id": "R24",
+          "bbox": {
+            "min_x": 36,
+            "min_y": 36,
+            "max_x": 41,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          38,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 4,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P12_recent_click_no_change_revisit:T4:R24",
+        "template_id": "P12_recent_click_no_change_revisit",
+        "anchor_region": {
+          "region_id": "R24",
+          "bbox": {
+            "min_x": 36,
+            "min_y": 36,
+            "max_x": 41,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          38,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 4,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P07_repeat_click_parity_revert:T5:R24",
+        "template_id": "P07_repeat_click_parity_revert",
+        "anchor_region": {
+          "region_id": "R24",
+          "bbox": {
+            "min_x": 36,
+            "min_y": 36,
+            "max_x": 41,
+            "max_y": 41
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          38,
+          38
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 5,
+        "reemit_count": 0
+      }
+    ],
+    "matched_prior_triggers": [],
+    "stuck_mode": false,
+    "stuck_severity": 0,
+    "marker_neighbor_states": [
+      {
+        "marker_id": "R28",
+        "compass": {
+          "N": {
+            "region_id": "R22",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NE": {
+            "region_id": "R23",
+            "current_color": null,
+            "clicks": 0
+          },
+          "E": {
+            "region_id": "R29",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SE": {
+            "region_id": "R35",
+            "current_color": null,
+            "clicks": 0
+          },
+          "S": {
+            "region_id": "R34",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SW": {
+            "region_id": "R33",
+            "current_color": null,
+            "clicks": 0
+          },
+          "W": {
+            "region_id": "R27",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NW": {
+            "region_id": "R21",
+            "current_color": null,
+            "clicks": 0
+          }
+        }
+      },
+      {
+        "marker_id": "R31",
+        "compass": {
+          "N": {
+            "region_id": "R25",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NE": {
+            "region_id": "R26",
+            "current_color": null,
+            "clicks": 0
+          },
+          "E": {
+            "region_id": "R32",
+            "current_color": null,
+            "clicks": 1
+          },
+          "SE": {
+            "region_id": "R38",
+            "current_color": null,
+            "clicks": 0
+          },
+          "S": {
+            "region_id": "R37",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SW": {
+            "region_id": "R36",
+            "current_color": null,
+            "clicks": 0
+          },
+          "W": {
+            "region_id": "R30",
+            "current_color": null,
+            "clicks": 1
+          },
+          "NW": {
+            "region_id": "R24",
+            "current_color": null,
+            "clicks": 1
+          }
+        }
+      },
+      {
+        "marker_id": "R8",
+        "compass": {
+          "N": {
+            "region_id": "R2",
+            "current_color": null,
+            "clicks": 0
+          },
+          "E": {
+            "region_id": "R16",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SE": {
+            "region_id": "R15",
+            "current_color": null,
+            "clicks": 0
+          },
+          "S": {
+            "region_id": "R14",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SW": {
+            "region_id": "R13",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NW": {
+            "region_id": "R1",
+            "current_color": null,
+            "clicks": 0
+          }
+        }
+      },
+      {
+        "marker_id": "R11",
+        "compass": {
+          "SE": {
+            "region_id": "R18",
+            "current_color": null,
+            "clicks": 0
+          },
+          "S": {
+            "region_id": "R17",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SW": {
+            "region_id": "R16",
+            "current_color": null,
+            "clicks": 0
+          },
+          "W": {
+            "region_id": "R15",
+            "current_color": null,
+            "clicks": 0
+          }
+        }
+      }
+    ],
+    "summary": "R19/R20 static; R31 focus; R21 _outside_. R24,R30,R32:9\u21928 c36 no rise. L+1 at turn 6 via region R36 dominant 5\u21924 count=1824. Prior crop/compass schemas SUSPECT. Dominant=9\u21928 toggle. HYPOTHESIS-FOR-NEXT-WINDOW: FRESH single-region explore post-rise.",
+    "last_observation": {
+      "primary_region_id": "R36",
+      "dominant_transition": {
+        "from": 5,
+        "to": 4,
+        "count": 1824
+      },
+      "level_delta": 1
+    },
+    "thought": "META: N=4, STATIC=[R19,R20], REL=same. ABSTRACT: rule cites colors=[0,8,9], rids=[R31], relations=[crop_sector_value, compass_direction, neighbor_toggle]; transferable=NO. ACTIVE_HYPOTHESES is empty, so I weigh candidate plan P_crop_compass_sweep_R31 against H_marker_center_R31: the plan has higher information_value because turns 3-5 already showed R24, R30, and R32 each toggling 9\u21928 around R31 with no level rise, while center-click behavior is less precise. I also weigh P_crop_compass_sweep_R31 against H_static_nonmarker_R20; the static reference is lower value now because SUMMARY says R19/R20 are static refs and the current IMAGE shows the lower-right R31 cluster still has one unclicked 9 neighbor matching the same crop-sector pattern. Plan P_crop_compass_sweep_R31 step 4/4: click R36 expecting 8. Rule hypothesis: for R31, sweep the compass directions whose crop sectors show 0 by toggling those neighboring regions from 9 to 8; rule is level-specific; expect failure on next level rise",
+    "coord_taken": [
+      38,
+      54
+    ],
+    "snapped_coord": false,
+    "verdict": "inconclusive"
+  },
+  "expected_module": "predicate_posterior",
+  "expected_behavior": "cycle237 T6 first L+1 with coord=[38,54] should be reachable from baseline predicates",
+  "expected_assertion": "len(output) > 0",
+  "split": "train"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "F3_coord_resolver_corner",
+  "failure_mode": "F3",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "predicate_id": "P07_corner_align",
+    "coord_policy": "corner_top_left",
+    "region": {"region_id": "R3", "bbox": {"min_x": 10, "min_y": 20, "max_x": 30, "max_y": 40}}
+  },
+  "expected_module": "library_install",
+  "expected_behavior": "corner_top_left policy returns (min_x, min_y) of bbox",
+  "expected_assertion": "output == (10, 20) or output == [10, 20]",
+  "split": "train"
+}

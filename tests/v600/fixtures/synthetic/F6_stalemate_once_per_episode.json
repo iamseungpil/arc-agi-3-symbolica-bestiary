@@ -1,0 +1,16 @@
+{
+  "id": "F6_stalemate_once_per_episode",
+  "failure_mode": "F6",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "scenario": "trigger fires at T10 (TRUE), then mark_fired() called; at T15 conditions still meet but already fired",
+    "first_fire_args": {"turns_since_L_plus": 10, "max_posterior": 0.3},
+    "second_check_args": {"turns_since_L_plus": 15, "max_posterior": 0.2}
+  },
+  "expected_module": "stalemate_trigger",
+  "expected_behavior": "once_per_episode=True ensures trigger fires at most once per episode (LLM extender called at most once)",
+  "expected_assertion": "(output.fires(**input['first_fire_args']) is True) and (output.mark_fired() or True) and (output.fires(**input['second_check_args']) is False)",
+  "split": "train"
+}

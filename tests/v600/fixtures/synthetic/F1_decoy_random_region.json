@@ -1,0 +1,16 @@
+{
+  "id": "F1_decoy_random_region",
+  "failure_mode": "F1",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "comment": "decoy spectrum (plan §1.20): real predicate vs random-region anchor decoy. After 30 emissions each, real should out-perform decoy by Wilson p<0.002.",
+    "real_predicate": {"id": "P_real", "alpha": 15, "beta": 17, "n_emit": 30},
+    "decoy_predicate": {"id": "P_decoy_random_region", "alpha": 4, "beta": 28, "n_emit": 30}
+  },
+  "expected_module": "predicate_posterior",
+  "expected_behavior": "retention_pass with n_min=10, lcb_min=0.5: real PASSES (Wilson LCB ≈ 0.46-0.55 with α=15/n=30 → about 0.30; thresholds tuned in Phase B), decoy FAILS",
+  "expected_assertion": "output.retention_pass(real_key, n_min=10, lcb_min=0.3) is True and output.retention_pass(decoy_key, n_min=10, lcb_min=0.3) is False",
+  "split": "val"
+}

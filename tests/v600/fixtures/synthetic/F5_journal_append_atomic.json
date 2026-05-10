@@ -1,0 +1,15 @@
+{
+  "id": "F5_journal_append_atomic",
+  "failure_mode": "F5",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "scenario": "10 sequential append calls with different EpisodeRecord; load_all() returns 10 records in order",
+    "n_records": 10
+  },
+  "expected_module": "memory_journal",
+  "expected_behavior": "append-only single-writer; no race; load_all() returns exactly n_records in append order",
+  "expected_assertion": "len(output) == 10 and all(output[i].episode_id == f'ep_{i:02d}' for i in range(10))",
+  "split": "train"
+}

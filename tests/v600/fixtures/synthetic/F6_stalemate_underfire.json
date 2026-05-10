@@ -1,0 +1,16 @@
+{
+  "id": "F6_stalemate_underfire",
+  "failure_mode": "F6",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "turns_since_L_plus": 5,
+    "max_posterior": 0.3,
+    "comment": "K_threshold=8 NOT met (only 5 turns since L+) → trigger MUST NOT fire even though posterior low"
+  },
+  "expected_module": "stalemate_trigger",
+  "expected_behavior": "do not fire prematurely — give predicate library time to converge",
+  "expected_assertion": "output.fires(turns_since_L_plus=5, max_posterior=0.3) is False",
+  "split": "train"
+}

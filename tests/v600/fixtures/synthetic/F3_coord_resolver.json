@@ -1,0 +1,17 @@
+{
+  "id": "F3_coord_resolver_centroid",
+  "failure_mode": "F3",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "predicate_id": "P03_dominant_transition",
+    "coord_policy": "centroid",
+    "region": {"region_id": "R12", "bbox": {"min_x": 32, "min_y": 40, "max_x": 44, "max_y": 56}, "color": 9},
+    "expected_centroid": [38, 48]
+  },
+  "expected_module": "library_install",
+  "expected_behavior": "resolve_coord with centroid policy returns midpoint of bbox",
+  "expected_assertion": "output == (38, 48) or output == [38, 48]",
+  "split": "train"
+}

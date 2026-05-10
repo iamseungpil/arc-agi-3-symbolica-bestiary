@@ -1,0 +1,873 @@
+{
+  "id": "F2-v57_1778300671_1318911-T28",
+  "failure_mode": "F2",
+  "pool": "replay",
+  "source_trace": "simple_logs/ft09-9ab2447a/v57_1778300671_1318911/trace.jsonl",
+  "source_turn": 28,
+  "input": {
+    "turn": 28,
+    "visible_regions": [
+      {
+        "id": "R6",
+        "bbox": [
+          28,
+          22,
+          33,
+          27
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": "R3",
+          "NE": "R4",
+          "E": "R7",
+          "SE": "R10",
+          "S": "R9",
+          "SW": "R8",
+          "W": "R5",
+          "NW": "R2"
+        },
+        "crop": [
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            12,
+            12,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            12,
+            12,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        ]
+      },
+      {
+        "id": "R12",
+        "bbox": [
+          28,
+          38,
+          33,
+          43
+        ],
+        "size": 36,
+        "color": 0,
+        "is_multicolor": true,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false,
+        "neighbors_3x3": {
+          "N": "R9",
+          "NE": "R10",
+          "E": "R13",
+          "SE": "R16",
+          "S": "R15",
+          "SW": "R14",
+          "W": "R11",
+          "NW": "R8"
+        },
+        "crop": [
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            2,
+            2,
+            12,
+            12,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            2,
+            2,
+            12,
+            12,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        ]
+      },
+      {
+        "id": "R2",
+        "bbox": [
+          20,
+          14,
+          25,
+          19
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R3",
+        "bbox": [
+          28,
+          14,
+          33,
+          19
+        ],
+        "size": 36,
+        "color": 12,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R4",
+        "bbox": [
+          36,
+          14,
+          41,
+          19
+        ],
+        "size": 36,
+        "color": 12,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R5",
+        "bbox": [
+          20,
+          22,
+          25,
+          27
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R7",
+        "bbox": [
+          36,
+          22,
+          41,
+          27
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R8",
+        "bbox": [
+          20,
+          30,
+          25,
+          35
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R9",
+        "bbox": [
+          28,
+          30,
+          33,
+          35
+        ],
+        "size": 36,
+        "color": 12,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R10",
+        "bbox": [
+          36,
+          30,
+          41,
+          35
+        ],
+        "size": 36,
+        "color": 12,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R11",
+        "bbox": [
+          20,
+          38,
+          25,
+          43
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R13",
+        "bbox": [
+          36,
+          38,
+          41,
+          43
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R14",
+        "bbox": [
+          20,
+          46,
+          25,
+          51
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R15",
+        "bbox": [
+          28,
+          46,
+          33,
+          51
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R16",
+        "bbox": [
+          36,
+          46,
+          41,
+          51
+        ],
+        "size": 36,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "play_zone",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": true,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R1",
+        "bbox": [
+          60,
+          0,
+          63,
+          7
+        ],
+        "size": 32,
+        "color": 9,
+        "is_multicolor": false,
+        "y_band": "top_strip",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false
+      },
+      {
+        "id": "R17",
+        "bbox": [
+          0,
+          63,
+          63,
+          63
+        ],
+        "size": 64,
+        "color": 12,
+        "is_multicolor": false,
+        "y_band": "bottom_budget",
+        "click_response": {
+          "clicks": 0,
+          "responses": 0
+        },
+        "is_marker_neighbor": false,
+        "is_primary_marker": false
+      }
+    ],
+    "visible_region_ids": [
+      "R6",
+      "R12",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R7",
+      "R8",
+      "R9",
+      "R10",
+      "R11",
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R1",
+      "R17"
+    ],
+    "active_hypotheses": [],
+    "candidate_tests": [
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T21:R5",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R5",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 22,
+            "max_x": 25,
+            "max_y": 27
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          24
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 21,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P07_repeat_click_parity_revert:T21:R2",
+        "template_id": "P07_repeat_click_parity_revert",
+        "anchor_region": {
+          "region_id": "R2",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 14,
+            "max_x": 25,
+            "max_y": 19
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          16
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 21,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T24:R5",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R5",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 22,
+            "max_x": 25,
+            "max_y": 27
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          24
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 24,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P07_repeat_click_parity_revert:T24:R9",
+        "template_id": "P07_repeat_click_parity_revert",
+        "anchor_region": {
+          "region_id": "R9",
+          "bbox": {
+            "min_x": 28,
+            "min_y": 30,
+            "max_x": 33,
+            "max_y": 35
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          30,
+          32
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 24,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P10_marker_no_recent_compass_change:T24:R2",
+        "template_id": "P10_marker_no_recent_compass_change",
+        "anchor_region": {
+          "region_id": "R2",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 14,
+            "max_x": 25,
+            "max_y": 19
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          16
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 24,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P12_recent_click_no_change_revisit:T24:R9",
+        "template_id": "P12_recent_click_no_change_revisit",
+        "anchor_region": {
+          "region_id": "R9",
+          "bbox": {
+            "min_x": 28,
+            "min_y": 30,
+            "max_x": 33,
+            "max_y": 35
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          30,
+          32
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 24,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T25:R3",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R3",
+          "bbox": {
+            "min_x": 28,
+            "min_y": 14,
+            "max_x": 33,
+            "max_y": 19
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          30,
+          16
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 25,
+        "reemit_count": 0
+      },
+      {
+        "candidate_id": null,
+        "suggested_test": {},
+        "expected_observable_signature": {},
+        "refutation_signature": {},
+        "predicate_id": "P01_unclicked_neighbor_of_active_marker:T25:R5",
+        "template_id": "P01_unclicked_neighbor_of_active_marker",
+        "anchor_region": {
+          "region_id": "R5",
+          "bbox": {
+            "min_x": 20,
+            "min_y": 22,
+            "max_x": 25,
+            "max_y": 27
+          },
+          "color": null,
+          "is_multicolor": false,
+          "kind": "non_marker"
+        },
+        "suggested_coord": [
+          22,
+          24
+        ],
+        "score": 0.6667,
+        "emitted_at_turn": 25,
+        "reemit_count": 0
+      }
+    ],
+    "matched_prior_triggers": [],
+    "stuck_mode": true,
+    "stuck_severity": 0,
+    "marker_neighbor_states": [
+      {
+        "marker_id": "R6",
+        "compass": {
+          "N": {
+            "region_id": "R3",
+            "current_color": null,
+            "clicks": 1
+          },
+          "NE": {
+            "region_id": "R4",
+            "current_color": null,
+            "clicks": 1
+          },
+          "E": {
+            "region_id": "R7",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SE": {
+            "region_id": "R10",
+            "current_color": null,
+            "clicks": 1
+          },
+          "S": {
+            "region_id": "R9",
+            "current_color": null,
+            "clicks": 1
+          },
+          "SW": {
+            "region_id": "R8",
+            "current_color": null,
+            "clicks": 2
+          },
+          "W": {
+            "region_id": "R5",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NW": {
+            "region_id": "R2",
+            "current_color": null,
+            "clicks": 2
+          }
+        }
+      },
+      {
+        "marker_id": "R12",
+        "compass": {
+          "N": {
+            "region_id": "R9",
+            "current_color": null,
+            "clicks": 1
+          },
+          "NE": {
+            "region_id": "R10",
+            "current_color": null,
+            "clicks": 1
+          },
+          "E": {
+            "region_id": "R13",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SE": {
+            "region_id": "R16",
+            "current_color": null,
+            "clicks": 0
+          },
+          "S": {
+            "region_id": "R15",
+            "current_color": null,
+            "clicks": 0
+          },
+          "SW": {
+            "region_id": "R14",
+            "current_color": null,
+            "clicks": 0
+          },
+          "W": {
+            "region_id": "R11",
+            "current_color": null,
+            "clicks": 0
+          },
+          "NW": {
+            "region_id": "R8",
+            "current_color": null,
+            "clicks": 2
+          }
+        }
+      }
+    ],
+    "summary": "Pre:R19/R20 static;_outside\u00d74 inert;R30/R32/R36 dom9\u21928c36;R24 toggled. L+1 at turn 18 via region R24 dominant 5\u21924 count=1824;cards SUSPECT.Post:R1/R17 static;R2/R6/R8/R9/R10/R12 dom9\u219212c36;R31/R38/R28?;R3/R5/R21 pending.HYPOTHESIS-FOR-NEXT-WINDOW:FRESH single-region,marker-crop plan",
+    "last_observation": {
+      "primary_region_id": "R10",
+      "dominant_transition": {
+        "from": 12,
+        "to": 9,
+        "count": 36
+      },
+      "level_delta": 0
+    },
+    "thought": "META: N=2, STATIC=[R1,R17], REL=shrunk vs prev. ACTIVE_HYPOTHESES is empty, so no active card ids exist to cite; I weigh fallback candidate C_upper_crop_cleanup_R10 above C_lower_crop_W_R11 because R10 is the only currently orange cell in a zero-coded sector for both visible marker crops, giving high precision and a plausible level-rise check, while R11 would only add another 9\u219212 observation on the lower marker side with lower immediacy. I also weigh C_reprobe_R24_prior_trigger low because the SUMMARY says the prior L+ was R24 5\u21924 but R24 is not visible, so it has no coordinate test now. The IMAGE shows the upper 3\u00d73 arrangement has orange at R3/R4/R9/R10, and RECENT_TURNS show R3 and R4 just changed 9\u219212 with no level_delta after R8 was reverted 12\u21929. Clicking R10 now tests whether removing the extra shared orange cell completes the upper crop-shaped relation rather than continuing the plateau of single toggles. Coord (38,32) lies inside R10 bbox [36,30,41,35].",
+    "coord_taken": [
+      38,
+      32
+    ],
+    "snapped_coord": false,
+    "verdict": "refuted"
+  },
+  "expected_module": "stalemate_trigger",
+  "expected_behavior": "10 turns post-L+1 with no further progress; stalemate trigger should fire by T28 (turns_since_L+ \u2265 10 \u2265 K_threshold)",
+  "expected_assertion": "output.fires(turns_since_L_plus=10, max_posterior=0.4) is True",
+  "split": "train"
+}

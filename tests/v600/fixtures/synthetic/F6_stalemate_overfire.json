@@ -1,0 +1,16 @@
+{
+  "id": "F6_stalemate_overfire",
+  "failure_mode": "F6",
+  "pool": "synthetic",
+  "source_trace": null,
+  "source_turn": null,
+  "input": {
+    "turns_since_L_plus": 8,
+    "max_posterior": 0.6,
+    "comment": "max_posterior=0.6 ABOVE theta_threshold=0.45 → trigger MUST NOT fire even though K_threshold met"
+  },
+  "expected_module": "stalemate_trigger",
+  "expected_behavior": "do not fire when max_posterior is high (above theta_threshold) — predicate library has confidence",
+  "expected_assertion": "output.fires(turns_since_L_plus=8, max_posterior=0.6) is False",
+  "split": "train"
+}
