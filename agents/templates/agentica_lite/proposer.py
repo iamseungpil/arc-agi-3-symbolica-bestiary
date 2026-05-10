@@ -148,6 +148,10 @@ def _validate_schema(raw: Any, visible_region_ids: list[str]) -> tuple[ProposerO
     for f in ("marker_id", "saturation_threshold", "saturation_denominator"):
         if f not in pre_state:
             return None, "schema_missing_field"
+    # v605 arm2b diagnostic: LLM was setting region_hint == marker_id, causing
+    # Policy to click the marker itself instead of its compass slot. Reject.
+    if pre_state.get("marker_id") and region_hint == pre_state["marker_id"]:
+        return None, "region_hint_equals_marker_id"
     return ProposerOutput(
         candidate_predicate_id=pid,
         region_hint=region_hint,
@@ -229,6 +233,9 @@ class Proposer:
                     kwargs["response_format"] = {"type": "json_object"}
                 resp = await client.chat.completions.create(**kwargs)
                 raw = resp.choices[0].message.content or "{}"
+                # v605 F4 codex round 3: log every successful proposer turn
+                logger.info("PROPOSER_RAW model=%s len=%d raw=%r",
+                            model, len(raw), raw[:600])
                 obj = json.loads(_extract_json_block(raw))
                 out, err = _validate_schema(obj, visible_region_ids)
                 if err is not None:

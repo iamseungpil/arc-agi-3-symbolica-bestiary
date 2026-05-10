@@ -29,7 +29,10 @@ SYSTEM_PROMPT = (
     "remaining unclicked compass slot, OR a slot adjacent to it.\n\n"
     "Output schema (strict JSON):\n"
     "  candidate_predicate_id: str (e.g., 'P_saturation_progress')\n"
-    "  region_hint: str (must be a region_id present in `visible_regions`)\n"
+    "  region_hint: str — CRITICAL: must be one of the marker's NEIGHBOR\n"
+    "    region ids from its unclicked_compass_region_ids list, NOT the\n"
+    "    marker_id itself. Clicking the marker has NO effect; you must\n"
+    "    click an unclicked compass neighbor of the marker.\n"
     "  expected_signature: dict (e.g., {level_delta: 1})\n"
     "  required_pre_state:\n"
     "    marker_id: str (must be a marker_id present in marker_neighbor_states)\n"
@@ -37,7 +40,9 @@ SYSTEM_PROMPT = (
     "    saturation_denominator: int\n"
     "  confidence: float in [0, 1]\n"
     "  thought: str (must contain the saturation Step-0 expression above)\n"
-    "Forbidden: tool_calls, submit_action, free-form prose outside `thought`."
+    "Forbidden: tool_calls, submit_action, free-form prose outside `thought`.\n"
+    "Forbidden: region_hint == marker_id (same value). Region_hint MUST\n"
+    "be a compass-neighbor region id; the marker_id field is separate."
 )
 
 

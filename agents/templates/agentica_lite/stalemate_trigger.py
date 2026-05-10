@@ -15,16 +15,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+def _env_int(name: str, default: int) -> int:
+    import os
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 @dataclass
 class StalemateConfig:
-    # v605 codex round 3 C1 fix: increase LLM fire rate. Old defaults
-    # (K=8, once=True) caused 0.8% LLM-guided turns; cycle237 success
-    # had 100%. New defaults aim for ~50% minimum LLM-guided turns.
-    K_threshold: int = 3       # was 8; lower = stalemate fires sooner
+    # v605 codex round 3 C1 fix: env-overridable for arm-tuning experiments.
+    K_threshold: int = _env_int("ARC_LITE_K_THRESHOLD", 3)
     theta_threshold: float = 0.45
-    once_per_episode: bool = False  # was True; allow repeated stalemate fires
-    periodic_every_n: int = 5  # NEW: also fire every N turns regardless
-    max_calls_per_episode: int = 50  # rate-limit guard
+    once_per_episode: bool = False
+    periodic_every_n: int = _env_int("ARC_LITE_PERIODIC_EVERY_N", 5)
+    max_calls_per_episode: int = _env_int("ARC_LITE_MAX_CALLS", 50)
 
 
 class StalemateTrigger:
