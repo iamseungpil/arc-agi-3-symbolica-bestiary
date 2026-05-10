@@ -103,8 +103,13 @@ class Reflector:
                 DefaultAzureCredential,
             )
             from openai import AsyncAzureOpenAI
+            from .proposer import _breaker_open as _proposer_breaker_open
         except Exception as e:  # noqa: BLE001
             logger.info("Reflector deps missing: %s", e)
+            return None
+        # v604.1 share the proposer's circuit breaker (same TRAPI endpoint).
+        if _proposer_breaker_open():
+            logger.info("Reflector skipped: TRAPI circuit breaker active")
             return None
 
         cred = ChainedTokenCredential(AzureCliCredential(), DefaultAzureCredential())
@@ -120,16 +125,19 @@ class Reflector:
         user_payload = json.dumps(contrast_payload, default=str)[:6000]
         for model in _MODEL_PREFERENCES:
             try:
-                resp = await client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": REFLECTOR_SYSTEM_PROMPT},
-                        {"role": "user", "content": user_payload},
-                    ],
-                    response_format={"type": "json_object"},
-                    temperature=0.0,
-                )
-                obj = json.loads(resp.choices[0].message.content or "{}")
+                # response_format json_object unsupported on some TRAPI
+                # deployments (see proposer.py): apply only to known-good
+                # models, otherwise rely on system prompt + JSON extractor.
+                kwargs = {"model": model, "messages": [
+                    {"role": "system", "content": REFLECTOR_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_payload},
+                ], "temperature": 0.0}
+                if "json" in model.lower() or model.endswith("-pro"):
+                    kwargs["response_format"] = {"type": "json_object"}
+                resp = await client.chat.completions.create(**kwargs)
+                from .proposer import _extract_json_block
+                raw = resp.choices[0].message.content or "{}"
+                obj = json.loads(_extract_json_block(raw))
                 return _parse_response(obj)
             except Exception as e:  # noqa: BLE001
                 logger.info("Reflector model %s failed: %s", model, e)

@@ -26,8 +26,65 @@ _MODEL_PREFERENCES = ["gpt-5.3-codex_2026-02-24", "gpt-5.4_2026-03-05", "gpt-5.4
 # Plan §4 INT04 + §3.12 fallback codes.
 _FAILURE_CODES = {"timeout", "parse_error", "schema_invalid", "llm_no_client"}
 
+def _extract_json_block(text: str) -> str:
+    """Extract first {...}-balanced JSON block from arbitrary LLM output.
+
+    Many TRAPI deployments do NOT support response_format=json_object and
+    instead return Markdown-wrapped JSON or prose-prefixed JSON. We use a
+    forgiving extractor that finds the first balanced object."""
+    if not text:
+        return "{}"
+    s = text.strip()
+    # Strip ```json ... ``` fences if present.
+    if s.startswith("```"):
+        end = s.find("```", 3)
+        if end > 3:
+            inner = s[3:end].lstrip()
+            if inner.lower().startswith("json"):
+                inner = inner[4:].lstrip()
+            s = inner.strip()
+    # Find first balanced {...}.
+    start = s.find("{")
+    if start < 0:
+        return s
+    depth = 0
+    for i in range(start, len(s)):
+        c = s[i]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return s[start:i + 1]
+    return s[start:]
+
+
 # Plan §4 INT04: blacklist of forbidden predicate ids that hint at tool calls.
 _PREDICATE_BLACKLIST = {"submit_action", "click", "tool_call", "execute"}
+
+
+# v604.1: Process-global TRAPI circuit breaker. After a 403/429 rate-limit
+# response, suspend ALL TRAPI calls (Proposer + Reflector) for N seconds
+# rather than hammering the API and worsening the block.
+import time as _time
+
+_TRAPI_BREAKER_UNTIL = 0.0
+_TRAPI_BREAKER_COOLDOWN_S = 600.0  # 10 minutes after a rate-limit hit
+
+
+def _breaker_open() -> bool:
+    return _time.time() < _TRAPI_BREAKER_UNTIL
+
+
+def _trip_breaker(error_text: str) -> None:
+    global _TRAPI_BREAKER_UNTIL
+    if "403" in error_text or "429" in error_text or "blocked" in error_text.lower() \
+            or "rate" in error_text.lower():
+        _TRAPI_BREAKER_UNTIL = _time.time() + _TRAPI_BREAKER_COOLDOWN_S
+        logger.warning(
+            "TRAPI circuit breaker tripped for %.0fs (reason: %s)",
+            _TRAPI_BREAKER_COOLDOWN_S, error_text[:120],
+        )
 
 
 @dataclass
@@ -135,6 +192,9 @@ class Proposer:
         state: dict[str, Any],
         visible_region_ids: list[str],
     ) -> ProposerResult:
+        # v604.1 circuit breaker: skip TRAPI when rate-limit cooldown active.
+        if _breaker_open():
+            return ProposerResult(output=None, failure_reason="llm_no_client")
         try:
             from azure.identity import (
                 AzureCliCredential,
@@ -160,13 +220,16 @@ class Proposer:
         last_err: Exception | None = None
         for model in _MODEL_PREFERENCES:
             try:
-                resp = await client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    response_format={"type": "json_object"},
-                    temperature=0.0,
-                )
-                obj = json.loads(resp.choices[0].message.content or "{}")
+                # NB: response_format json_object is unsupported by some
+                # TRAPI deployments (e.g. gpt-5.3-codex returns 400). We
+                # rely on the system prompt to demand JSON output and parse
+                # any wrapper text via _extract_json_block before json.loads.
+                kwargs = {"model": model, "messages": messages, "temperature": 0.0}
+                if "json" in model.lower() or model.endswith("-pro"):
+                    kwargs["response_format"] = {"type": "json_object"}
+                resp = await client.chat.completions.create(**kwargs)
+                raw = resp.choices[0].message.content or "{}"
+                obj = json.loads(_extract_json_block(raw))
                 out, err = _validate_schema(obj, visible_region_ids)
                 if err is not None:
                     return ProposerResult(
@@ -180,5 +243,9 @@ class Proposer:
             except Exception as e:  # noqa: BLE001
                 last_err = e
                 logger.info("Proposer model %s failed: %s", model, e)
+                _trip_breaker(str(e))
+                if _breaker_open():
+                    # don't try further models in this call once breaker tripped
+                    break
         logger.warning("Proposer exhausted models; last_err=%s", last_err)
         return ProposerResult(output=None, failure_reason="parse_error")
