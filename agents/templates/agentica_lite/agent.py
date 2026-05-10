@@ -168,7 +168,10 @@ class ArcgenticaLite:
         try:
             warm_up = self.stalemate.warm_up_fires(self._turn_count - 1)
             max_post = self._max_posterior(visible_regions)
-            stalemate_fires = self.stalemate.fires(self.turns_since_L_plus, max_post)
+            # v605 codex round 3: pass turn_count for periodic-trigger logic
+            stalemate_fires = self.stalemate.fires(
+                self.turns_since_L_plus, max_post, turn_count=self._turn_count - 1
+            )
             if warm_up or stalemate_fires:
                 # Build state dict for proposer
                 state_for_prop = state if isinstance(state, dict) else {}
@@ -191,7 +194,7 @@ class ArcgenticaLite:
                     self.stalemate.mark_warm_up_done()
                 if stalemate_fires:
                     self._stalemate_events += 1
-                    self.stalemate.mark_fired()
+                    self.stalemate.mark_fired(turn_count=self._turn_count - 1)
         except Exception as e:  # noqa: BLE001
             logger.warning("proposer trigger path failed: %s", e)
 

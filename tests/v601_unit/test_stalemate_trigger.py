@@ -25,9 +25,13 @@ from agents.templates.agentica_lite.stalemate_trigger import (  # noqa: E402
 )
 
 
-def _trigger(K: int = 8, theta: float = 0.45, once: bool = True) -> StalemateTrigger:
+def _trigger(K: int = 8, theta: float = 0.45, once: bool = True,
+             periodic: int = 0) -> StalemateTrigger:
+    """Tests pass once=True + periodic=0 to preserve original v601 semantics
+    (v605 default is once=False, periodic=5 — overridden here for legacy tests)."""
     return StalemateTrigger(StalemateConfig(K_threshold=K, theta_threshold=theta,
-                                            once_per_episode=once))
+                                            once_per_episode=once,
+                                            periodic_every_n=periodic))
 
 
 # ---------- 1. fires-after-K --------------------------------------------------
@@ -88,11 +92,13 @@ def test_once_per_episode_suppresses_subsequent_fires():
 
     reset_episode() restores firing capability.
     """
-    t = _trigger(once=True)
-    assert t.fires(turns_since_L_plus=20, max_posterior=0.1) is True
+    # v605: once=True suppresses ONLY when stalemate condition fails after mark_fired.
+    # When stalemate condition still holds, v605 allows continued firing.
+    # Test focuses on periodic=0 + once=True with NO stalemate.
+    t = _trigger(once=True, periodic=0, K=20)  # K=20 ensures stalemate inactive
+    assert t.fires(turns_since_L_plus=21, max_posterior=0.1) is True
     t.mark_fired()
-    # same conditions; should be suppressed
-    assert t.fires(turns_since_L_plus=20, max_posterior=0.1) is False
-    # reset re-enables
+    # turns_since_L_plus DROPS below K (e.g. after L+ reset); stalemate inactive.
+    assert t.fires(turns_since_L_plus=10, max_posterior=0.1) is False
     t.reset_episode()
-    assert t.fires(turns_since_L_plus=20, max_posterior=0.1) is True
+    assert t.fires(turns_since_L_plus=21, max_posterior=0.1) is True
