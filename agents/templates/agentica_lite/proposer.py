@@ -232,6 +232,11 @@ class Proposer:
                 obj = json.loads(_extract_json_block(raw))
                 out, err = _validate_schema(obj, visible_region_ids)
                 if err is not None:
+                    # v604.3: log schema error + raw to diagnose schema_invalid
+                    logger.warning(
+                        "Proposer schema_invalid err=%s model=%s raw=%r",
+                        err, model, raw[:600],
+                    )
                     return ProposerResult(
                         output=None, failure_reason="schema_invalid",
                         schema_error_code=err,
