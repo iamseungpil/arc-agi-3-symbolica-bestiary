@@ -88,7 +88,11 @@ _TRAPI_MODEL_MAP = {
     "gpt-5.3-codex": "gpt-5.3-codex_2026-02-24",
     "gpt-5.4-mini": "gpt-5.4-mini_2026-03-17",
     "gpt-5.4": "gpt-5.4_2026-03-05",
+    "gpt-5.4-pro": "gpt-5.4-pro_2026-03-05",
 }
+
+# arm11 swap: env-driven default model override across all _call_trapi sites.
+_DEFAULT_MODEL = os.environ.get("ARC_RESEARCH_MODEL", "gpt-5.3-codex")
 
 _trapi_client = None
 
@@ -220,7 +224,9 @@ def _get_trapi_client():
     )
     return _trapi_client
 
-def _call_trapi(messages: list[dict], model: str = "gpt-5.3-codex") -> str:
+def _call_trapi(messages: list[dict], model: str | None = None) -> str:
+    if model is None or model == "gpt-5.3-codex":
+        model = _DEFAULT_MODEL
     deployment = _TRAPI_MODEL_MAP.get(model, model)
     client = _get_trapi_client()
     input_items = [{"type": "message", "role": m["role"], "content": m["content"]} for m in messages]
@@ -235,13 +241,15 @@ def _call_trapi(messages: list[dict], model: str = "gpt-5.3-codex") -> str:
 
 def _create_trapi_response(
     *,
-    model: str = "gpt-5.3-codex",
+    model: str | None = None,
     input_items: Any,
     instructions: str | None = None,
     previous_response_id: str | None = None,
     tools: list[dict[str, Any]] | None = None,
     max_output_tokens: int = 4096,
 ):
+    if model is None or model == "gpt-5.3-codex":
+        model = _DEFAULT_MODEL
     deployment = _TRAPI_MODEL_MAP.get(model, model)
     client = _get_trapi_client()
     kwargs: dict[str, Any] = {

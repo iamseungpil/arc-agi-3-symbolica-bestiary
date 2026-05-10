@@ -403,6 +403,10 @@ def _markers_from_components(
         # v605 arm5 filter: must be size>=4 with >=4 neighbors, OR multicolor.
         if not (is_multi or (size >= 4 and len(populated) >= 4)):
             continue
+        # v606.4: exclude background color=0 huge component from markers
+        # (it always has 8 neighbors and size > 1000, polluting marker list).
+        if c.get("color") == 0 and size > 100:
+            continue
         compass: dict[str, dict[str, Any]] = {}
         for direction, nbr_id in populated:
             nbr_comp = next((cc for cc in comps if cc["id"] == nbr_id), None)
@@ -576,15 +580,21 @@ def frame_to_state(
         pg = entry.get("prev_grid")
         cg = entry.get("curr_grid") or grid
         dti = _dominant_transition(pg, cg)
-        # which region (in current segmentation) contains this past click
+        # which region (in current segmentation) contains this past click —
+        # prefer the SMALLEST enclosing region to avoid the giant background.
         click_rid = None
         if ec is not None:
             cx, cy = ec
+            candidates = []
             for r in visible_regions:
                 x0, y0, x1, y1 = r["bbox"]
                 if x0 <= cx <= x1 and y0 <= cy <= y1:
-                    click_rid = r["region_id"]
-                    break
+                    area = (x1 - x0 + 1) * (y1 - y0 + 1)
+                    candidates.append((area, r["region_id"]))
+            if candidates:
+                # smallest area first; ties broken by region_id
+                candidates.sort()
+                click_rid = candidates[0][1]
         recent_turn_diffs.append({
             "turn_offset": -(len(action_history[-7:]) - i),
             "coord": list(ec) if ec else None,

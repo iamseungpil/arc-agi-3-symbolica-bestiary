@@ -22,6 +22,8 @@ def _safe_import(name: str, module_path: str, cls_names: list[str]) -> dict[str,
 
 _agents: dict[str, Type[Agent]] = {}
 _agents.update(_safe_import("random", ".templates.random_agent", ["Random"]))
+_agents.update(_safe_import("arm12_coord_replay", ".templates.arm12_coord_replay", ["Arm12CoordReplay"]))
+_agents.update(_safe_import("arm20_hybrid", ".templates.arm20_hybrid", ["Arm20Hybrid"]))
 _agents.update(_safe_import("llm", ".templates.llm_agents", ["LLM", "FastLLM", "GuidedLLM", "ReasoningLLM"]))
 _agents.update(_safe_import("reasoning", ".templates.reasoning_agent", ["ReasoningAgent"]))
 _agents.update(_safe_import("multimodal", ".templates.multimodal", ["MultiModalLLM"]))
