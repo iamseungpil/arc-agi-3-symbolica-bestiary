@@ -5,7 +5,9 @@
   "input": {
     "files_to_lint": [
       "agents/templates/agentica_lite/proposer_prompt.py",
-      "agents/templates/agentica_lite/agent.py"
+      "agents/templates/agentica_lite/agent.py",
+      "agents/templates/agentica_lite/adapter.py",
+      "agents/templates/agentica_lite/_frame_to_state.py"
     ],
     "forbidden_tokens": [
       "R6",
