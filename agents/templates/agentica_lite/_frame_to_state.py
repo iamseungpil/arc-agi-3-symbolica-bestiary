@@ -94,6 +94,12 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
                     "is_multicolor": len(colors) > 1,
                 }
             )
+    # v605 arm6: multicolor super-component merge pass.
+    # Equality flood-fill splits a multicolor 3x3 marker into 9 single-cell
+    # components. Detect tight clusters of 4+ small components in a 3x3 bbox
+    # and merge them into one multicolor super-component.
+    raw_comps = _merge_multicolor_clusters(raw_comps)
+
     # Stable order: by top-left corner.
     raw_comps.sort(key=lambda c: (c["bbox"][1], c["bbox"][0]))
     out: list[dict[str, Any]] = []
@@ -114,6 +120,57 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
             }
         )
     return out
+
+
+def _merge_multicolor_clusters(raw_comps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """v605 arm6 helper: detect 3x3 clusters of small components and merge.
+
+    Strategy: among components with size <= 2, find groups of 4+ whose
+    bounding box (after merge) fits in a 4x4 area. Merge them into one
+    multicolor super-component (same total cells, multicolor=True).
+    Background-color (0) components are excluded from merging.
+    """
+    if not raw_comps:
+        return raw_comps
+    small = [c for c in raw_comps if c["size"] <= 2 and c["_seed_color"] != 0]
+    other = [c for c in raw_comps if not (c["size"] <= 2 and c["_seed_color"] != 0)]
+    used = [False] * len(small)
+    merged: list[dict[str, Any]] = []
+    for i, c in enumerate(small):
+        if used[i]:
+            continue
+        cluster = [c]
+        used[i] = True
+        cx0, cy0 = c["_cells"][0][1], c["_cells"][0][0]
+        for j, d in enumerate(small):
+            if used[j] or i == j:
+                continue
+            dx0, dy0 = d["_cells"][0][1], d["_cells"][0][0]
+            if abs(cx0 - dx0) <= 3 and abs(cy0 - dy0) <= 3:
+                cluster.append(d)
+                used[j] = True
+        if len(cluster) >= 4:
+            all_cells: list[tuple[int, int]] = []
+            all_colors: set[int] = set()
+            for cc in cluster:
+                all_cells.extend(cc["_cells"])
+                all_colors.add(cc["_seed_color"])
+            min_r = min(c[0] for c in all_cells)
+            max_r = max(c[0] for c in all_cells)
+            min_c = min(c[1] for c in all_cells)
+            max_c = max(c[1] for c in all_cells)
+            merged.append({
+                "_seed_color": cluster[0]["_seed_color"],
+                "_cells": all_cells,
+                "bbox": [min_c, min_r, max_c, max_r],
+                "size": len(all_cells),
+                "color": cluster[0]["_seed_color"],
+                "is_multicolor": len(all_colors) > 1,
+            })
+        else:
+            # not a multicolor cluster — keep components individually
+            merged.extend(cluster)
+    return other + merged
 
 
 def _centroid(cells: list[tuple[int, int]]) -> tuple[int, int]:
