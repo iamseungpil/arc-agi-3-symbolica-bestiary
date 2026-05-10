@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 _TRAPI_ENDPOINT = "https://trapi.research.microsoft.com/gcr/shared"
 _API_VERSION = "2025-04-01-preview"
-_MODEL_PREFERENCES = ["gpt-5.3-codex_2026-02-24", "gpt-5.4_2026-03-05", "gpt-5.4-mini_2026-03-17"]
+_MODEL_PREFERENCES = ["gpt-5.4-mini_2026-03-17", "gpt-5.4_2026-03-05"]
 
 REFLECTOR_SYSTEM_PROMPT = (
     "You are a contrastive analyzer for a structured-observation puzzle agent.\n"
