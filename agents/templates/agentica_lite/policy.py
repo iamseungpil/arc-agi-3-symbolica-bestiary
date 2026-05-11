@@ -146,6 +146,9 @@ def select_arm(
     state_for_predicates = dict(state) if isinstance(state, dict) else {}
     if target_marker_id is not None:
         state_for_predicates["target_marker_id"] = target_marker_id
+    # v607 P3: inject turn_count for unknown-predicate grid rotation in resolve_coord.
+    if "turn_count" not in state_for_predicates:
+        state_for_predicates["turn_count"] = int(episode.policy_decisions)
 
     preds = library.all_predicates() if library is not None else {}
     if not preds:

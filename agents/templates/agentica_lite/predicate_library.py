@@ -319,7 +319,21 @@ class PredicateLibrary:
             return (0, 0)
         if policy == "corner_top_left":
             return (x_min, y_min)
-        return ((x_min + x_max) // 2, (y_min + y_max) // 2)
+        cx = (x_min + x_max) // 2
+        cy = (y_min + y_max) // 2
+        # v607 P3 (codex pivot 3): for UNKNOWN predicate (Reflector-emitted), rotate
+        # through 9 positions of the region's bbox 3x3 grid based on turn_count.
+        # Fixes the centroid-only fallback that caused 0 L+ across cycles 300-304.
+        if pred is None and isinstance(state, dict):
+            turn = state.get("turn_count")
+            if isinstance(turn, int) and turn >= 0:
+                # 3x3 grid offsets: indices 0..8
+                # 0=NW, 1=N, 2=NE, 3=W, 4=center, 5=E, 6=SW, 7=S, 8=SE
+                idx = turn % 9
+                xs = [x_min, cx, x_max]
+                ys = [y_min, cy, y_max]
+                return (xs[idx % 3], ys[idx // 3])
+        return (cx, cy)
 
     def all_predicates(self) -> dict[str, Predicate]:
         return {**self.static, **self.installed}
