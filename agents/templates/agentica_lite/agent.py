@@ -347,14 +347,27 @@ class ArcgenticaLite:
         self.posterior.record_emission([decision.arm_key])
         self._last_action_arm_key = decision.arm_key
         # v607 Phase 6: identify chid_template family match for posterior tracking.
+        # Order-agnostic: extracts verb_noun key from template (between 'P_' and
+        # '_C{m}'/'{m}' marker), matches if predicate_id CONTAINS it. Handles both
+        # P_<verb>_<noun>_C<m> and P_C<m>_<verb>_<noun> LLM emission orderings.
         if proposer_output is not None and proposer_output.candidate_predicate_id:
             pid = proposer_output.candidate_predicate_id
             for sk in self._skill_state.skill_lifecycle:
                 tmpl = getattr(sk, "chid_template", "")
                 if not tmpl:
                     continue
-                tmpl_prefix = tmpl.split("{")[0] if "{" in tmpl else tmpl
-                if tmpl_prefix and pid.startswith(tmpl_prefix):
+                # Extract verb_noun key by stripping P_ prefix and _C{m}/{m} suffix.
+                key = tmpl
+                if key.startswith("P_"):
+                    key = key[2:]
+                for marker_tag in ("_C{m}", "_C{marker_id}", "_{m}", "_{marker_id}"):
+                    if key.endswith(marker_tag):
+                        key = key[: -len(marker_tag)]
+                        break
+                # Drop any remaining {placeholder}.
+                if "{" in key:
+                    key = key.split("{")[0].rstrip("_")
+                if key and key in pid:
                     try:
                         increment_emit_count(
                             self._skill_state, tmpl, self._turn_count,
