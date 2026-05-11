@@ -297,3 +297,98 @@ class PredicatePosterior:
         if arm is None or arm.n_emit < n_min:
             return False
         return self.retention_score(key) >= lcb_min
+
+
+# =============================================================================
+# v607 Phase 4 — top-k chid_template sampling (Plan v607 rev E §3 Option C)
+# =============================================================================
+
+import random as _random  # local import to avoid global namespace pollution
+
+# Warmup threshold per plan §6 R2: until total chid_template emissions reach
+# this many across the library, top-k returns uniform-random instead of
+# EV-ranked to avoid premature exploitation of weak priors.
+_WARMUP_TOTAL_EMISSIONS = 5
+
+
+def rank_chid_templates(
+    skill_state,  # SkillState (avoid circular import)
+    k: int = 3,
+    rng: _random.Random | None = None,
+) -> list[tuple[str, float]]:
+    """v607 §3 Option C: top-k chid_template sampling from SkillState.
+
+    Reads beta_alpha / beta_beta from every SkillRecord with non-empty
+    chid_template. Computes EV = alpha / (alpha + beta).
+
+    Warmup: while sum of emit_count across all chid_templates < threshold,
+    returns uniform-random shuffle (length k) to avoid weak-prior bias.
+
+    Returns list of (chid_template, ev) tuples sorted by ev descending.
+    Length ≤ k.
+    """
+    candidates: list[tuple[str, float, int]] = []  # (template, ev, emit_count)
+    total_emissions = 0
+    for s in skill_state.skill_lifecycle:
+        tmpl = getattr(s, "chid_template", "") or ""
+        if not tmpl:
+            continue
+        if s.status == "retired":
+            continue
+        alpha = float(getattr(s, "beta_alpha", 0.5))
+        beta = float(getattr(s, "beta_beta", 0.5))
+        denom = alpha + beta
+        ev = (alpha / denom) if denom > 0 else 0.5
+        ec = int(getattr(s, "emit_count", 0))
+        candidates.append((tmpl, ev, ec))
+        total_emissions += ec
+    if not candidates:
+        return []
+    rng = rng or _random.Random()
+    if total_emissions < _WARMUP_TOTAL_EMISSIONS:
+        # Uniform warmup sampling — return up to k random templates.
+        shuffled = candidates[:]
+        rng.shuffle(shuffled)
+        return [(t, ev) for (t, ev, _) in shuffled[:k]]
+    # EV-ranked top-k.
+    candidates.sort(key=lambda c: c[1], reverse=True)
+    return [(t, ev) for (t, ev, _) in candidates[:k]]
+
+
+def update_chid_posterior(
+    skill_state,  # SkillState
+    chid_template: str,
+    delta_clipped: int,
+) -> bool:
+    """v607 §3 Option C: update Beta posterior on a chid_template SkillRecord.
+
+    delta_clipped ∈ {0, 1}: 1 = success (level_delta >= 1), 0 = failure.
+
+    Mutates the matching SkillRecord in-place. Returns True if a record was
+    found and updated, False otherwise.
+    """
+    for s in skill_state.skill_lifecycle:
+        if getattr(s, "chid_template", "") == chid_template:
+            if delta_clipped >= 1:
+                s.beta_alpha = float(getattr(s, "beta_alpha", 0.5)) + 1.0
+                s.confirmed_count = int(getattr(s, "confirmed_count", 0)) + 1
+            else:
+                s.beta_beta = float(getattr(s, "beta_beta", 0.5)) + 1.0
+                s.falsified_count = int(getattr(s, "falsified_count", 0)) + 1
+            return True
+    return False
+
+
+def increment_emit_count(skill_state, chid_template: str, turn: int) -> None:
+    """v607 §4 cost normalization: bump emit_count + emit_tokens proxy.
+
+    Each Proposer instantiation of a chid_template counts as 1 emission.
+    Used by Policy/Agent after a successful Proposer call.
+    """
+    for s in skill_state.skill_lifecycle:
+        if getattr(s, "chid_template", "") == chid_template:
+            s.emit_count = int(getattr(s, "emit_count", 0)) + 1
+            # Marginal Proposer token cost ~600 per emission (plan §4).
+            s.emit_tokens = int(getattr(s, "emit_tokens", 0)) + 600
+            s.last_emit_turn = turn
+            return
