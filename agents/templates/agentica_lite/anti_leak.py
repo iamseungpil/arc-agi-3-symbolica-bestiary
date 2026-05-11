@@ -192,13 +192,24 @@ def validate_chid_template(s: str) -> Tuple[bool, str]:
     rule violated (V_LEAK_TOKENS / cycle237 4-gram / TF-IDF cosine).
 
     Empty template short-circuits to empty_template reject.
+
+    v607 Phase 9 (P4 hybrid): ARC_LITE_ANTI_LEAK_MODE env var controls strictness:
+      "strict" (default): all 3 rules active (V-LEAK + cycle237 + TF-IDF)
+      "v_leak_only":      only V-LEAK ft09-identifier tokens; cycle237 vocab allowed
+      "off":              all rules disabled (debug only)
     """
     if not s or not s.strip():
         return False, "empty_template"
-    # Rule 1: V-LEAK forbidden tokens (case-sensitive — ft09 tokens are typed).
+    import os as _os
+    mode = _os.environ.get("ARC_LITE_ANTI_LEAK_MODE", "strict").lower()
+    if mode == "off":
+        return True, "ok"
+    # Rule 1: V-LEAK forbidden tokens (always active unless mode=off).
     for tok in V_LEAK_TOKENS:
         if tok in s:
             return False, "v_leak_token"
+    if mode == "v_leak_only":
+        return True, "ok"
     # Rule 2: cycle237 distinguishing-token ban (case-insensitive substring match).
     _, tokens = _ensure_corpus()
     s_lower = s.lower()
