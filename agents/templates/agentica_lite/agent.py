@@ -33,6 +33,7 @@ from .predicate_posterior import (
     ArmKey,
     PredicatePosterior,
     increment_emit_count,
+    rank_chid_templates,
     update_chid_posterior,
 )
 from .proposer import Proposer, ProposerOutput, ProposerResult
@@ -287,8 +288,19 @@ class ArcgenticaLite:
                 self.turns_since_L_plus, max_post, turn_count=self._turn_count - 1
             )
             if warm_up or stalemate_fires:
-                # Build state dict for proposer
-                state_for_prop = state if isinstance(state, dict) else {}
+                # Build state dict for proposer (copy to avoid mutating input)
+                state_for_prop = dict(state) if isinstance(state, dict) else {}
+                # v607 Phase 8: inject top-k chid_template hints from skill_state.
+                # Replaces the v606.x hardcoded `_crop_sector_alignment` example
+                # that caused 60/60 monomania. Empty list = cold-start; proposer
+                # prompt falls through to anonymized invention guidance.
+                try:
+                    if self._skill_state.skill_lifecycle:
+                        state_for_prop["v607_chid_template_hints"] = (
+                            rank_chid_templates(self._skill_state, k=3)
+                        )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("rank_chid_templates failed: %s", e)
                 visible_rids = [
                     (r.get("region_id") or r.get("id")) if isinstance(r, dict)
                     else (getattr(r, "region_id", None) or getattr(r, "id", None))

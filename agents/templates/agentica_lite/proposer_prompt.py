@@ -153,15 +153,38 @@ def render_user_prompt(state: dict[str, Any]) -> str:
                 f"  T{t}: click={coord} region={r} {trans_s} level_delta={ld}{advance_s}"
             )
         lines.append("")
-    # codex r11: inject dynamic TIER-B examples using the actual marker ids
-    # the LLM sees this turn (prefix-agnostic; works for C-prefix, R-prefix, etc.)
+    # v607 Phase 8: dynamic chid_template injection from skill_state top-k posterior.
+    # Replaces v606.x hardcoded `P_<m>_crop_sector_alignment` (which caused 60/60
+    # monomania AND leaked cycle237 vocab compass/sector/sweep/crop/alignment).
     marker_ids_visible = [ms["marker_id"] for ms in summarized if ms.get("marker_id")]
-    if marker_ids_visible:
-        tier_b_examples = ", ".join(
-            f"'P_{mid}_crop_sector_alignment'" for mid in marker_ids_visible[:3]
-        )
+    chid_hints = state.get("v607_chid_template_hints") or []
+    if chid_hints and marker_ids_visible:
+        formatted: list[str] = []
+        for hint in chid_hints[:3]:
+            if isinstance(hint, tuple):
+                tmpl = hint[0]
+                ev = hint[1] if len(hint) > 1 else None
+            else:
+                tmpl, ev = hint, None
+            inst = tmpl
+            if "{m}" in inst:
+                inst = inst.replace("{m}", str(marker_ids_visible[0]))
+            elif "{marker_id}" in inst:
+                inst = inst.replace("{marker_id}", str(marker_ids_visible[0]))
+            tag = f" (EV={ev:.2f})" if isinstance(ev, (int, float)) else ""
+            formatted.append(f"'{inst}'{tag}")
         lines.append(
-            f"TIER-B candidate examples for this turn (using your visible markers): {tier_b_examples}"
+            "DISCOVERED skill templates (top-k by Bayesian EV, pick one if it fits "
+            "this turn's evidence, else INVENT a new <verb>_<noun> family): "
+            + ", ".join(formatted)
+        )
+    elif marker_ids_visible:
+        # Cold-start (no Reflector emissions yet): anonymized invention prompt
+        # (no leak vocab; LLM must invent a verb_noun pair for this turn).
+        lines.append(
+            "Predicate template format: P_<verb>_<noun>_C{marker_id}. "
+            "Invent a NEW verb_noun pair distinct from prior turns; do NOT "
+            "use generic terms like 'check'/'select'/'click'."
         )
     lines.append("Reminder: cite the Step-0 saturation expression in your thought.")
     lines.append("region_hint MUST be one of the visible region ids listed above.")
