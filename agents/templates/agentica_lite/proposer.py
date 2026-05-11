@@ -269,7 +269,10 @@ class Proposer:
                 # TRAPI deployments (e.g. gpt-5.3-codex returns 400). We
                 # rely on the system prompt to demand JSON output and parse
                 # any wrapper text via _extract_json_block before json.loads.
-                kwargs = {"model": model, "messages": messages, "temperature": 0.0}
+                # gpt-5.5 only accepts default temperature=1; gpt-5.4 supports 0.0.
+                kwargs: dict = {"model": model, "messages": messages}
+                if "5.5" not in model.lower():
+                    kwargs["temperature"] = 0.0
                 if "json" in model.lower() or model.endswith("-pro"):
                     kwargs["response_format"] = {"type": "json_object"}
                 resp = await client.chat.completions.create(**kwargs)
