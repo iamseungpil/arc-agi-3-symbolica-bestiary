@@ -157,6 +157,13 @@ def _validate_schema(raw: Any, visible_region_ids: list[str]) -> tuple[ProposerO
     # Policy to click the marker itself instead of its compass slot. Reject.
     if pre_state.get("marker_id") and region_hint == pre_state["marker_id"]:
         return None, "region_hint_equals_marker_id"
+    # v607 Phase 5: anti-leak gate on candidate_predicate_id (plan rev E §5.1 U5).
+    # Defends against paraphrased cycle237 chid templates being smuggled in by
+    # the Reflector or Proposer LLM. Returns schema_error_code = "anti_leak:<reason>".
+    from .anti_leak import validate_chid_template
+    leak_ok, leak_reason = validate_chid_template(pid)
+    if not leak_ok:
+        return None, f"anti_leak:{leak_reason}"
     return ProposerOutput(
         candidate_predicate_id=pid,
         region_hint=region_hint,
