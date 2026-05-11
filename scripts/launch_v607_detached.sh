@@ -40,9 +40,11 @@ setsid -f bash -c '
   export ARC_LITE_SKILL_STATE_PATH="'"$SKILL_STATE"'"
   export ARC_AGENTICA_TRAPI_TIMEOUT_SEC=600
 
-  # v607 uses gpt-5.4-mini for fast iteration; M4 Reflector also gpt-5.4-mini.
-  # User can override via V607_M_MODEL=gpt-5.5 to reproduce cycle237-era model.
-  export V607_M_MODEL="${V607_M_MODEL:-gpt-5.4-mini}"
+  # v607 P10: ARC_LITE_MODEL overrides proposer model (gpt-5.4-mini default).
+  # Set to "gpt-5.5_2026-04-24" to reproduce cycle237-era model.
+  # Set ARC_LITE_ANTI_LEAK_MODE to {strict|v_leak_only|off} to test leak hypothesis.
+  [ -n "${ARC_LITE_MODEL:-}" ] && export ARC_LITE_MODEL
+  [ -n "${ARC_LITE_ANTI_LEAK_MODE:-}" ] && export ARC_LITE_ANTI_LEAK_MODE
 
   ( while true; do
       touch "'"$HEARTBEAT"'" 2>/dev/null || break

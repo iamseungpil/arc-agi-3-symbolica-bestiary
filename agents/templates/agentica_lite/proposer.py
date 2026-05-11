@@ -22,8 +22,12 @@ logger = logging.getLogger(__name__)
 _TRAPI_ENDPOINT = "https://trapi.research.microsoft.com/gcr/shared"
 _API_VERSION = "2025-04-01-preview"
 # v605 arm7: prefer multimodal model first when image-mode is enabled.
+# v607 Phase 10 (P1 codex pivot): ARC_LITE_MODEL env var overrides default.
 import os as _os
-if _os.environ.get("ARC_LITE_MULTIMODAL", "0") == "1":
+_model_override = _os.environ.get("ARC_LITE_MODEL", "").strip()
+if _model_override:
+    _MODEL_PREFERENCES = [_model_override]
+elif _os.environ.get("ARC_LITE_MULTIMODAL", "0") == "1":
     _MODEL_PREFERENCES = ["gpt-4o-mini_2024-07-18", "gpt-4o_2024-11-20"]
 else:
     _MODEL_PREFERENCES = ["gpt-5.4-mini_2026-03-17", "gpt-5.4_2026-03-05"]
