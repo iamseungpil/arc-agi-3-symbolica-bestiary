@@ -12,8 +12,10 @@ Backwards-compatible with the v600 smoke test: ArcgenticaLite(game_id, seed)
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .llm_extender import ExtenderInput, LLMExtender
@@ -27,9 +29,32 @@ from .policy import (
     select_arm,
 )
 from .predicate_library import PredicateLibrary
-from .predicate_posterior import ArmKey, PredicatePosterior
+from .predicate_posterior import (
+    ArmKey,
+    PredicatePosterior,
+    increment_emit_count,
+    update_chid_posterior,
+)
 from .proposer import Proposer, ProposerOutput, ProposerResult
-from .reflector import Reflector, ReflectorOutput
+from .reflector import (
+    Reflector,
+    ReflectorOutput,
+    StuckTriggerConfig,
+    StuckTriggerState,
+    emit_new_chid,
+    record_fire,
+    reset_episode,
+    step_cooldown,
+    stuck_fires,
+)
+from .skill_state import (
+    EmitChidTemplatePatch,
+    SkillState,
+    SkillStateMetadata,
+    apply_patch,
+    load_state,
+    save_state,
+)
 from .stalemate_trigger import StalemateConfig, StalemateTrigger
 
 logger = logging.getLogger(__name__)
@@ -90,6 +115,25 @@ class ArcgenticaLite:
         self._last_proposer_output: ProposerOutput | None = None
         self._last_action_arm_key: ArmKey | None = None
         self._last_action_expected_signature: dict | None = None
+        # v607 Phase 6: skill discovery + stuck trigger lifecycle.
+        # skill_state.json is per-game; can be overridden via env var.
+        self._skill_state_path = Path(os.environ.get(
+            "ARC_LITE_SKILL_STATE_PATH",
+            f"./skill_state_{game_id}.json",
+        ))
+        loaded = load_state(self._skill_state_path)
+        self._skill_state = (
+            loaded if loaded is not None
+            else SkillState(metadata=SkillStateMetadata(game_id=game_id))
+        )
+        self._stuck_cfg = StuckTriggerConfig()
+        self._stuck_state = StuckTriggerState()
+        self._best_advance_turn = -1
+        self._last_dominant_transition: str | None = None
+        self._last_emitted_chid_template: str | None = None
+        self._v607_emit_calls = 0
+        self._v607_emit_accepted = 0
+        self._v607_emit_rejected = 0
 
     @staticmethod
     def _visible_regions(state: Any) -> list[Any]:
@@ -149,18 +193,88 @@ class ArcgenticaLite:
                 prev_coord = obs.get("coord")
                 # Use the coord we issued previously (stored on Action), not the obs.
             self.posterior.update(obs)
-            if int(obs.get("level_delta", 0) or 0) > 0:
+            level_advanced = int(obs.get("level_delta", 0) or 0) > 0
+            if level_advanced:
                 self.turns_since_L_plus = 0
                 self.last_max_level += 1
+                self._best_advance_turn = self._turn_count
             else:
                 self.turns_since_L_plus += 1
         except Exception as e:  # noqa: BLE001
             logger.warning("posterior.update failed: %s", e)
+            level_advanced = False
+
+        # v607 Phase 6: update chid_template posterior with prev turn's verdict.
+        if self._last_emitted_chid_template:
+            try:
+                delta = 1 if level_advanced else 0
+                update_chid_posterior(
+                    self._skill_state, self._last_emitted_chid_template, delta,
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning("update_chid_posterior failed: %s", e)
+            self._last_emitted_chid_template = None
 
         # Expire reflector boost.
         if self._boost_expiry_turn >= 0 and self._turn_count > self._boost_expiry_turn:
             self._exploration_boost = {}
             self._boost_expiry_turn = -1
+
+        # v607 Phase 6: stuck trigger + Reflector chid_template emit.
+        # Fires only on genuine stagnation (per plan rev E §3 Option B adaptive cap).
+        try:
+            step_cooldown(self._stuck_state)
+            dt_obs = obs.get("dominant_transition") or {}
+            curr_dt = (
+                f"{dt_obs.get('from')}->{dt_obs.get('to')}"
+                if dt_obs else None
+            )
+            best_advance_age = self._turn_count - max(0, self._best_advance_turn)
+            if stuck_fires(
+                turns_since_advance=self.turns_since_L_plus,
+                best_advance_age=best_advance_age,
+                episode_length=30,
+                current_dt=curr_dt,
+                state=self._stuck_state,
+                cfg=self._stuck_cfg,
+            ):
+                existing_templates = [
+                    getattr(s, "chid_template", "")
+                    for s in self._skill_state.skill_lifecycle
+                    if getattr(s, "chid_template", "")
+                ]
+                vr_ids = [
+                    (r.get("region_id") if isinstance(r, dict) else str(r))
+                    for r in visible_regions[:10]
+                ]
+                contrast_payload = {
+                    "turn": self._turn_count,
+                    "turns_since_advance": self.turns_since_L_plus,
+                    "dominant_transition": curr_dt,
+                    "recent_diffs": self._recent_failures[-5:],
+                    "visible_regions": [r for r in vr_ids if r],
+                }
+                self._v607_emit_calls += 1
+                emit_res = await emit_new_chid(contrast_payload, existing_templates)
+                if emit_res is not None and not emit_res.reject_reason and emit_res.chid_template:
+                    patch = EmitChidTemplatePatch(
+                        chid_template=emit_res.chid_template,
+                        family="reflector",
+                        description=emit_res.rationale[:200] if emit_res.rationale else "",
+                        emit_run=str(self.seed),
+                        emit_turn=self._turn_count,
+                        emit_tokens=emit_res.tokens_consumed,
+                        cooldown=self._stuck_cfg.cooldown_after_fire,
+                    )
+                    apply_patch(self._skill_state, patch)
+                    record_fire(self._stuck_state, self._turn_count, self._stuck_cfg)
+                    self._stuck_state.last_dominant_transition = curr_dt
+                    save_state(self._skill_state, self._skill_state_path)
+                    self._v607_emit_accepted += 1
+                else:
+                    self._v607_emit_rejected += 1
+        except Exception as e:  # noqa: BLE001
+            logger.warning("v607 stuck-trigger emit failed: %s", e)
 
         # Proposer trigger evaluation (warm-up / stalemate). Paired-cf-driven proposer
         # calls happen via Memory writer below (after action verdict).
@@ -220,6 +334,23 @@ class ArcgenticaLite:
 
         self.posterior.record_emission([decision.arm_key])
         self._last_action_arm_key = decision.arm_key
+        # v607 Phase 6: identify chid_template family match for posterior tracking.
+        if proposer_output is not None and proposer_output.candidate_predicate_id:
+            pid = proposer_output.candidate_predicate_id
+            for sk in self._skill_state.skill_lifecycle:
+                tmpl = getattr(sk, "chid_template", "")
+                if not tmpl:
+                    continue
+                tmpl_prefix = tmpl.split("{")[0] if "{" in tmpl else tmpl
+                if tmpl_prefix and pid.startswith(tmpl_prefix):
+                    try:
+                        increment_emit_count(
+                            self._skill_state, tmpl, self._turn_count,
+                        )
+                        self._last_emitted_chid_template = tmpl
+                    except Exception:  # noqa: BLE001
+                        pass
+                    break
         self._last_action_expected_signature = (
             getattr(proposer_output, "expected_signature", None)
             if proposer_output is not None else None
@@ -348,7 +479,18 @@ class ArcgenticaLite:
                 "proposer_calls": self._proposer_calls,
                 "reflector_calls": self._reflector_calls,
                 "confidence_overrides": self.episode_state.confidence_override_count,
+                # v607 Phase 6 telemetry
+                "v607_emit_calls": self._v607_emit_calls,
+                "v607_emit_accepted": self._v607_emit_accepted,
+                "v607_emit_rejected": self._v607_emit_rejected,
+                "v607_skill_count": len(self._skill_state.skill_lifecycle),
             },
         )
+        # v607 Phase 6: persist final skill_state + reset stuck trigger.
+        try:
+            save_state(self._skill_state, self._skill_state_path)
+            reset_episode(self._stuck_state)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("v607 episode_end persist failed: %s", e)
         self.journal.append(rec)
         return rec
