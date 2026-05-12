@@ -172,6 +172,121 @@ class M4ValidationResult:
     violations: list[str]
 
 
+# ─────────────────────────────────────────────────────────────────
+# Δ7 — multi-role separation (Plan rev D, codex round 10 ACCEPT)
+# ─────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class M1ProposerResult:
+    ok: bool
+    violations: list[str]
+
+
+def validate_m1_proposer_output(out: dict) -> M1ProposerResult:
+    """Δ7a — M1 Proposer outputs NL intent ONLY. No coords allowed.
+
+    Plan rev D §Δ7a contract:
+      {
+        "nl_strategy": "<NL>",
+        "suggested_click_region": "<NL spatial descriptor>",
+        "expected_signature": {...},
+        "rollback_trigger": "<NL>"
+      }
+
+    FORBIDDEN: any `click_xy_hint` or `(x,y)` integer pair field.
+    """
+    v: list[str] = []
+    if not isinstance(out, dict):
+        return M1ProposerResult(False, ["proposer output not a dict"])
+    s = out.get("nl_strategy")
+    if not isinstance(s, str) or len(s) < 30:
+        v.append("nl_strategy missing or <30 chars")
+    region = out.get("suggested_click_region")
+    if not isinstance(region, str) or not region.strip():
+        v.append("suggested_click_region missing (Δ7a NL spatial)")
+    es = out.get("expected_signature")
+    if not isinstance(es, dict):
+        v.append("expected_signature missing or not a dict")
+    rb = out.get("rollback_trigger")
+    if not isinstance(rb, str) or not rb.strip():
+        v.append("rollback_trigger missing or empty NL")
+    # CRITICAL: M1 Proposer must NOT output coords
+    if "click_xy_hint" in out:
+        v.append("click_xy_hint forbidden in M1 Proposer (Δ7a) — "
+                 "coords are M2e Executor's responsibility")
+    if "click_xy" in out or "x" in out or "y" in out:
+        v.append("raw x/y coords forbidden in M1 Proposer output")
+    return M1ProposerResult(ok=(len(v) == 0), violations=v)
+
+
+@dataclass
+class M2vVerifierResult:
+    ok: bool
+    violations: list[str]
+
+
+def validate_m2v_verifier_output(out: dict) -> M2vVerifierResult:
+    """Δ7b — M2v Verifier outputs verdict + reason. Separate context.
+
+    Plan rev D §Δ7b contract:
+      {
+        "verdict": "approve" | "reject_replan" | "reject_anchor",
+        "reason_nl": "<NL>"
+      }
+
+    The Verifier's INPUT separation (no frame, no SKILL.md) is
+    enforced at the agent.py level — not here. This validator only
+    checks the OUTPUT shape.
+    """
+    v: list[str] = []
+    if not isinstance(out, dict):
+        return M2vVerifierResult(False, ["verifier output not a dict"])
+    verdict = out.get("verdict")
+    if verdict not in ("approve", "reject_replan", "reject_anchor"):
+        v.append(f"verdict must be approve|reject_replan|reject_anchor "
+                 f"(got {verdict!r})")
+    reason = out.get("reason_nl")
+    if not isinstance(reason, str) or len(reason) < 10:
+        v.append("reason_nl missing or <10 chars")
+    return M2vVerifierResult(ok=(len(v) == 0), violations=v)
+
+
+@dataclass
+class M2eExecutorResult:
+    ok: bool
+    violations: list[str]
+
+
+def validate_m2e_executor_output(out: dict) -> M2eExecutorResult:
+    """Δ7c — M2e Executor takes approved NL strategy + PNG and emits
+    click coords.
+
+    Plan rev D §Δ7c contract:
+      {
+        "click_xy_hint": [int, int],
+        "grounding_text": "<NL explaining which visual feature maps to xy>"
+      }
+    """
+    v: list[str] = []
+    if not isinstance(out, dict):
+        return M2eExecutorResult(False, ["executor output not a dict"])
+    coord = out.get("click_xy_hint")
+    if not (isinstance(coord, (list, tuple)) and len(coord) == 2):
+        v.append("click_xy_hint missing or wrong shape (need [x, y])")
+    else:
+        try:
+            x, y = int(coord[0]), int(coord[1])
+            if not (0 <= x < 64 and 0 <= y < 64):
+                v.append(f"click_xy_hint out of bounds: ({x},{y})")
+        except (TypeError, ValueError):
+            v.append("click_xy_hint contents not int-coercible")
+    grounding = out.get("grounding_text")
+    if not isinstance(grounding, str) or len(grounding) < 20:
+        v.append("grounding_text missing or <20 chars (Δ7c required)")
+    return M2eExecutorResult(ok=(len(v) == 0), violations=v)
+
+
 def validate_m4_output(out: dict) -> M4ValidationResult:
     """Validate M4 emits 3-step self-verification.
 
