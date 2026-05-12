@@ -11,6 +11,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Final
+
+
+# Round 13: single source of truth for M2v verdict labels.
+# Imported by validator, runner, orchestrator, tests.
+M2V_VERDICTS: Final[tuple[str, ...]] = (
+    "approve", "reject_replan", "reject_anchor",
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -243,8 +251,8 @@ def validate_m2v_verifier_output(out: dict) -> M2vVerifierResult:
     if not isinstance(out, dict):
         return M2vVerifierResult(False, ["verifier output not a dict"])
     verdict = out.get("verdict")
-    if verdict not in ("approve", "reject_replan", "reject_anchor"):
-        v.append(f"verdict must be approve|reject_replan|reject_anchor "
+    if verdict not in M2V_VERDICTS:
+        v.append(f"verdict must be one of {M2V_VERDICTS} "
                  f"(got {verdict!r})")
     reason = out.get("reason_nl")
     if not isinstance(reason, str) or len(reason) < 10:
