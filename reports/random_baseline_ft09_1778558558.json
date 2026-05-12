@@ -1,0 +1,12 @@
+{
+  "game": "ft09-9ab2447a",
+  "n_actions": 1000,
+  "snap_grid": true,
+  "seed": 42,
+  "levels_initial": 0,
+  "levels_final": 0,
+  "total_l_plus_events": 0,
+  "wall_seconds": 0.36498165130615234,
+  "actions_per_sec": 2739.863761428336,
+  "l_plus_events": []
+}
