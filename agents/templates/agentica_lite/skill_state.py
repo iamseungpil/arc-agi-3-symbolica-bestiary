@@ -29,6 +29,10 @@ class SkillStateMetadata:
     game_id: str = ""
     last_updated: str = ""
     cross_run_imported: bool = False  # one-time migration flag (plan §7)
+    # v608f-fix: telemetry dict (repeats_fired / repeat_regions / etc).
+    # Persisted via `asdict` so post-cycle analysis scripts can read it
+    # from skill_state.json without instrumenting the live process.
+    v608f_counters: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,6 +92,34 @@ class SkillRecord:
 
 
 @dataclass
+class SkillCard:
+    """v608 card-ledger record rendered into SKILL.md.
+
+    Cards are operational: they must name observable state features,
+    predictions, falsifiers, and policy hooks so Reflector updates remain
+    testable instead of prose-only.
+    """
+    id: str
+    card_type: Literal["mechanic", "strategy", "hypothesis"]
+    status: Literal["draft", "active", "narrowed", "falsified", "retired"] = "draft"
+    claim: str = ""
+    state_features: list[str] = field(default_factory=list)
+    predicts: list[str] = field(default_factory=list)
+    falsifiers: list[str] = field(default_factory=list)
+    policy_hooks: list[str] = field(default_factory=list)
+    support_count: int = 0
+    refute_count: int = 0
+    evidence: list[dict[str, Any]] = field(default_factory=list)
+    # v608d: optional fields. `auto_draft` marks cards created by the
+    # atomic-citation auto-draft path so the sleep compressor can prefer
+    # human-curated seeds. `last_predicted` carries the most recent
+    # next-state prediction payload for the prediction-vs-observation
+    # comparator in the next turn.
+    auto_draft: bool = False
+    last_predicted: dict[str, Any] | None = None
+
+
+@dataclass
 class SkillMetrics:
     skills_proposed: int = 0
     skills_confirmed: int = 0
@@ -107,6 +139,7 @@ class SkillState:
     active_hypotheses: list[ActiveHypothesis] = field(default_factory=list)
     falsifications: list[Falsification] = field(default_factory=list)
     skill_lifecycle: list[SkillRecord] = field(default_factory=list)
+    cards: list[SkillCard] = field(default_factory=list)
     metrics: SkillMetrics = field(default_factory=SkillMetrics)
 
     # ----------------------------------------------------------------- I/O
@@ -140,10 +173,11 @@ class SkillState:
             for k, v in _sr_defaults.items():
                 row.setdefault(k, v)
             sl.append(SkillRecord(**row))
+        cards = [SkillCard(**c) for c in d.get("cards", [])]
         m = SkillMetrics(**d.get("metrics", {}))
         return cls(metadata=meta, confirmed_mechanics=cm,
                    active_hypotheses=ah, falsifications=fals,
-                   skill_lifecycle=sl, metrics=m)
+                   skill_lifecycle=sl, cards=cards, metrics=m)
 
     def touch(self) -> None:
         """Update last_updated timestamp."""

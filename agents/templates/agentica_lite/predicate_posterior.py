@@ -48,7 +48,8 @@ class ArmStats:
 # proposer's saturation_progress (priority 0.0) by 4 points, far beyond the 0.05
 # tie-break window of §3.14.
 _FAMILY_PRIORITY: dict[str, float] = {
-    "saturation_progress": 5.0,
+    "constraint_repair": 6.0,
+    "saturation_progress": 4.5,
     "sector_alignment": 4.0, "marker_align": 3.0, "dominant_transition": 2.0,
     "neighbor_pair": 1.5, "unclicked_neighbor": 1.5, "compass_change": 1.5,
     "size_anchor": 1.0, "color_invariance": 1.0, "corner_align": 1.0,
@@ -141,6 +142,19 @@ class PredicatePosterior:
         family = getattr(pred, "family", "") if pred is not None else ""
         return family == "saturation_progress"
 
+    @staticmethod
+    def _has_marker_constraints(state: Any) -> bool:
+        if state is None:
+            return False
+        if isinstance(state, dict):
+            return bool(state.get("marker_constraints"))
+        return bool(getattr(state, "marker_constraints", None))
+
+    @staticmethod
+    def _is_constraint_repair_pred(pid: str, pred: Any) -> bool:
+        family = getattr(pred, "family", "") if pred is not None else ""
+        return family == "constraint_repair" or pid.startswith("P13_") or pid.startswith("P14_")
+
     def select(self, visible_regions: list[Any], library: Any,
                state: Any = None) -> tuple[str, str] | None:
         """v600/v601 select. v601: skip saturation_progress predicates unless
@@ -159,6 +173,7 @@ class PredicatePosterior:
                 has_target = bool(state.get("target_marker_id"))
             else:
                 has_target = bool(getattr(state, "target_marker_id", None))
+        has_constraints = self._has_marker_constraints(state)
         N = max(1, self._total_selections())
         log_N = math.log(N + 1)
         best_key: ArmKey | None = None
@@ -169,6 +184,8 @@ class PredicatePosterior:
                 continue
             for pid, pred in preds.items():
                 if (not has_target) and self._is_saturation_progress_pred(pid, pred):
+                    continue
+                if (not has_constraints) and self._is_constraint_repair_pred(pid, pred):
                     continue
                 s = self._score(pid, pred, rid, log_N)
                 if s > best_score:
@@ -192,6 +209,7 @@ class PredicatePosterior:
                 has_target = bool(state.get("target_marker_id"))
             else:
                 has_target = bool(getattr(state, "target_marker_id", None))
+        has_constraints = self._has_marker_constraints(state)
         N = max(1, self._total_selections())
         log_N = math.log(N + 1)
         rows: list[tuple[str, str, float]] = []
@@ -201,6 +219,8 @@ class PredicatePosterior:
                 continue
             for pid, pred in preds.items():
                 if (not has_target) and self._is_saturation_progress_pred(pid, pred):
+                    continue
+                if (not has_constraints) and self._is_constraint_repair_pred(pid, pred):
                     continue
                 rows.append((pid, rid, self._score(pid, pred, rid, log_N)))
         rows.sort(key=lambda r: r[2], reverse=True)

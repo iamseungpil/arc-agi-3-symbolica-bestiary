@@ -11,23 +11,28 @@ from __future__ import annotations
 
 from typing import Any
 
-# Plan §3 + §G11: Step-0 saturation computation must be referenced verbatim.
+# Legacy v601 saturation expression retained for migration tests. v608 prompts
+# use the constraint expression below as the primary Step 0.
 SATURATION_STEP0_REFERENCE = (
     "mean(c.clicks >= 1 for c in M.compass)"
+)
+CONSTRAINT_STEP0_REFERENCE = (
+    "for each marker slot, relation = same if marker slot value is zero-like "
+    "else different; satisfied = neighbor_color relation marker_color"
 )
 
 SYSTEM_PROMPT = (
     "You are a predicate proposer for a structured-observation puzzle agent.\n"
     "You CANNOT call submit_action, click, or any environment tool.\n"
     "You output ONE JSON object describing a candidate predicate to test.\n\n"
-    "Step 0 (mandatory). For each visible primary marker M, compute the\n"
-    "saturation fraction:\n"
-    f"  saturation(M) = {SATURATION_STEP0_REFERENCE}\n"
-    "Cite this expression in your `thought` field. Markers with saturation\n"
-    "approaching 1.0 are strong candidates for level-progression triggers.\n\n"
+    "Step 0 (mandatory). Build local marker-constraint cards:\n"
+    f"  {CONSTRAINT_STEP0_REFERENCE}\n"
+    "Cite this constraint expression in your `thought` field. Prefer actions\n"
+    "that reduce the count of unsatisfied marker constraints. Treat raw\n"
+    f"saturation ({SATURATION_STEP0_REFERENCE}) only as auxiliary history.\n\n"
     "Step 1. You may propose either:\n"
-    "  (A) a saturation-driven predicate that targets the most-saturated\n"
-    "      marker's remaining unclicked neighbor slot, OR a slot adjacent to it, OR\n"
+    "  (A) a constraint-repair predicate that targets an unsatisfied marker\n"
+    "      neighbor slot, OR\n"
     "  (B) a region-anchored predicate whose candidate id names a NEW\n"
     "      <verb>_<noun> rationale invented for this turn's evidence.\n"
     "      INVENT the verb_noun pair distinct from prior turns; do NOT reuse\n"
@@ -35,7 +40,7 @@ SYSTEM_PROMPT = (
     "Region-anchored predicates anchored to one of the visible marker ids in\n"
     "marker_neighbor_states (form: P_<visible_marker_id>_<verb>_<noun>, e.g.\n"
     "P_<marker_id>_<your_invented_rationale>) are PREFERRED over generic\n"
-    "saturation_progress when both are plausible. Substitute <visible_marker_id>\n"
+    "constraint_repair when both are plausible. Substitute <visible_marker_id>\n"
     "with an actual marker_id from the user prompt's marker list.\n"
     "If skill template hints are present in the user prompt (DISCOVERED skill\n"
     "templates with EV scores), prefer instantiating one of those over\n"
@@ -52,12 +57,12 @@ SYSTEM_PROMPT = (
     "  expected_signature: dict (e.g., {level_delta: 1})\n"
     "  required_pre_state:\n"
     "    marker_id: str (must be a marker_id present in marker_neighbor_states)\n"
-    "    saturation_threshold: int\n"
-    "    saturation_denominator: int\n"
+    "    saturation_threshold: int (legacy; fill with 0 if unused)\n"
+    "    saturation_denominator: int (legacy; fill with 0 if unused)\n"
     "    If the predicate is not saturation-based, keep these fields present\n"
     "    and fill them with explicit dummy integers rather than omitting them.\n"
     "  confidence: float in [0, 1]\n"
-    "  thought: str (must contain the saturation Step-0 expression above;\n"
+    "  thought: str (must contain the constraint Step-0 expression above;\n"
     "    explain the region-anchored rationale in the same thought)\n"
     "Forbidden: tool_calls, submit_action, free-form prose outside `thought`.\n"
     "Forbidden: region_hint == marker_id (same value). Region_hint MUST\n"
@@ -119,6 +124,8 @@ def render_user_prompt(state: dict[str, Any]) -> str:
     )
     visible_regions = state.get("visible_regions") or []
     visible_ids = [r.get("region_id") or r.get("id") for r in visible_regions if r]
+    constraints = state.get("marker_constraints") or []
+    constraint_summary = state.get("marker_constraint_summary") or {}
     lines: list[str] = []
     lines.append("State summary:")
     if primary_id:
@@ -132,6 +139,19 @@ def render_user_prompt(state: dict[str, Any]) -> str:
             f"compass clicks {ms['compass_saturation_numerator']}/{ms['compass_denominator']} ; "
             f"unclicked compass region ids: {ms['unclicked_compass_region_ids']}"
         )
+    if constraints:
+        lines.append(
+            "  marker constraints: "
+            f"unsatisfied={int(constraint_summary.get('unsatisfied', 0) or 0)} "
+            f"/ total={int(constraint_summary.get('total', len(constraints)) or 0)}"
+        )
+        for c in constraints[:12]:
+            lines.append(
+                "    "
+                f"marker={c.get('marker_id')} slot={c.get('slot')} "
+                f"neighbor={c.get('neighbor_region_id')} "
+                f"relation={c.get('relation')} satisfied={bool(c.get('satisfied'))}"
+            )
     lines.append("")
     # codex r20 option B: rolling click+observation history for multi-step
     # planning (cycle237 evidence: L+1 requires 7-step sequence, not 1 click)
@@ -146,10 +166,38 @@ def render_user_prompt(state: dict[str, Any]) -> str:
             adv = d.get("did_advance", False)
             dt_d = d.get("dominant_transition") or {}
             from_c, to_c, cnt = dt_d.get("from"), dt_d.get("to"), dt_d.get("count", 0)
-            trans_s = f"trans={from_c}→{to_c}(n={cnt})" if from_c is not None else "trans=none"
+            trans_s = f"trans={from_c}->{to_c}(n={cnt})" if from_c is not None else "trans=none"
             advance_s = " [LEVEL_ADVANCED!]" if adv else ""
             lines.append(
                 f"  T{t}: click={coord} region={r} {trans_s} level_delta={ld}{advance_s}"
+            )
+        lines.append("")
+    # v608d Phase 2 / v608e: per-region color-cycle world model. The cycle
+    # detector can infer a period after 3 samples, and cycle401 showed the
+    # stricter n>=4 gate injected zero world-model slices in live play.
+    rt = (state.get("region_transition_cache")
+          or state.get("region_transitions")
+          or {})
+    confirmed = [
+        (rid, view) for rid, view in rt.items()
+        if isinstance(view, dict)
+        and view.get("inferred_cycle")
+        and int(view.get("n_samples", 0) or 0) >= 3
+    ]
+    if confirmed:
+        confirmed.sort(key=lambda kv: -float(kv[1].get("confidence", 0.0)))
+        lines.append(
+            "Region click-cycle local transition cache (cycle inferred from "
+            "your own click history; use this to predict the next observation):"
+        )
+        for rid, view in confirmed[:8]:
+            cycle = view.get("inferred_cycle")
+            nxt = view.get("next_predicted")
+            conf = float(view.get("confidence", 0.0) or 0.0)
+            ns = int(view.get("n_samples", 0) or 0)
+            lines.append(
+                f"  {rid}: cycle={cycle} next_predicted={nxt} "
+                f"confidence={conf:.2f} samples={ns}"
             )
         lines.append("")
     # v607 Phase 8: dynamic chid_template injection from skill_state top-k posterior.
@@ -185,8 +233,13 @@ def render_user_prompt(state: dict[str, Any]) -> str:
             "Invent a NEW verb_noun pair distinct from prior turns; do NOT "
             "use generic terms like 'check'/'select'/'click'."
         )
-    lines.append("Reminder: cite the Step-0 saturation expression in your thought.")
+    lines.append("Reminder: cite the Step-0 marker-constraint expression in your thought.")
     lines.append("region_hint MUST be one of the visible region ids listed above.")
+    lines.append(
+        "If a region click-cycle world model entry is shown above, your "
+        "thought MUST compare the previous turn's predicted next color to "
+        "this turn's observed color when you click that region."
+    )
     lines.append(
         "If recent click history shows no level_delta advance after several "
         "tries on the same region, try a DIFFERENT region this turn."

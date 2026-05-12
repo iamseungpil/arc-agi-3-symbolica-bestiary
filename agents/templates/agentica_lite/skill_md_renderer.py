@@ -18,7 +18,7 @@ from typing import Iterable
 
 from .skill_state import (
     ActiveHypothesis, ConfirmedMechanic, Falsification, SkillMetrics,
-    SkillRecord, SkillState,
+    SkillCard, SkillRecord, SkillState,
 )
 
 AUTO_GENERATED_HEADER = (
@@ -161,6 +161,48 @@ def _render_S_section(items: list[SkillRecord]) -> str:
     return "\n".join(lines)
 
 
+def _sorted_cards(items: Iterable[SkillCard], card_type: str) -> list[SkillCard]:
+    status_rank = {"active": 0, "draft": 1, "narrowed": 2, "falsified": 3, "retired": 4}
+    return sorted(
+        [c for c in items if c.card_type == card_type],
+        key=lambda c: (
+            status_rank.get(c.status, 99),
+            -(c.support_count - c.refute_count),
+            c.id,
+        ),
+    )
+
+
+def _render_card_group(title: str, items: list[SkillCard]) -> list[str]:
+    lines = [f"### {title}"]
+    if not items:
+        lines.append("_(none)_")
+        return lines
+    for c in items:
+        lines.append(
+            f"- [{c.id}] status={c.status} support={c.support_count} "
+            f"refute={c.refute_count}"
+        )
+        lines.append(f"  claim: {c.claim}")
+        if c.state_features:
+            lines.append(f"  state_features: {', '.join(c.state_features)}")
+        if c.predicts:
+            lines.append(f"  predicts: {' | '.join(c.predicts)}")
+        if c.falsifiers:
+            lines.append(f"  falsifiers: {' | '.join(c.falsifiers)}")
+        if c.policy_hooks:
+            lines.append(f"  policy_hooks: {', '.join(c.policy_hooks)}")
+    return lines
+
+
+def _render_cards_section(items: list[SkillCard]) -> str:
+    lines = ["## Cards — Mechanic / Strategy / Hypothesis Ledger"]
+    lines.extend(_render_card_group("Mechanics", _sorted_cards(items, "mechanic")))
+    lines.extend(_render_card_group("Strategies", _sorted_cards(items, "strategy")))
+    lines.extend(_render_card_group("Hypotheses", _sorted_cards(items, "hypothesis")))
+    return "\n".join(lines)
+
+
 def render(state: SkillState) -> str:
     """Render SkillState to a deterministic Markdown string."""
     sections = [
@@ -174,6 +216,8 @@ def render(state: SkillState) -> str:
         _render_1B_section(_sorted_1B(state.active_hypotheses)),
         "",
         _render_F_section(_sorted_F(state.falsifications)),
+        "",
+        _render_cards_section(state.cards),
         "",
         _render_S_section(state.skill_lifecycle),
         "",

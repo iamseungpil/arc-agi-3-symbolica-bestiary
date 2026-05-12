@@ -134,6 +134,94 @@ def _p12_saturation_progress(state: Any, t: int) -> list[RegionRef]:
     return out
 
 
+def _marker_constraints_of(state: Any) -> list[dict[str, Any]]:
+    if isinstance(state, dict):
+        return state.get("marker_constraints") or []
+    return getattr(state, "marker_constraints", None) or []
+
+
+def _p13_unsatisfied_marker_constraint(state: Any, t: int) -> list[RegionRef]:
+    """v608: regions participating in currently unsatisfied marker constraints.
+
+    v608b: when at least one unsatisfied constraint has high evidence_quality
+    (i.e. comes from a multicolor marker), restrict the output to those.
+    Otherwise fall back to all unsatisfied constraints so the substrate still
+    fires on single-color marker fallbacks.
+    """
+    regions = _regions_of(state)
+    by_id: dict[str, Any] = {}
+    for r in regions:
+        rid = r.get("region_id") or r.get("id") if isinstance(r, dict) else (
+            getattr(r, "region_id", None) or getattr(r, "id", None)
+        )
+        if rid:
+            by_id[str(rid)] = r
+    constraints = _marker_constraints_of(state)
+    high_unsat = [
+        c for c in constraints
+        if isinstance(c, dict)
+        and not bool(c.get("satisfied", True))
+        and c.get("evidence_quality") == "high"
+    ]
+    chosen = high_unsat if high_unsat else [
+        c for c in constraints
+        if isinstance(c, dict) and not bool(c.get("satisfied", True))
+    ]
+    out: list[RegionRef] = []
+    seen: set[str] = set()
+    for c in chosen:
+        rid = c.get("neighbor_region_id")
+        if not rid or str(rid) in seen:
+            continue
+        r = by_id.get(str(rid))
+        if r is not None:
+            out.append(_to_region_ref(r))
+            seen.add(str(rid))
+    return out
+
+
+def _p14_best_constraint_delta(state: Any, t: int) -> list[RegionRef]:
+    """v608 smoke implementation: prioritize unsatisfied constraints.
+
+    v608b should replace this with a palette-transition net-gain scorer. For
+    now it is a deterministic alias to P13, which is enough to validate the
+    card/state/policy contract before live autoresearch.
+    """
+    return _p13_unsatisfied_marker_constraint(state, t)
+
+
+def _p16_transition_cache_repeat(state: Any, t: int) -> list[RegionRef]:
+    """v608f: regions eligible for a deterministic repeat-click to close the
+    local transition cache (n_samples in {1, 2}).
+
+    Used primarily as the predicate_id stamped on actions issued by the
+    policy's active override path. The function body returns *only* those
+    regions whose `region_transition_cache` entry has n_samples 1 or 2 so
+    that the candidates list still has a sensible mapping if the override
+    ever falls back to the standard candidate-selection flow.
+    """
+    cache = _marker_constraints_of  # silence unused import
+    regions = _regions_of(state)
+    if not regions or not isinstance(state, dict):
+        return []
+    tc = state.get("region_transition_cache") or state.get("region_transitions") or {}
+    if not isinstance(tc, dict):
+        return []
+    eligible_ids = {
+        str(rid) for rid, view in tc.items()
+        if isinstance(view, dict)
+        and int(view.get("n_samples", 0) or 0) in (1, 2)
+    }
+    out: list[RegionRef] = []
+    for r in regions:
+        rid = r.get("region_id") or r.get("id") if isinstance(r, dict) else (
+            getattr(r, "region_id", None) or getattr(r, "id", None)
+        )
+        if rid and str(rid) in eligible_ids:
+            out.append(_to_region_ref(r))
+    return out
+
+
 STATIC_PREDICATES: dict[str, Predicate] = {}
 
 
@@ -167,6 +255,28 @@ _register(Predicate(
 ))
 # Alias for proposer-emitted IDs (plan §3.9 P_saturation_progress).
 STATIC_PREDICATES["P_saturation_progress"] = STATIC_PREDICATES["P12_saturation_progress"]
+_register(Predicate(
+    "P13_unsatisfied_marker_constraint", "constraint_repair", "centroid",
+    _p13_unsatisfied_marker_constraint, True,
+))
+_register(Predicate(
+    "P14_best_constraint_delta", "constraint_repair", "centroid",
+    _p14_best_constraint_delta, True,
+))
+# v608f: explicit predicate stamped on policy-driven repeat-click actions.
+# It is NEVER chosen by the standard scoring flow; the policy overrides the
+# arm_key to this id when the active local-transition-cache gate fires.
+_register(Predicate(
+    "P16_transition_cache_repeat", "transition_cache", "centroid",
+    _p16_transition_cache_repeat, True,
+))
+# v609: explicit predicate stamped on coords emitted by the offline A*
+# graph solver. NEVER chosen by standard scoring; the search uses this
+# id so its evidence rows stay distinguishable in the card ledger.
+_register(Predicate(
+    "P17_search_step", "graph_search", "centroid",
+    _p16_transition_cache_repeat, True,  # body reused; ranking is by external A*
+))
 
 
 P_TEST_FRAME: dict[str, Any] = {

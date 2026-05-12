@@ -88,6 +88,7 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
                 {
                     "_seed_color": seed_color,
                     "_cells": cells,
+                    "_cell_values": {cell: grid[cell[0]][cell[1]] for cell in cells},
                     "bbox": [min_c, min_r, max_c, max_r],  # x0, y0, x1, y1
                     "size": len(cells),
                     "color": seed_color,
@@ -128,6 +129,10 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
                 "is_multicolor": c["is_multicolor"],
                 "_cells_first": c["_cells"][0] if c["_cells"] else (0, 0),
                 "_cells_centroid": _centroid(c["_cells"]),
+                # v608: forward raw cell values so downstream constraint
+                # inference can read per-slot colors. Stripped before exposing
+                # visible_regions to the framework (see frame_to_state main).
+                "_cell_values": dict(c.get("_cell_values") or {}),
                 "y_band": _y_band(c["bbox"]),
             }
         )
@@ -149,11 +154,18 @@ def _flood_fill_components(grid: list[list[int]]) -> list[dict[str, Any]]:
 # adapter.reset_episode() must call _reset_stability_state() to clear.
 _STABILITY_STATE: dict[str, Any] = {"prev": [], "next_idx": 1}
 
+# v608d Phase 2: per-region post-click color history. Keyed by region_id.
+# Each entry is a `collections.deque` of the last K colors observed AFTER the
+# click landed inside the region. Reset on episode boundary.
+_REGION_TRANSITION_STATE: dict[str, dict[str, Any]] = {}
+_REGION_TRANSITION_MAX = 8
+
 
 def _reset_stability_state() -> None:
     """Called at start of each new episode (per adapter contract)."""
     _STABILITY_STATE["prev"] = []
     _STABILITY_STATE["next_idx"] = 1
+    _REGION_TRANSITION_STATE.clear()
 
 
 def _iou_xyxy(a: list[int], b: list[int]) -> float:
@@ -222,6 +234,7 @@ def _add_3x3_multicolor_patches(
                 added.append({
                     "_seed_color": grid[non_bg[0][0]][non_bg[0][1]],
                     "_cells": non_bg,
+                    "_cell_values": {cell: grid[cell[0]][cell[1]] for cell in non_bg},
                     "bbox": [c0, r0, c0 + 2, r0 + 2],
                     "size": len(non_bg),
                     "color": grid[non_bg[0][0]][non_bg[0][1]],
@@ -250,19 +263,36 @@ def _match_or_assign(c: dict, state: dict, used: set[str]) -> str:
 
 
 def _merge_multicolor_clusters(raw_comps: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """v605 arm6 helper: detect 3x3 clusters of small components and merge.
+    """Detect grouped small same-bbox components and merge into a multicolor
+    super-component when they share a tight window AND span >= 2 distinct
+    non-background colors.
 
-    Strategy: among components with size <= 2, find groups of 4+ whose
-    bounding box (after merge) fits in a 4x4 area. Merge them into one
-    multicolor super-component (same total cells, multicolor=True).
-    Background-color (0) components are excluded from merging.
+    v608c (2026-05-11): ft09 markers are roughly 6x6 patches built from
+    several 2x2 sub-blocks of distinct colors. The pre-v608c logic only
+    inspected a 4x4 window, which missed the ft09 layout entirely (E1 on
+    cycle237 traces reported `high_constraints=0` across 203 frames). The
+    revised heuristic uses a 6x6 cluster bbox and requires at least two
+    distinct seed colors in the cluster, so a uniform 2x2 patch by itself is
+    not promoted while a real multi-color marker is.
+
+    Background-color (0) components are still excluded.
     """
     if not raw_comps:
         return raw_comps
-    # v606.3 codex r19: relax size<=2 to size<=4 to catch ft09 3x3 multicolor
-    # patches whose per-color sub-components are size 3-4 (not <=2).
-    small = [c for c in raw_comps if c["size"] <= 4 and c["_seed_color"] != 0]
-    other = [c for c in raw_comps if not (c["size"] <= 4 and c["_seed_color"] != 0)]
+    # Centroid of a component (column-major, matches `_centroid`).
+    def _comp_center(comp: dict[str, Any]) -> tuple[float, float]:
+        cells = comp.get("_cells") or []
+        if not cells:
+            return (0.0, 0.0)
+        sr = sum(c[0] for c in cells) / len(cells)
+        sc = sum(c[1] for c in cells) / len(cells)
+        return (sc, sr)
+
+    # v608c: relax size cap from 4 to 9. Some ft09 marker sub-blocks are
+    # actually 2x2=4 cells but a 3x3 single-color block is also plausible; the
+    # cluster bbox + multicolor constraint below keep noise out.
+    small = [c for c in raw_comps if c["size"] <= 9 and c["_seed_color"] != 0]
+    other = [c for c in raw_comps if not (c["size"] <= 9 and c["_seed_color"] != 0)]
     used = [False] * len(small)
     merged: list[dict[str, Any]] = []
     for i, c in enumerate(small):
@@ -270,31 +300,51 @@ def _merge_multicolor_clusters(raw_comps: list[dict[str, Any]]) -> list[dict[str
             continue
         cluster = [c]
         used[i] = True
-        cx0, cy0 = c["_cells"][0][1], c["_cells"][0][0]
+        cx, cy = _comp_center(c)
+        # v608c: 6x6 cluster bbox (was 4x4). Distance is measured from the
+        # cluster seed center to each candidate center.
+        WINDOW = 5.5  # admit components whose centers fall within a 11x11
+        # diameter around the seed; the final bbox is recomputed from cells.
         for j, d in enumerate(small):
             if used[j] or i == j:
                 continue
-            dx0, dy0 = d["_cells"][0][1], d["_cells"][0][0]
-            if abs(cx0 - dx0) <= 3 and abs(cy0 - dy0) <= 3:
+            dx, dy = _comp_center(d)
+            if abs(cx - dx) <= WINDOW and abs(cy - dy) <= WINDOW:
                 cluster.append(d)
                 used[j] = True
         if len(cluster) >= 4:
             all_cells: list[tuple[int, int]] = []
             all_colors: set[int] = set()
+            all_values: dict[tuple[int, int], int] = {}
             for cc in cluster:
                 all_cells.extend(cc["_cells"])
                 all_colors.add(cc["_seed_color"])
-            min_r = min(c[0] for c in all_cells)
-            max_r = max(c[0] for c in all_cells)
-            min_c = min(c[1] for c in all_cells)
-            max_c = max(c[1] for c in all_cells)
+                all_values.update(cc.get("_cell_values", {}))
+            # v608c: require true multicolor (>= 2 distinct seed colors). A
+            # cluster of identically-colored sub-blocks is not a marker and
+            # should pass through unchanged so the downstream regular-region
+            # path can still see it.
+            if len(all_colors) < 2:
+                merged.extend(cluster)
+                continue
+            min_r = min(cc[0] for cc in all_cells)
+            max_r = max(cc[0] for cc in all_cells)
+            min_c = min(cc[1] for cc in all_cells)
+            max_c = max(cc[1] for cc in all_cells)
+            # v608c: final geometric guardrail. The merged bbox should fit
+            # inside a 7x7 window; anything larger is unlikely to be a single
+            # marker.
+            if (max_r - min_r) > 6 or (max_c - min_c) > 6:
+                merged.extend(cluster)
+                continue
             merged.append({
                 "_seed_color": cluster[0]["_seed_color"],
                 "_cells": all_cells,
+                "_cell_values": all_values,
                 "bbox": [min_c, min_r, max_c, max_r],
                 "size": len(all_cells),
                 "color": cluster[0]["_seed_color"],
-                "is_multicolor": len(all_colors) > 1,
+                "is_multicolor": True,
             })
         else:
             # not a multicolor cluster — keep components individually
@@ -444,6 +494,291 @@ def _click_count_in_region(
     return n
 
 
+_SLOT_TO_OFFSET: dict[str, tuple[int, int]] = {
+    "NW": (-1, -1), "N": (0, -1), "NE": (1, -1),
+    "W": (-1, 0), "E": (1, 0),
+    "SW": (-1, 1), "S": (0, 1), "SE": (1, 1),
+}
+
+
+def _modal_nonzero(values: list[int]) -> int | None:
+    counts: dict[int, int] = {}
+    for v in values:
+        if v == 0:
+            continue
+        counts[v] = counts.get(v, 0) + 1
+    if not counts:
+        return None
+    return max(counts.items(), key=lambda kv: (kv[1], -kv[0]))[0]
+
+
+def _marker_center_value(marker: dict[str, Any]) -> int | None:
+    values = marker.get("_cell_values") or {}
+    if not values:
+        return None
+    x0, y0, x1, y1 = marker["bbox"]
+    cx = (x0 + x1) / 2.0
+    cy = (y0 + y1) / 2.0
+    best: tuple[float, int] | None = None
+    for (r, c), val in values.items():
+        dist = (c - cx) ** 2 + (r - cy) ** 2
+        item = (dist, int(val))
+        if best is None or item < best:
+            best = item
+    return best[1] if best is not None else None
+
+
+def _marker_slot_value(marker: dict[str, Any], slot: str) -> int | None:
+    """Infer a coarse 3x3 marker-slot value from component cell colors.
+
+    This is intentionally generic: it only uses the raw grid component's own
+    cells and bbox. A zero-like slot maps to a `same` constraint; any non-zero
+    slot maps to `different`.
+    """
+    values = marker.get("_cell_values") or {}
+    if not values:
+        return None
+    x0, y0, x1, y1 = marker["bbox"]
+    cx = (x0 + x1) / 2.0
+    cy = (y0 + y1) / 2.0
+    off = _SLOT_TO_OFFSET.get(slot)
+    if off is None:
+        return None
+    dx, dy = off
+    candidates: list[tuple[float, int]] = []
+    for (r, c), val in values.items():
+        rel_x = c - cx
+        rel_y = r - cy
+        if dx < 0 and rel_x > 0:
+            continue
+        if dx > 0 and rel_x < 0:
+            continue
+        if dy < 0 and rel_y > 0:
+            continue
+        if dy > 0 and rel_y < 0:
+            continue
+        if dx == 0 and abs(rel_x) > max(1.0, (x1 - x0 + 1) / 4.0):
+            continue
+        if dy == 0 and abs(rel_y) > max(1.0, (y1 - y0 + 1) / 4.0):
+            continue
+        dist = (rel_x - dx) ** 2 + (rel_y - dy) ** 2
+        candidates.append((dist, int(val)))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda kv: kv[0])
+    return candidates[0][1]
+
+
+def _infer_marker_constraints(
+    comps: list[dict[str, Any]],
+    markers: list[dict[str, Any]],
+    action_history: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Build v608 marker-neighbor same/different constraints.
+
+    Live inference is conservative: when a marker's local slot value cannot be
+    inferred from raw component cells, no constraint is emitted for that slot.
+    """
+    by_id = {c["id"]: c for c in comps}
+    constraints: list[dict[str, Any]] = []
+    by_marker: dict[str, dict[str, int]] = {}
+    for m in markers:
+        marker = by_id.get(m.get("marker_id"))
+        if marker is None:
+            continue
+        marker_color = _marker_center_value(marker)
+        if marker_color == 0 or marker_color is None:
+            marker_color = _modal_nonzero(list((marker.get("_cell_values") or {}).values()))
+        if marker_color is None:
+            marker_color = marker.get("color")
+        if marker_color is None:
+            continue
+        for slot, info in (m.get("compass") or {}).items():
+            nbr_id = info.get("region_id")
+            nbr = by_id.get(nbr_id)
+            if nbr is None:
+                continue
+            slot_value = _marker_slot_value(marker, slot)
+            if slot_value is None:
+                continue
+            relation = "same" if int(slot_value) == 0 else "different"
+            neighbor_color = nbr.get("color")
+            if neighbor_color is None:
+                continue
+            satisfied = (
+                int(neighbor_color) == int(marker_color)
+                if relation == "same"
+                else int(neighbor_color) != int(marker_color)
+            )
+            clicks = _click_count_in_region(nbr, action_history)
+            # v608b: classify evidence quality. Multicolor markers are the
+            # ft09 design substrate; single-color "markers" come from the
+            # permissive `size>=4 + >=4 neighbors` fallback in
+            # `_markers_from_components` and produce noisy constraints. Mark
+            # those low-quality so downstream policy can filter them out
+            # without losing the substrate signal.
+            evidence_quality = (
+                "high" if bool(marker.get("is_multicolor", False)) else "low"
+            )
+            constraints.append({
+                "marker_id": m.get("marker_id"),
+                "slot": slot,
+                "neighbor_region_id": nbr_id,
+                "marker_color": int(marker_color),
+                "neighbor_color": int(neighbor_color),
+                "relation": relation,
+                "satisfied": bool(satisfied),
+                "clicks": clicks,
+                "evidence_quality": evidence_quality,
+            })
+            bucket = by_marker.setdefault(
+                str(m.get("marker_id")),
+                {"total": 0, "unsatisfied": 0,
+                 "high_total": 0, "high_unsatisfied": 0,
+                 "evidence_quality": evidence_quality},
+            )
+            bucket["total"] += 1
+            if evidence_quality == "high":
+                bucket["high_total"] += 1
+            if not satisfied:
+                bucket["unsatisfied"] += 1
+                if evidence_quality == "high":
+                    bucket["high_unsatisfied"] += 1
+    summary = {
+        "total": len(constraints),
+        "unsatisfied": sum(1 for c in constraints if not c["satisfied"]),
+        "high_total": sum(
+            1 for c in constraints if c.get("evidence_quality") == "high"
+        ),
+        "high_unsatisfied": sum(
+            1 for c in constraints
+            if c.get("evidence_quality") == "high" and not c["satisfied"]
+        ),
+        "by_marker": by_marker,
+    }
+    return constraints, summary
+
+
+def _shortest_period(seq: list[int]) -> list[int] | None:
+    """Return the shortest non-trivial period of `seq` if at least one
+    wraparound is observed (i.e. seq[p:] matches the prefix), else None.
+
+    Example:
+      [4, 8, 12, 4, 8, 12] -> [4, 8, 12]
+      [4, 8, 12, 4]        -> [4, 8, 12]
+      [4, 8, 12]           -> None (no wraparound yet)
+      [4, 4, 4, 4]         -> None (degenerate)
+    """
+    n = len(seq)
+    if n < 2:
+        return None
+    for p in range(1, n):
+        # We need at least one wraparound element: n must exceed p.
+        if n <= p:
+            break
+        cycle = seq[:p]
+        # All elements identical is not a useful cycle.
+        if len(set(cycle)) <= 1:
+            continue
+        ok = True
+        for i in range(p, n):
+            if seq[i] != seq[i % p]:
+                ok = False
+                break
+        if ok:
+            return cycle
+    return None
+
+
+def _record_region_transition(
+    region_id: str | None,
+    new_color: int | None,
+) -> None:
+    """Append `new_color` to the per-region post-click history (capped)."""
+    if not region_id or new_color is None:
+        return
+    bucket = _REGION_TRANSITION_STATE.setdefault(
+        str(region_id),
+        {"history": [], "n_samples": 0},
+    )
+    hist = bucket["history"]
+    hist.append(int(new_color))
+    if len(hist) > _REGION_TRANSITION_MAX:
+        del hist[: len(hist) - _REGION_TRANSITION_MAX]
+    bucket["n_samples"] = int(bucket.get("n_samples", 0)) + 1
+
+
+def _region_transitions_view() -> dict[str, dict[str, Any]]:
+    """Return a serializable snapshot of `_REGION_TRANSITION_STATE` with
+    `inferred_cycle` / `next_predicted` / `confidence` computed.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for rid, bucket in _REGION_TRANSITION_STATE.items():
+        hist = list(bucket.get("history", []))
+        n = len(hist)
+        cycle = _shortest_period(hist) if n >= 3 else None
+        next_predicted: int | None = None
+        confidence = 0.0
+        if cycle:
+            next_predicted = int(cycle[n % len(cycle)])
+            # Confidence grows with the number of completed cycles observed.
+            completed = n // len(cycle)
+            confidence = min(1.0, completed / 3.0)
+        out[str(rid)] = {
+            "history": hist,
+            "inferred_cycle": cycle,
+            "next_predicted": next_predicted,
+            "confidence": confidence,
+            "n_samples": int(bucket.get("n_samples", n)),
+        }
+    return out
+
+
+def _maybe_record_click_for_region(
+    comps: list[dict[str, Any]],
+    last_coord: tuple[int, int] | None,
+    prev_grid: list[list[int]] | None,
+    curr_grid: list[list[int]] | None,
+) -> None:
+    """Find the region containing `last_coord` and append the post-click
+    color to its history if the color actually changed.
+
+    Coord is (x, y). bbox is [x0, y0, x1, y1]. We use the centroid color
+    of the region as the post-click color (matches `_to_region_ref`).
+    """
+    if last_coord is None or curr_grid is None or not comps:
+        return
+    x, y = int(last_coord[0]), int(last_coord[1])
+    matching = None
+    for c in comps:
+        bbox = c.get("bbox")
+        if not bbox or len(bbox) != 4:
+            continue
+        x0, y0, x1, y1 = bbox[0], bbox[1], bbox[2], bbox[3]
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            matching = c
+            break
+    if matching is None:
+        return
+    new_color = matching.get("color")
+    if new_color is None:
+        return
+    # v608f-fix: do NOT gate on per-pixel equality at the recorded coord.
+    # ft09 snaps clicks (see `feedback_ft09_coord_snap.md`), so the pixel
+    # under the LLM-intended coord often did not actually change even when
+    # the env did fire a transition somewhere inside the region. Instead,
+    # gate against the most recent recorded color for THIS region: append
+    # a sample only when the centroid color differs from the most recent
+    # entry. This keeps cycle detection on the actual color stream.
+    rid = matching.get("id")
+    if rid:
+        prev_bucket = _REGION_TRANSITION_STATE.get(str(rid)) or {}
+        prev_hist = prev_bucket.get("history") or []
+        if prev_hist and int(prev_hist[-1]) == int(new_color):
+            return
+    _record_region_transition(rid, new_color)
+
+
 def _dominant_transition(
     prev_grid: list[list[int]] | None,
     curr_grid: list[list[int]],
@@ -535,11 +870,21 @@ def frame_to_state(
     comps = _flood_fill_components(grid)
     _compute_neighbors_3x3(comps)
     markers = _markers_from_components(comps, action_history)
+    marker_constraints, marker_constraint_summary = _infer_marker_constraints(
+        comps, markers, action_history,
+    )
 
     last_entry = action_history[-1] if action_history else None
     last_coord = last_entry["coord_xy"] if last_entry else None
     prev_grid = last_entry["prev_grid"] if last_entry else None
     dt = _dominant_transition(prev_grid, grid)
+
+    # v608d Phase 2: record the post-click color for the region that
+    # contained the previous click coord. Skipped when the pixel did not
+    # actually change. The module-level log feeds `region_transitions`
+    # below.
+    _maybe_record_click_for_region(comps, last_coord, prev_grid, grid)
+    region_transitions = _region_transitions_view()
 
     levels_completed = int(getattr(frame, "levels_completed", 0) or 0)
     level_delta = max(0, levels_completed - int(prev_levels_completed or 0))
@@ -608,6 +953,14 @@ def frame_to_state(
     return {
         "visible_regions": visible_regions,
         "marker_neighbor_states": markers,
+        "marker_constraints": marker_constraints,
+        "marker_constraint_summary": marker_constraint_summary,
+        # v608d Phase 2 (renamed v608f): per-region post-click transition log
+        # + inferred cycle. This is a deterministic action-planning support
+        # feature, not a learned world model — name it accordingly. The
+        # legacy `region_transitions` key is kept as an alias for tests.
+        "region_transition_cache": region_transitions,
+        "region_transitions": region_transitions,
         "last_observation": {
             "primary_region_id": primary_rid,
             "level_delta": level_delta,

@@ -135,6 +135,21 @@ class ArcgenticaLite:
         self._v607_emit_calls = 0
         self._v607_emit_accepted = 0
         self._v607_emit_rejected = 0
+        # v608b: load seed cards into the typed ledger on first launch so the
+        # rendered SKILL.md is non-empty from turn 0. ensure_seeded is a no-op
+        # when the persisted state already has cards.
+        try:
+            from .seed_cards import ensure_seeded
+            n_seeded = ensure_seeded(self._skill_state)
+            if n_seeded:
+                save_state(self._skill_state, self._skill_state_path)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("v608b seed_cards.ensure_seeded failed: %s", e)
+        # v608b: remember the last state snapshot so we can compute observed
+        # unsatisfied_count_delta after the action lands.
+        self._v608_last_state_snapshot: dict | None = None
+        self._v608_last_predicted_unsat_delta: int = 0
+        self._v608_card_updates: int = 0
 
     @staticmethod
     def _visible_regions(state: Any) -> list[Any]:
@@ -193,12 +208,46 @@ class ArcgenticaLite:
                 # Memory writer paired-cf detection for the previous coord.
                 prev_coord = obs.get("coord")
                 # Use the coord we issued previously (stored on Action), not the obs.
+                # v608b: record card evidence using the prev/current state pair.
+                try:
+                    from .seed_cards import (
+                        observed_unsat_delta_from_states,
+                        record_card_evidence,
+                    )
+                    observed_delta = observed_unsat_delta_from_states(
+                        self._v608_last_state_snapshot,
+                        state if isinstance(state, dict) else None,
+                    )
+                    updated = record_card_evidence(
+                        self._skill_state,
+                        turn=self._turn_count,
+                        run_id=str(self.seed),
+                        predicate_id=self._last_action_arm_key.predicate_id,
+                        region_id=self._last_action_arm_key.region_id,
+                        coord_xy=None,
+                        predicted_unsat_delta=self._v608_last_predicted_unsat_delta,
+                        observed_unsat_delta=observed_delta,
+                        observed_level_delta=int(obs.get("level_delta", 0) or 0),
+                    )
+                    if updated:
+                        self._v608_card_updates += len(updated)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("v608b record_card_evidence failed: %s", e)
             self.posterior.update(obs)
             level_advanced = int(obs.get("level_delta", 0) or 0) > 0
             if level_advanced:
                 self.turns_since_L_plus = 0
                 self.last_max_level += 1
                 self._best_advance_turn = self._turn_count
+                # v608f-fix: a level advance changes the available regions
+                # and invalidates the local transition cache for the next
+                # phase. Clear repeat bookkeeping so we re-sample from
+                # scratch.
+                try:
+                    from .policy import reset_repeat_state
+                    reset_repeat_state(self.episode_state)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("v608f reset_repeat_state failed: %s", e)
             else:
                 self.turns_since_L_plus += 1
         except Exception as e:  # noqa: BLE001
@@ -346,6 +395,57 @@ class ArcgenticaLite:
 
         self.posterior.record_emission([decision.arm_key])
         self._last_action_arm_key = decision.arm_key
+        # v608f-fix: record the region the policy just clicked so the next
+        # turn's active-override gate can find it. We also stash a snapshot
+        # of region_transition_cache + repeat telemetry into skill_state
+        # metadata so offline analyzers can read it after the cycle ends.
+        self.episode_state.last_clicked_region_id = decision.arm_key.region_id
+        try:
+            meta = self._skill_state.metadata
+            counters = getattr(meta, "v608f_counters", None)
+            if not isinstance(counters, dict):
+                counters = {}
+                setattr(meta, "v608f_counters", counters)
+            if decision.repeat_click_used:
+                counters["repeats_fired"] = counters.get("repeats_fired", 0) + 1
+                regions = counters.setdefault("repeat_regions", {})
+                rid = decision.arm_key.region_id
+                regions[rid] = regions.get(rid, 0) + 1
+            counters["last_repeats_budget_used"] = self.episode_state.repeats_budget_used
+            tc = (state.get("region_transition_cache")
+                  if isinstance(state, dict) else None) or {}
+            counters["last_region_transitions"] = {
+                k: {
+                    "history": list(v.get("history") or []),
+                    "n_samples": int(v.get("n_samples", 0) or 0),
+                    "inferred_cycle": v.get("inferred_cycle"),
+                    "next_predicted": v.get("next_predicted"),
+                    "confidence": float(v.get("confidence", 0.0) or 0.0),
+                }
+                for k, v in tc.items() if isinstance(v, dict)
+            }
+            counters["n_regions_with_samples_ge_3"] = sum(
+                1 for v in counters["last_region_transitions"].values()
+                if v["n_samples"] >= 3
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("v608f metadata update failed: %s", e)
+        # v608b: capture state snapshot + predicted unsat_delta for the card
+        # evidence updater that runs on the NEXT turn's outcome observation.
+        try:
+            from .seed_cards import predict_unsat_delta_for_arm
+            self._v608_last_state_snapshot = (
+                dict(state) if isinstance(state, dict) else None
+            )
+            self._v608_last_predicted_unsat_delta = predict_unsat_delta_for_arm(
+                decision.arm_key.predicate_id,
+                decision.arm_key.region_id,
+                state if isinstance(state, dict) else None,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("v608b prediction snapshot failed: %s", e)
+            self._v608_last_state_snapshot = None
+            self._v608_last_predicted_unsat_delta = 0
         # v607 Phase 6: identify chid_template family match for posterior tracking.
         # Order-agnostic: extracts verb_noun key from template (between 'P_' and
         # '_C{m}'/'{m}' marker), matches if predicate_id CONTAINS it. Handles both
