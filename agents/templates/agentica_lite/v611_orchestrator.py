@@ -33,13 +33,26 @@ from .v611_telemetry import log_turn_event
 # ─────────────────────────────────────────────────────────────────
 
 
+# Length contracts (round 18 enforcement):
+MAX_STATE_TEXT_CHARS = 4000
+MAX_STATE_NOW_CHARS = 200
+MAX_SKILL_MD_SUMMARY_CHARS = 2000
+
+
+def _clamp(text: str, limit: int) -> str:
+    if text is None:
+        return ""
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
 @dataclass
 class StateSummary:
     """Structured summary passed to M2v Verifier.
 
-    Plan rev D round 15: M2v's anchor-detection thresholds require
-    explicit failure-history fields, not free prose. This dataclass is
-    serialized to text by `render()` and passed to the verifier.
+    Plan rev D round 15-18: M2v's anchor-detection thresholds require
+    explicit failure-history fields. state_now clamped to 200 chars.
     """
 
     state_now: str = ""
@@ -49,10 +62,11 @@ class StateSummary:
 
     def render(self) -> str:
         """Render to the multi-line text format the M2v prompt expects."""
-        lines = [f"state_now: {self.state_now}"]
+        clamped_state = _clamp(self.state_now, MAX_STATE_NOW_CHARS)
+        lines = [f"state_now: {clamped_state}"]
         lines.append("last_5_strategies:")
         for i, s in enumerate(self.last_strategies[:5], 1):
-            text = s.get("text", "")
+            text = _clamp(str(s.get("text", "")), 80)
             verdict = s.get("verdict", "?")
             changed = s.get("frame_changed", "?")
             lines.append(f"  {i}. \"{text}\" verdict={verdict} "
@@ -168,6 +182,9 @@ def run_v611_turn(
         state_text_summary_str = state_text_summary.render()
     else:
         state_text_summary_str = state_text_summary
+    # Round 18 enforcement: clamp lengths before passing to LLM roles.
+    state_text = _clamp(state_text, MAX_STATE_TEXT_CHARS)
+    skill_md_summary = _clamp(skill_md_summary, MAX_SKILL_MD_SUMMARY_CHARS)
 
     def _log(role: str, event: str, payload: dict[str, Any]) -> None:
         log_turn_event(turn_id=turn_id, role=role, event=event,
