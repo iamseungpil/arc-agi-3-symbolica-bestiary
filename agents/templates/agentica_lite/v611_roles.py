@@ -47,6 +47,12 @@ _M2V_SYSTEM = (_PROMPTS_DIR / "m2v_verifier_system.md").read_text(
 _M2E_SYSTEM = (_PROMPTS_DIR / "m2e_executor_system.md").read_text(
     encoding="utf-8"
 )
+_M3_SYSTEM = (_PROMPTS_DIR / "m3_skill_compressor_system.md").read_text(
+    encoding="utf-8"
+)
+_M4_SYSTEM = (_PROMPTS_DIR / "m4_reflector_system.md").read_text(
+    encoding="utf-8"
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -214,6 +220,82 @@ def run_m2v_verifier(
         system_prompt=_M2V_SYSTEM,
         user_text=user_text,
         max_tokens=200,
+    )
+
+
+def run_m3_compressor(
+    recent_trials: list[dict[str, Any]],
+    existing_skills: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Δ3 Skill Compressor — runs every 5 turns, emits NL-only skill.
+
+    Input has NO raw coords; trial text is bounded by upstream M1 NL.
+    """
+    trial_lines = []
+    for i, t in enumerate(recent_trials[-5:], 1):
+        trial_lines.append(
+            f"  {i}. nl_strategy={t.get('nl_strategy', '')[:80]!r} "
+            f"suggested_region={t.get('suggested_region', '')[:40]!r} "
+            f"verdict={t.get('verdict', '?')} "
+            f"frame_changed={t.get('frame_changed', '?')} "
+            f"unsat_delta={t.get('unsat_delta', '?')}"
+        )
+    skill_lines = []
+    for s in existing_skills[:8]:
+        skill_lines.append(
+            f"  - {s.get('skill_id', '?')}: "
+            f"{s.get('nl_description', '')[:80]}"
+        )
+    user_text = (
+        "RECENT TRIALS:\n"
+        + ("\n".join(trial_lines) if trial_lines else "  (none)")
+        + "\n\nEXISTING SKILLS:\n"
+        + ("\n".join(skill_lines) if skill_lines else "  (none)")
+    )
+    return _call_llm(
+        system_prompt=_M3_SYSTEM,
+        user_text=user_text,
+        max_tokens=400,
+    )
+
+
+def run_m4_reflector(
+    proposer_out: dict[str, Any],
+    verifier_out: dict[str, Any],
+    executor_out: dict[str, Any],
+    env_observation: dict[str, Any],
+    prior_skills: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Δ5 M4 Reflector — privileged role, sees ALL turn artifacts,
+    emits 3-step verification + SKILL.md patch."""
+    skill_lines = []
+    for s in prior_skills[:8]:
+        skill_lines.append(
+            f"  - {s.get('skill_id', '?')}: "
+            f"{s.get('nl_description', '')[:80]}"
+        )
+    user_text = (
+        "PROPOSER OUT:\n"
+        f"  nl_strategy: {proposer_out.get('nl_strategy', '')[:200]}\n"
+        f"  expected_signature: {proposer_out.get('expected_signature')}\n"
+        f"  rollback_trigger: {proposer_out.get('rollback_trigger', '')[:100]}\n"
+        "\nVERIFIER OUT:\n"
+        f"  verdict: {verifier_out.get('verdict')}\n"
+        f"  reason_nl: {verifier_out.get('reason_nl', '')[:150]}\n"
+        "\nEXECUTOR OUT:\n"
+        f"  click_xy_hint: {executor_out.get('click_xy_hint')}\n"
+        f"  grounding_text: {executor_out.get('grounding_text', '')[:150]}\n"
+        "\nENV OBSERVATION:\n"
+        f"  frame_changed: {env_observation.get('frame_changed')}\n"
+        f"  unsat_delta: {env_observation.get('unsat_delta')}\n"
+        f"  level_delta: {env_observation.get('level_delta')}\n"
+        "\nPRIOR SKILLS:\n"
+        + ("\n".join(skill_lines) if skill_lines else "  (none)")
+    )
+    return _call_llm(
+        system_prompt=_M4_SYSTEM,
+        user_text=user_text,
+        max_tokens=500,
     )
 
 

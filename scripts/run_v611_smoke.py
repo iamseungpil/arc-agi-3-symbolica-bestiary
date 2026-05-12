@@ -147,7 +147,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     from agents.templates.agentica_lite.v611_roles import (
         run_m1_proposer, run_m2v_verifier, run_m2e_executor,
+        run_m3_compressor, run_m4_reflector,
     )
+    from agents.templates.agentica_lite.v611_schemas import (
+        validate_m3_skill_output, validate_m4_output,
+    )
+    from agents.templates.agentica_lite.v611_leak_scanner import (
+        validate_confirmed_skill,
+    )
+    import hashlib as _hl
+    import json as _json
     from agents.templates.agentica_lite.v611_telemetry import (
         log_turn_event,
     )
@@ -164,6 +173,29 @@ def main(argv: list[str] | None = None) -> int:
     episode_id = f"v611_smoke_{ts}"
     successes = 0
     last_levels = int(getattr(raw, "levels_completed", 0) or 0)
+
+    # SKILL.md accumulation state — codex round 19 fix
+    confirmed_skills: list[dict] = []     # NL-only, hygiene-gated
+    skill_state_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _render_skill_md_summary() -> str:
+        if not confirmed_skills:
+            return "(no confirmed skills yet — turn-1 exploration)"
+        lines = [
+            f"confirmed_skills (n={len(confirmed_skills)}):"
+        ]
+        for s in confirmed_skills[-5:]:
+            lines.append(
+                f"  - {s.get('skill_id', '?')}: "
+                f"{s.get('nl_description', '')[:120]}"
+            )
+        return "\n".join(lines)
+
+    def _persist_skill_state():
+        with open(skill_state_path, "w", encoding="utf-8") as f:
+            _json.dump({"confirmed_skills": confirmed_skills,
+                        "episode_id": episode_id,
+                        "ts": ts}, f, indent=2)
 
     for turn in range(args.turns):
         proxy = _FrameProxy(raw)
@@ -186,10 +218,7 @@ def main(argv: list[str] | None = None) -> int:
             null_effect_streak=null_streak,
         )
 
-        skill_md_summary = (
-            "(empty skill_state — first turn)" if turn == 0
-            else f"skill_state has been updated through turn {turn-1}"
-        )
+        skill_md_summary = _render_skill_md_summary()
 
         print(f"\n=== TURN {turn} ===")
         result = run_v611_turn(
@@ -239,15 +268,113 @@ def main(argv: list[str] | None = None) -> int:
         )
 
         successes += 1
+        # Compute unsat_delta from before vs after
+        try:
+            proxy_post = _FrameProxy(raw)
+            post_payload = frame_to_state(proxy_post, [], last_levels)
+            post_unsat = (post_payload.get("marker_constraint_summary")
+                          or {}).get("unsatisfied", 0)
+            pre_unsat = (proxy_payload.get("marker_constraint_summary")
+                         or {}).get("unsatisfied", 0)
+            unsat_delta = int(post_unsat) - int(pre_unsat)
+        except Exception:
+            unsat_delta = 0
+
         last_strategies.append({
-            "text": result.proposer_out.get("suggested_click_region",
-                                              "")[:60],
+            "nl_strategy": result.proposer_out.get("nl_strategy", "")[:80],
+            "suggested_region":
+                result.proposer_out.get("suggested_click_region", "")[:40],
             "verdict": result.verifier_out["verdict"],
             "frame_changed": frame_changed,
+            "unsat_delta": unsat_delta,
         })
 
         print(f"  ENV STEP: level_delta={level_delta} "
-              f"frame_changed={frame_changed} cur_levels={cur_levels}")
+              f"frame_changed={frame_changed} unsat_delta={unsat_delta} "
+              f"cur_levels={cur_levels}")
+
+        # ───── M4 Reflector (every successful turn) ─────
+        try:
+            m4_out = run_m4_reflector(
+                proposer_out=result.proposer_out,
+                verifier_out=result.verifier_out,
+                executor_out=result.executor_out,
+                env_observation={
+                    "frame_changed": frame_changed,
+                    "unsat_delta": unsat_delta,
+                    "level_delta": level_delta,
+                },
+                prior_skills=confirmed_skills,
+            )
+            v4 = validate_m4_output(m4_out)
+            log_turn_event(turn, role="m4", event="role_returned",
+                           payload={"verdict": m4_out.get("verdict"),
+                                    "ok": v4.ok,
+                                    "violations": v4.violations[:3]},
+                           seed=args.seed, episode_id=episode_id)
+            if v4.ok:
+                print(f"  M4 verdict: {m4_out.get('verdict')!r} "
+                      f"directive={m4_out.get('next_directive', '')[:60]!r}")
+                # Apply SKILL.md patch (codex round 19 wiring)
+                upd = m4_out.get("verify", {}).get("skillmd_update", {})
+                add_ids = upd.get("add") or []
+                if add_ids:
+                    log_turn_event(turn, role="m4", event="skillmd_patch_add",
+                                   payload={"add_ids": add_ids[:5]},
+                                   seed=args.seed, episode_id=episode_id)
+            else:
+                print(f"  M4 INVALID: {v4.violations[:2]}")
+        except Exception as e:
+            print(f"  M4 error: {e}")
+
+        # ───── M3 Skill Compressor (every 5 turns) ─────
+        if (turn + 1) % 5 == 0 and last_strategies:
+            try:
+                m3_out = run_m3_compressor(
+                    recent_trials=last_strategies[-5:],
+                    existing_skills=confirmed_skills,
+                )
+                if isinstance(m3_out, dict) and m3_out.get("emit"):
+                    v3 = validate_m3_skill_output(m3_out)
+                    hyg = validate_confirmed_skill(m3_out)
+                    log_turn_event(turn, role="m3",
+                                   event="role_returned",
+                                   payload={"emit": True,
+                                            "schema_ok": v3.ok,
+                                            "hygiene_ok": hyg.ok},
+                                   seed=args.seed,
+                                   episode_id=episode_id)
+                    if v3.ok and hyg.ok:
+                        confirmed_skills.append({
+                            "skill_id": m3_out["skill_id"],
+                            "nl_description": m3_out["nl_description"],
+                            "abstract_precondition":
+                                m3_out["abstract_precondition"],
+                            "expected_observed_effect":
+                                m3_out["expected_observed_effect"],
+                            "turn_emitted": turn,
+                        })
+                        _persist_skill_state()
+                        print(f"  M3 EMITTED skill {m3_out['skill_id']}: "
+                              f"{m3_out['nl_description'][:80]!r}")
+                    else:
+                        print(f"  M3 emit REJECTED: schema_ok={v3.ok} "
+                              f"hygiene_ok={hyg.ok} "
+                              f"violations={(v3.violations + hyg.violations)[:2]}")
+                else:
+                    log_turn_event(turn, role="m3",
+                                   event="role_returned",
+                                   payload={"emit": False,
+                                            "reason": m3_out.get(
+                                                "reason_nl", "")[:80]
+                                                if isinstance(m3_out, dict)
+                                                else "invalid"},
+                                   seed=args.seed,
+                                   episode_id=episode_id)
+                    print(f"  M3 no-emit: "
+                          f"{(m3_out or {}).get('reason_nl', '')[:80]!r}")
+            except Exception as e:
+                print(f"  M3 error: {e}")
 
     print(f"\n=== SMOKE SUMMARY ===")
     print(f"turns_run={args.turns} successes={successes} "
