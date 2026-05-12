@@ -20,11 +20,46 @@ from typing import Any, Callable, Protocol
 
 from .v611_schemas import (
     M2V_VERDICTS,
+    m2e_is_substitute,
     validate_m1_proposer_output,
     validate_m2e_executor_output,
     validate_m2v_verifier_output,
 )
 from .v611_telemetry import log_turn_event
+
+
+# ─────────────────────────────────────────────────────────────────
+# Structured state summary for M2v Verifier (round 15 fix)
+# ─────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class StateSummary:
+    """Structured summary passed to M2v Verifier.
+
+    Plan rev D round 15: M2v's anchor-detection thresholds require
+    explicit failure-history fields, not free prose. This dataclass is
+    serialized to text by `render()` and passed to the verifier.
+    """
+
+    state_now: str = ""
+    last_strategies: list[dict] = field(default_factory=list)
+    repeat_axis_count: int = 0
+    null_effect_streak: int = 0
+
+    def render(self) -> str:
+        """Render to the multi-line text format the M2v prompt expects."""
+        lines = [f"state_now: {self.state_now}"]
+        lines.append("last_5_strategies:")
+        for i, s in enumerate(self.last_strategies[:5], 1):
+            text = s.get("text", "")
+            verdict = s.get("verdict", "?")
+            changed = s.get("frame_changed", "?")
+            lines.append(f"  {i}. \"{text}\" verdict={verdict} "
+                          f"frame_changed={changed}")
+        lines.append(f"repeat_axis_count: {self.repeat_axis_count}")
+        lines.append(f"null_effect_streak: {self.null_effect_streak}")
+        return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -68,7 +103,7 @@ class M1ProposerCallable(Protocol):
 
 class M2vVerifierCallable(Protocol):
     def __call__(self, proposer_out: dict[str, Any],
-                 state_text_summary: str) -> dict[str, Any]: ...
+                 state_text_summary: str | StateSummary) -> dict[str, Any]: ...
 
 
 class M2eExecutorCallable(Protocol):
@@ -109,7 +144,7 @@ def run_v611_turn(
     *,
     turn_id: int,
     state_text: str,
-    state_text_summary: str,
+    state_text_summary: str | StateSummary,
     png_bytes: bytes,
     skill_md_summary: str,
     anchor: AnchorCounter,
@@ -123,7 +158,16 @@ def run_v611_turn(
 
     Returns TurnResult describing the outcome. Telemetry written to
     `logs/v611_turn_telemetry.jsonl` per Plan rev D §Q6.
+
+    Round 16 fix: if `state_text_summary` is a StateSummary instance,
+    it is rendered via .render() before passing to M2v (per M2v prompt
+    contract). Plain strings still accepted for backwards compatibility.
     """
+    # Render StateSummary to structured multi-line text if provided.
+    if isinstance(state_text_summary, StateSummary):
+        state_text_summary_str = state_text_summary.render()
+    else:
+        state_text_summary_str = state_text_summary
 
     def _log(role: str, event: str, payload: dict[str, Any]) -> None:
         log_turn_event(turn_id=turn_id, role=role, event=event,
@@ -157,7 +201,7 @@ def run_v611_turn(
     # ───── Role 2: M2v Verifier (separate context, state_text_summary
     # only — NO frame, NO skill_md) ─────
     m2v_out = m2v_verifier(proposer_out=m1_out,
-                            state_text_summary=state_text_summary)
+                            state_text_summary=state_text_summary_str)
     _log("m2v", "role_returned",
          {"verdict": (m2v_out or {}).get("verdict")
                        if isinstance(m2v_out, dict) else None})
@@ -166,7 +210,7 @@ def run_v611_turn(
          {"violations": v2.violations})
     if not v2.ok:
         m2v_out = m2v_verifier(proposer_out=m1_out,
-                                state_text_summary=state_text_summary)
+                                state_text_summary=state_text_summary_str)
         v2 = validate_m2v_verifier_output(m2v_out)
         _log("m2v", "validator_ok" if v2.ok else "validator_fail",
              {"violations": v2.violations, "retry": True})
@@ -192,7 +236,7 @@ def run_v611_turn(
                               skip_reason="m1_replan_invalid",
                               proposer_out=m1_out, verifier_out=m2v_out)
         m2v_out = m2v_verifier(proposer_out=m1_out,
-                                state_text_summary=state_text_summary)
+                                state_text_summary=state_text_summary_str)
         v2b = validate_m2v_verifier_output(m2v_out)
         _log("m2v", "role_returned",
              {"replan_followup": True,
@@ -236,6 +280,12 @@ def run_v611_turn(
                               skip_reason="m2e_invalid",
                               proposer_out=m1_out, verifier_out=m2v_out,
                               executor_out=m2e_out)
+
+    # Round 16: emit SUBSTITUTE drift telemetry if M2e flagged it.
+    if m2e_is_substitute(m2e_out.get("grounding_text", "")):
+        _log("m2e", "substitute_drift",
+             {"grounding_text_prefix":
+                  m2e_out["grounding_text"][:80]})
 
     coord = tuple(int(c) for c in m2e_out["click_xy_hint"])
     return TurnResult(turn_id=turn_id, success=True,

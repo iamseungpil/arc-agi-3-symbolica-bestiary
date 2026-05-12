@@ -266,6 +266,28 @@ class M2eExecutorResult:
     violations: list[str]
 
 
+def validate_m2e_grounding_attributes(grounding_text: str) -> bool:
+    """Δ7c (round 15): grounding_text must reference two specific
+    visual attributes — (a) color name/index AND (b) concrete pixel
+    range or shape descriptor.
+    """
+    s = (grounding_text or "").lower()
+    color_words = ("color", "red", "blue", "green", "yellow", "black",
+                   "white", "purple", "cyan", "magenta", "orange",
+                   "gray", "grey", "pixel value", "index ")
+    pixel_or_shape = ("pixel", "row", "column", "cluster", "block",
+                      "cell", "bbox", "bounding", "tile of", "x ", "y ",
+                      "-", "by ", "wide", "tall", "square")
+    has_color = any(w in s for w in color_words)
+    has_shape = any(w in s for w in pixel_or_shape)
+    return has_color and has_shape
+
+
+def m2e_is_substitute(grounding_text: str) -> bool:
+    """Round 15: M2e SUBSTITUTE: prefix signals proposer-region drift."""
+    return (grounding_text or "").lstrip().startswith("SUBSTITUTE:")
+
+
 def validate_m2e_executor_output(out: dict) -> M2eExecutorResult:
     """Δ7c — M2e Executor takes approved NL strategy + PNG and emits
     click coords.
@@ -292,6 +314,9 @@ def validate_m2e_executor_output(out: dict) -> M2eExecutorResult:
     grounding = out.get("grounding_text")
     if not isinstance(grounding, str) or len(grounding) < 20:
         v.append("grounding_text missing or <20 chars (Δ7c required)")
+    elif not validate_m2e_grounding_attributes(grounding):
+        v.append("grounding_text lacks required two visual attributes "
+                 "(color name/index AND pixel range/shape descriptor)")
     return M2eExecutorResult(ok=(len(v) == 0), violations=v)
 
 

@@ -162,9 +162,9 @@ def _mock_m2e_clean():
         })
         return {
             "click_xy_hint": [44, 44],
-            "grounding_text": ("the marker tile in the PNG occupies "
-                                "approximately pixels around (40-48, 40-48); "
-                                "centered at (44, 44)"),
+            "grounding_text": ("the marker tile, color 8, occupies "
+                                "approximately pixels 40-48 by 40-48 in "
+                                "the PNG; centered at (44, 44)"),
         }
     runner.received = received  # type: ignore[attr-defined]
     return runner

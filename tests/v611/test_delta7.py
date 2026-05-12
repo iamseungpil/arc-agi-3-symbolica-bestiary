@@ -139,9 +139,9 @@ def test_delta7b_rejects_short_reason():
 def _m2e_executor_clean() -> dict:
     return {
         "click_xy_hint": [44, 44],
-        "grounding_text": ("the marker tile I see in the PNG occupies "
-                            "approximately pixels (40-48, 40-48); I aim "
-                            "for its center at (44, 44)"),
+        "grounding_text": ("the marker tile, color 8, occupies "
+                            "approximately pixels 40-48 by 40-48 in the "
+                            "PNG; I aim for its center at (44, 44)"),
     }
 
 
