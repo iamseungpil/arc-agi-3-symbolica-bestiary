@@ -27,32 +27,16 @@ _agents.update(_safe_import("arm20_hybrid", ".templates.arm20_hybrid", ["Arm20Hy
 _agents.update(_safe_import("llm", ".templates.llm_agents", ["LLM", "FastLLM", "GuidedLLM", "ReasoningLLM"]))
 _agents.update(_safe_import("reasoning", ".templates.reasoning_agent", ["ReasoningAgent"]))
 _agents.update(_safe_import("multimodal", ".templates.multimodal", ["MultiModalLLM"]))
-_agents.update(_safe_import("agentica", ".templates.agentica", ["Arcgentica"]))
-_agents.update(_safe_import("agentica_simple", ".templates.agentica_simple", ["ArcgenticaSimple"]))
-_agents.update(_safe_import("agentica_v57", ".templates.agentica_v57", ["ArcgenticaV57"]))
 _agents.update(_safe_import("langgraph_func", ".templates.langgraph_functional_agent", ["LangGraphFunc", "LangGraphTextOnly"]))
 _agents.update(_safe_import("langgraph_random", ".templates.langgraph_random_agent", ["LangGraphRandom"]))
 _agents.update(_safe_import("langgraph_thinking", ".templates.langgraph_thinking", ["LangGraphThinking"]))
 _agents.update(_safe_import("smolagents", ".templates.smolagents", ["SmolCodingAgent", "SmolVisionAgent"]))
-_agents.update(
-    _safe_import("arcgentica_research", ".templates.arcgentica_research", ["ArcgenticaResearch"])
-)
 _agents.update(
     _safe_import("agentica_lite", ".templates.agentica_lite.adapter", ["ArcgenticaLiteAgent"])
 )
 
 AVAILABLE_AGENTS: dict[str, Type[Agent]] = _agents
 
-if "arcgenticaresearch" in AVAILABLE_AGENTS:
-    AVAILABLE_AGENTS["research"] = AVAILABLE_AGENTS["arcgenticaresearch"]
-    AVAILABLE_AGENTS["arcgentica_research"] = AVAILABLE_AGENTS["arcgenticaresearch"]
-if "arcgenticasimple" in AVAILABLE_AGENTS:
-    AVAILABLE_AGENTS["simple"] = AVAILABLE_AGENTS["arcgenticasimple"]
-    AVAILABLE_AGENTS["arcgentica_simple"] = AVAILABLE_AGENTS["arcgenticasimple"]
-    AVAILABLE_AGENTS["symbolica_simple"] = AVAILABLE_AGENTS["arcgenticasimple"]
-if "arcgenticav57" in AVAILABLE_AGENTS:
-    AVAILABLE_AGENTS["v57"] = AVAILABLE_AGENTS["arcgenticav57"]
-    AVAILABLE_AGENTS["agentica_v57"] = AVAILABLE_AGENTS["arcgenticav57"]
 if "arcgenticaliteagent" in AVAILABLE_AGENTS:
     AVAILABLE_AGENTS["lite"] = AVAILABLE_AGENTS["arcgenticaliteagent"]
     AVAILABLE_AGENTS["agentica_lite"] = AVAILABLE_AGENTS["arcgenticaliteagent"]
