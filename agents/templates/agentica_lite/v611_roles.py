@@ -139,9 +139,12 @@ def _call_llm(
     kwargs: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "max_tokens": max_tokens,
+        "max_completion_tokens": max_tokens,
     }
-    if "5.5" not in model.lower():
+    # gpt-5.4-mini / gpt-5.5 require default temperature=1.
+    # Only set explicit temperature for older models that support it.
+    if model.endswith("-pro") or "gpt-5.3" in model.lower() or \
+       "gpt-4" in model.lower():
         kwargs["temperature"] = 0.0
     if model.endswith("-pro") or "json" in model.lower():
         kwargs["response_format"] = {"type": "json_object"}
