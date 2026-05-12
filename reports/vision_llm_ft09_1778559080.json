@@ -1,0 +1,84 @@
+{
+  "game": "ft09-9ab2447a",
+  "model": "gpt-4o_2024-11-20",
+  "max_attempts": 3,
+  "levels_initial": 0,
+  "levels_final": 0,
+  "total_l_plus_events": 0,
+  "wall_seconds": 7.717441558837891,
+  "l_plus_events": [],
+  "history": [
+    {
+      "attempt": 0,
+      "response": "46,38  \n54,38  \n46,54  \n54,54  ",
+      "parsed_coords": [
+        [
+          46,
+          38
+        ],
+        [
+          54,
+          38
+        ],
+        [
+          46,
+          54
+        ],
+        [
+          54,
+          54
+        ]
+      ],
+      "levels_after": 0,
+      "attempt_l_plus": []
+    },
+    {
+      "attempt": 1,
+      "response": "46,38  \n54,38  \n46,54  \n54,54  ",
+      "parsed_coords": [
+        [
+          46,
+          38
+        ],
+        [
+          54,
+          38
+        ],
+        [
+          46,
+          54
+        ],
+        [
+          54,
+          54
+        ]
+      ],
+      "levels_after": 0,
+      "attempt_l_plus": []
+    },
+    {
+      "attempt": 2,
+      "response": "46,38  \n38,46  \n54,46  \n46,54  ",
+      "parsed_coords": [
+        [
+          46,
+          38
+        ],
+        [
+          38,
+          46
+        ],
+        [
+          54,
+          46
+        ],
+        [
+          46,
+          54
+        ]
+      ],
+      "levels_after": 0,
+      "attempt_l_plus": []
+    }
+  ]
+}

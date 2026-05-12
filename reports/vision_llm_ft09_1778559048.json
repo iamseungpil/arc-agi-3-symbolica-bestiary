@@ -1,0 +1,24 @@
+{
+  "game": "ft09-9ab2447a",
+  "model": "gpt-5.4_2026-03-05",
+  "max_attempts": 3,
+  "levels_initial": 0,
+  "levels_final": 0,
+  "total_l_plus_events": 0,
+  "wall_seconds": 4.144572973251343,
+  "l_plus_events": [],
+  "history": [
+    {
+      "attempt": 0,
+      "error": "Error code: 403 - {'error': {'code': 'Forbidden', 'message': 'Your resource has been temporarily blocked because we detected unusual behavior.'}}"
+    },
+    {
+      "attempt": 1,
+      "error": "Error code: 403 - {'error': {'code': 'Forbidden', 'message': 'Your resource has been temporarily blocked because we detected unusual behavior.'}}"
+    },
+    {
+      "attempt": 2,
+      "error": "Error code: 403 - {'error': {'code': 'Forbidden', 'message': 'Your resource has been temporarily blocked because we detected unusual behavior.'}}"
+    }
+  ]
+}
