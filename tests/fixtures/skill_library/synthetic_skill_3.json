@@ -1,0 +1,17 @@
+{
+  "skill_id": "33333333-3333-4333-8333-333333333333",
+  "summary": "Press ACTION1 when region_count >= 3",
+  "recipe": "1. compute region_count from current frame\n2. if region_count >= 3, issue ACTION1\n3. otherwise wait one frame and retry",
+  "evidence": ["mem:42"],
+  "posterior": [2, 0],
+  "applicability_conditions": ["frame_features dict exposes region_count"],
+  "parent_hypothesis_ids": ["hyp-region-count-gate"],
+  "category": "mechanic",
+  "predicate": "f[\"region_count\"] >= 3",
+  "code": null,
+  "schema_version": "1",
+  "predicate_dsl_version": "1",
+  "quarantined": false,
+  "quarantine_reason": null,
+  "timestamp": "2026-05-15T00:00:02"
+}

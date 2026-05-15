@@ -1,0 +1,17 @@
+{
+  "skill_id": "22222222-2222-4222-8222-222222222222",
+  "summary": "Toggle all cells of color X by repeated ACTION3 on each cell",
+  "recipe": "1. enumerate cells of the target color\n2. for each cell, issue ACTION3 with (cell.x, cell.y)\n3. verify color flipped after each press",
+  "evidence": ["mem:230", "mem:231", "mem:232"],
+  "posterior": [4, 1],
+  "applicability_conditions": ["target color has been identified", "ACTION3 is available"],
+  "parent_hypothesis_ids": ["hyp-toggle-color"],
+  "category": "strategy",
+  "predicate": null,
+  "code": null,
+  "schema_version": "1",
+  "predicate_dsl_version": "1",
+  "quarantined": false,
+  "quarantine_reason": null,
+  "timestamp": "2026-05-15T00:00:01"
+}

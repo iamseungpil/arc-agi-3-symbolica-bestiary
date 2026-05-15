@@ -1,0 +1,17 @@
+{
+  "skill_id": "11111111-1111-4111-8111-111111111111",
+  "summary": "Click center of any solid 3x3 region",
+  "recipe": "1. analyze frame and locate connected regions of size 9 arranged as a 3x3 block\n2. take the centroid of the region\n3. issue ACTION6 with (centroid_x, centroid_y)",
+  "evidence": ["mem:101", "mem:117"],
+  "posterior": [3, 0],
+  "applicability_conditions": ["frame contains at least one solid 3x3 region"],
+  "parent_hypothesis_ids": ["hyp-3x3-center"],
+  "category": "mechanic",
+  "predicate": null,
+  "code": null,
+  "schema_version": "1",
+  "predicate_dsl_version": "1",
+  "quarantined": false,
+  "quarantine_reason": null,
+  "timestamp": "2026-05-15T00:00:00"
+}

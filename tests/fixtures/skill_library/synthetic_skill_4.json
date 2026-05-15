@@ -1,0 +1,17 @@
+{
+  "skill_id": "44444444-4444-4444-8444-444444444444",
+  "summary": "Issue ACTION2 to clear the level (claimed but contaminated)",
+  "recipe": "1. observe frame\n2. press ACTION2\n3. expect level transition",
+  "evidence": ["mem:300", "mem:301", "mem:302", "mem:303"],
+  "posterior": [1, 3],
+  "applicability_conditions": ["any frame"],
+  "parent_hypothesis_ids": ["hyp-action2-clears"],
+  "category": "strategy",
+  "predicate": null,
+  "code": null,
+  "schema_version": "1",
+  "predicate_dsl_version": "1",
+  "quarantined": true,
+  "quarantine_reason": "falsify_n exceeded confirm_n during replay; action did not clear level on 3/4 attempts",
+  "timestamp": "2026-05-15T00:00:03"
+}

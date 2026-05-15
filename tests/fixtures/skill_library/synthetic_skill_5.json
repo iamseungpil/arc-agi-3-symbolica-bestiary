@@ -1,0 +1,17 @@
+{
+  "skill_id": "55555555-5555-4555-8555-555555555555",
+  "summary": "Click the largest red region when red_region_count >= 1",
+  "recipe": "1. run code helper to compute red_region_count and red_region_largest_xy\n2. if red_region_count >= 1, ACTION6 at red_region_largest_xy\n3. else fall through",
+  "evidence": ["mem:512"],
+  "posterior": [2, 0],
+  "applicability_conditions": ["frame is a 2-D int grid with color values"],
+  "parent_hypothesis_ids": ["hyp-largest-red"],
+  "category": "mechanic",
+  "predicate": "f[\"red_region_count\"] >= 1",
+  "code": "red_cells = 0\nfor row in frame:\n    for v in row:\n        if v == 2:\n            red_cells += 1\nRESULT = {\"red_region_count\": red_cells}\n",
+  "schema_version": "1",
+  "predicate_dsl_version": "1",
+  "quarantined": false,
+  "quarantine_reason": null,
+  "timestamp": "2026-05-15T00:00:04"
+}
