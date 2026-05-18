@@ -1,0 +1,15 @@
+{
+  "idea_id": "idea1_abstract_threshold",
+  "harness": "faithful",
+  "arms": [
+    {"name": "none", "role": "ctrl", "env_overlay": {"A3_EXT": "none"}},
+    {"name": "trace2skill_abstract", "role": "treat",
+     "env_overlay": {"A3_EXT": "trace2skill", "T2S_SKILL_MODE": "abstract"}}
+  ],
+  "seeds": [47, 43, 48, 49, 50, 51, 53, 55, 57, 59, 61],
+  "game_id": "ft09",
+  "model": "gpt-5.5",
+  "max_actions": 200,
+  "wall_s": 2600,
+  "s0_max_actions": 60
+}

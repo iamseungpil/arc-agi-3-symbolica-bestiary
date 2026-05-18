@@ -41,7 +41,7 @@ border-radius:4px;padding:2px 8px;font-size:12px}
 </style></head><body><div class="wrap">
 <h1>FT09 Skill Trace Explorer &mdash; <span class="badge">L6 WIN</span> seed&nbsp;47 &middot; A3_EXT=trace2skill</h1>
 <div class="sub">Original byte-faithful Symbolica + skill ONLY (single variable). Trace = the one clean L6 full win
-(<code>pilot_s47_trace2skill</code>, terminal <code>swarm_returned</code>, 101 actions). Built 2026-05-18 06:28Z from authoritative
+(<code>pilot_s47_trace2skill</code>, terminal <code>swarm_returned</code>, 101 actions). Built 2026-05-18 07:40Z from authoritative
 <code>reports/a3_calibration/</code> recorder telemetry + the verbatim instruction paragraph and the actual run-distilled store.
 Honest: recorder is per-action level/token telemetry (no ft09 grid frames) &mdash; timeline shows real level/skill progression, not a reconstructed pixel grid.</div>
 
@@ -54,10 +54,33 @@ Honest: recorder is per-action level/token telemetry (no ft09 grid frames) &mdas
 <div class="note">All &Delta;L &gt; 0. s47 = the clean L6 WIN shown left. (rev4 caveat: 8/9 non-s47 episodes soft_deadline = M3-censored speed dim; capability dim valid.)</div></div>
 </div>
 
-<div class="pan"><h2>s47 trace2skill &mdash; per-action level timeline (101 actions &rarr; L6)</h2>
+<div class="pan"><h2>s47 trace2skill &mdash; per-action level timeline (101 recorded actions; reached L5 in-loop, L6 WIN post-loop)</h2>
 <div class="lvline" id="lvline"></div>
 <div class="tl" id="tl"></div>
-<div class="note">Green = a level was cleared on that action (<code>cleared_a_level</code>). Hover a cell for action / level / latency / prompt-tokens / t2s-consolidation-wall.</div></div>
+<div class="note">Green = a level was cleared on that action (<code>cleared_a_level</code>). Hover a cell for action / level / latency / prompt-tokens / t2s-consolidation-wall.
+<b>Note:</b> recorded actions plateau at L5; the L5&rarr;L6 WIN cleared <i>after</i> the action loop returned, so it appears in <code>summary.json</code> (final frame) but is NOT a recorded action and was NOT consolidated &mdash; see the skill panel below.</div></div>
+
+
+<div class="pan"><h2>Step-by-step solve path &mdash; how s47 actually reached
+L6 (authoritative recorder, the real moves)</h2>
+<div class="note">This is the ACTUAL action trace that solved ft09, level by
+level (recorder <code>pilot_s47_trace2skill_20260517T161830Z.jsonl</code>, 101 actions). Action
+NAMES only &mdash; the recorder carries no click coords; the agent's exact
+per-turn executed code + reasoning + click (x,y) live in the proxy capture
+<code>pilot_s47_trace2skill_20260517T161830Z.proxy.jsonl</code> (145 model requests). Green
+&#10003; = the action that cleared that level.</div>
+<table><thead><tr><th>level</th><th>action span</th>
+<th style="text-align:left">ordered actions (the path)</th>
+<th>outcome</th></tr></thead><tbody>
+<tr><td><b>L0</b></td><td>#1&ndash;#10 (10 actions)</td><td style="text-align:left">RESET &middot; RESET &middot; ACTION1 &middot; ACTION2 &middot; ACTION5 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; <b style="color:var(--grn)">ACTION6&#10003;(L1)</b></td><td class="pos">cleared by action #10 (L0&rarr;L1)</td></tr><tr><td><b>L1</b></td><td>#11&ndash;#17 (7 actions)</td><td style="text-align:left">ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; <b style="color:var(--grn)">ACTION6&#10003;(L2)</b></td><td class="pos">cleared by action #17 (L1&rarr;L2)</td></tr><tr><td><b>L2</b></td><td>#18&ndash;#33 (16 actions)</td><td style="text-align:left">ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; <b style="color:var(--grn)">ACTION6&#10003;(L3)</b></td><td class="pos">cleared by action #33 (L2&rarr;L3)</td></tr><tr><td><b>L3</b></td><td>#34&ndash;#57 (24 actions)</td><td style="text-align:left">ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; <b style="color:var(--grn)">ACTION6&#10003;(L4)</b></td><td class="pos">cleared by action #57 (L3&rarr;L4)</td></tr><tr><td><b>L4</b></td><td>#58&ndash;#83 (26 actions)</td><td style="text-align:left">ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; <b style="color:var(--grn)">ACTION6&#10003;(L5)</b></td><td class="pos">cleared by action #83 (L4&rarr;L5)</td></tr><tr><td><b>L5</b></td><td>#84&ndash;#101 (18 actions)</td><td style="text-align:left">ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6 &middot; ACTION6</td><td class="note">no recorded clear &mdash; L5&rarr;L6 happened AFTER the action loop (WIN post-loop, not consolidated)</td></tr>
+</tbody></table>
+<div class="note" style="margin-top:8px">L5&rarr;L6 has no row-clear because
+the winning clear occurred after the recorded loop returned on WIN
+(<code>swarm_returned</code>); <code>levels_completed=6</code> is from the
+agent's final frame in <code>summary.json</code>. To see WHY each ACTION6
+worked (coords, reasoning), the per-turn model I/O is in the proxy jsonl.</div>
+</div>
+
 
 
 <div class="pan"><h2>What the LLM actually receives under A3_EXT=trace2skill</h2>
@@ -76,6 +99,19 @@ checksum <code>8b1f97c6b05ee108…</code>,
 5 entries). Each entry is a <b>VERBATIM per-level action
 transcript</b> recorded by the deterministic level-boundary observer &mdash;
 NO LLM, NO abstraction (<code>code=null, predicate=null, posterior=[0,0]</code>).</div>
+<div class="note" style="margin-top:14px;border:1px solid var(--org);
+border-radius:6px;padding:10px;color:#e3b341"><b>Why the path stops at L5
+(not L6):</b> the store has <b>5 skills covering L0&rarr;L5</b>;
+there is <b>NO L5&rarr;L6 skill</b>. Consolidation fires
+ONLY on a level-clear detected <i>during the recorded action loop</i>
+(<code>run_clean_upstream_ft09.py:2269</code>, frozen). The terminal
+L5&rarr;L6 clear happened <b>after</b> the loop
+returned on WIN (<code>swarm_returned</code>), so it was never consolidated.
+<code>levels_completed=6</code> comes from the agent's <b>final
+frame</b> in <code>summary.json</code>, not from a recorded action &mdash;
+hence the timeline cells also flatten at L5. This is a faithful
+gap (frozen-runner consolidation trigger), not a visualizer omission; the true
+fix locus is post-loop consolidation in the frozen runner.</div>
 <div class="rec"><div class="rech">store[0] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=11 recs</div><pre class="recp">1. action=RESET; outcome=no level change (level 0)
 2. action=RESET; outcome=no level change (level 0)
 3. action=ACTION1; outcome=no level change (level 0)

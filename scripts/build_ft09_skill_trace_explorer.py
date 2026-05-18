@@ -84,6 +84,18 @@ for s in seeds:
 
 summ = json.load(open(SUMM))["result"]
 
+# ---- recorded-vs-final level gap (WHY the store/path stops at L5) ----
+# Consolidation fires ONLY on a level-clear detected DURING the recorded
+# action loop (run_clean_upstream_ft09.py:2269, FROZEN). The terminal
+# L5->L6 clear happened AFTER the loop returned on WIN, so it was never
+# consolidated and no L5->L6 skill exists. levels_completed=6 comes from
+# the agent's final frame in summary.json, NOT from a recorded action.
+rec_max_level = max((int(d.get("level_after_action") or 0) for d in rows),
+                    default=0)
+final_level = int(summ.get("levels_completed") or 0)
+level_gap = final_level - rec_max_level  # >0 => terminal clear NOT consolidated
+n_store = len(store_skills)
+
 
 # ---- TRACE-VERIFIED consumption (recomputed, not asserted) ----
 def _epoch(ts):
@@ -181,6 +193,63 @@ for i, sk in enumerate(store_skills):
         f'<pre class="recp">{html.escape(rcp)}</pre></div>')
 RECIPES = "\n".join(recipe_blocks)
 
+# ---- step-by-step SOLVE PATH (authoritative recorder, the actual moves) ----
+_seg: dict[int, list] = {}
+for d in rows:
+    lb = int(d.get("level_before_action") or 0)
+    _seg.setdefault(lb, []).append(d)
+solve_rows = []
+_maxlb = max(_seg) if _seg else 0
+for L in range(0, _maxlb + 1):
+    seg = _seg.get(L, [])
+    if not seg:
+        continue
+    i0, i1 = seg[0].get("action_index"), seg[-1].get("action_index")
+    acts = [str(s.get("action_name")) for s in seg]
+    clr = next((s for s in seg if s.get("cleared_a_level")), None)
+    seq_html = []
+    for s in seg:
+        nm = html.escape(str(s.get("action_name")))
+        if s.get("cleared_a_level"):
+            seq_html.append(f'<b style="color:var(--grn)">{nm}&#10003;'
+                            f'(L{s.get("level_after_action")})</b>')
+        else:
+            seq_html.append(nm)
+    if clr:
+        verdict = (f'cleared by action #{clr.get("action_index")} '
+                   f'(L{L}&rarr;L{clr.get("level_after_action")})')
+        vcls = "pos"
+    else:
+        verdict = (f'no recorded clear &mdash; L{L}&rarr;L{L+1} happened '
+                   f'AFTER the action loop (WIN post-loop, not consolidated)')
+        vcls = "note"
+    solve_rows.append(
+        f'<tr><td><b>L{L}</b></td><td>#{i0}&ndash;#{i1} '
+        f'({len(seg)} actions)</td><td style="text-align:left">'
+        f'{" &middot; ".join(seq_html)}</td>'
+        f'<td class="{vcls}">{verdict}</td></tr>')
+SOLVEPATH = f"""
+<div class="pan"><h2>Step-by-step solve path &mdash; how s47 actually reached
+L6 (authoritative recorder, the real moves)</h2>
+<div class="note">This is the ACTUAL action trace that solved ft09, level by
+level (recorder <code>{TRACE.name}</code>, {len(rows)} actions). Action
+NAMES only &mdash; the recorder carries no click coords; the agent's exact
+per-turn executed code + reasoning + click (x,y) live in the proxy capture
+<code>{PROXY.name}</code> ({consume['n_requests']} model requests). Green
+&#10003; = the action that cleared that level.</div>
+<table><thead><tr><th>level</th><th>action span</th>
+<th style="text-align:left">ordered actions (the path)</th>
+<th>outcome</th></tr></thead><tbody>
+{''.join(solve_rows)}
+</tbody></table>
+<div class="note" style="margin-top:8px">L5&rarr;L6 has no row-clear because
+the winning clear occurred after the recorded loop returned on WIN
+(<code>swarm_returned</code>); <code>levels_completed=6</code> is from the
+agent's final frame in <code>summary.json</code>. To see WHY each ACTION6
+worked (coords, reasoning), the per-turn model I/O is in the proxy jsonl.</div>
+</div>
+"""
+
 SKILLPANEL = f"""
 <div class="pan"><h2>What the LLM actually receives under A3_EXT=trace2skill</h2>
 <div class="note"><b>(1) The only injected instruction</b> &mdash; byte-exact
@@ -195,6 +264,19 @@ checksum <code>{html.escape(str(store.get('checksum',''))[:16])}…</code>,
 {len(store_skills)} entries). Each entry is a <b>VERBATIM per-level action
 transcript</b> recorded by the deterministic level-boundary observer &mdash;
 NO LLM, NO abstraction (<code>code=null, predicate=null, posterior=[0,0]</code>).</div>
+<div class="note" style="margin-top:14px;border:1px solid var(--org);
+border-radius:6px;padding:10px;color:#e3b341"><b>Why the path stops at L5
+(not L6):</b> the store has <b>{n_store} skills covering L0&rarr;L{rec_max_level}</b>;
+there is <b>NO L{rec_max_level}&rarr;L{final_level} skill</b>. Consolidation fires
+ONLY on a level-clear detected <i>during the recorded action loop</i>
+(<code>run_clean_upstream_ft09.py:2269</code>, frozen). The terminal
+L{rec_max_level}&rarr;L{final_level} clear happened <b>after</b> the loop
+returned on WIN (<code>swarm_returned</code>), so it was never consolidated.
+<code>levels_completed={final_level}</code> comes from the agent's <b>final
+frame</b> in <code>summary.json</code>, not from a recorded action &mdash;
+hence the timeline cells also flatten at L{rec_max_level}. This is a faithful
+gap (frozen-runner consolidation trigger), not a visualizer omission; the true
+fix locus is post-loop consolidation in the frozen runner.</div>
 {RECIPES}
 <div class="note" style="margin-top:14px"><b>(3) Input re-entry &mdash;
 trace-verified, recomputed here</b> from <code>{PROXY.name}</code> (codex
@@ -270,10 +352,13 @@ Honest: recorder is per-action level/token telemetry (no ft09 grid frames) &mdas
 <div class="note">All &Delta;L &gt; 0. s47 = the clean L6 WIN shown left. (rev4 caveat: 8/9 non-s47 episodes soft_deadline = M3-censored speed dim; capability dim valid.)</div></div>
 </div>
 
-<div class="pan"><h2>s47 trace2skill &mdash; per-action level timeline (101 actions &rarr; L6)</h2>
+<div class="pan"><h2>s47 trace2skill &mdash; per-action level timeline (__NREC__ recorded actions; reached L__RECMAX__ in-loop, L__FINALLV__ WIN post-loop)</h2>
 <div class="lvline" id="lvline"></div>
 <div class="tl" id="tl"></div>
-<div class="note">Green = a level was cleared on that action (<code>cleared_a_level</code>). Hover a cell for action / level / latency / prompt-tokens / t2s-consolidation-wall.</div></div>
+<div class="note">Green = a level was cleared on that action (<code>cleared_a_level</code>). Hover a cell for action / level / latency / prompt-tokens / t2s-consolidation-wall.
+<b>Note:</b> recorded actions plateau at L__RECMAX__; the L__RECMAX__&rarr;L__FINALLV__ WIN cleared <i>after</i> the action loop returned, so it appears in <code>summary.json</code> (final frame) but is NOT a recorded action and was NOT consolidated &mdash; see the skill panel below.</div></div>
+
+__SOLVEPATH__
 
 __SKILLPANEL__
 
@@ -303,7 +388,11 @@ DATA.actions.forEach(a=>{
 </div></body></html>"""
 
 OUT.write_text(HTML.replace("__DATA__", J)
+                .replace("__SOLVEPATH__", SOLVEPATH)
                 .replace("__SKILLPANEL__", SKILLPANEL)
+                .replace("__NREC__", str(len(rows)))
+                .replace("__RECMAX__", str(rec_max_level))
+                .replace("__FINALLV__", str(final_level))
                 .replace("{now}", now))
 print(f"WROTE {OUT}  ({OUT.stat().st_size} bytes)")
 print(f"actions={len(DATA['actions'])} pairs={len(DATA['pairs'])} "
