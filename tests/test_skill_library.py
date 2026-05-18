@@ -634,3 +634,90 @@ if __name__ == "__main__":  # pragma: no cover - convenience runner
     import sys
 
     sys.exit(pytest.main([__file__, "-v"]))
+
+
+class TestConsolidatorAbstractMode:
+    """P1 gated, out-of-band, trace-only abstraction (codex go-conditions)."""
+
+    @staticmethod
+    def _s47_stack() -> _FakeMemories:
+        acts = ["RESET", "RESET", "ACTION1", "ACTION2", "ACTION5",
+                "ACTION6", "ACTION6", "ACTION6", "ACTION6", "ACTION6"]
+        items = [_FakeMem(memory_id="b0", summary="level_start", details="")]
+        for i, a in enumerate(acts, 1):
+            out = "level 1 cleared" if i == len(acts) else "no level change (level 0)"
+            items.append(_FakeMem(memory_id=f"m{i}", action=a, outcome=out))
+        items.append(_FakeMem(memory_id="bc", summary="level_clear", details="cleared"))
+        return _FakeMemories(items)
+
+    _CANNED = json.dumps({
+        "summary": "Repeating the primary interaction on the active target clears the level",
+        "recipe": "1. Observe which element responds to the interaction. "
+                  "2. Identify the recurring target. 3. Repeat until cleared.",
+        "applicability_conditions": ["a repeatable interaction exists"],
+        "category": "mechanic",
+        "expected_goal": "the level is cleared",
+    })
+
+    def test_abstract_mode_emits_abstracted_skill(self, monkeypatch, tmp_path):
+        import research_extensions.tools.skill_consolidator as sc
+        monkeypatch.setenv("A3_EXT", "trace2skill")
+        monkeypatch.setenv("T2S_SKILL_MODE", "abstract")
+        monkeypatch.setenv("T2S_ABSTRACT_LOG_PATH", str(tmp_path / "a.jsonl"))
+        monkeypatch.setattr(sc, "_T2S_ABSTRACT_CLIENT_HOOK",
+                            lambda prompt: self._CANNED)
+        sk = consolidate_from_level_clear(self._s47_stack(),
+                                          level_clear_memory_index=11)
+        assert len(sk) == 1
+        s = sk[0]
+        assert not s.summary.startswith("Skill for clearing level via")
+        assert s.summary.startswith("Repeating the primary interaction")
+        assert "EXPECTED GOAL:" in s.recipe
+        assert s.applicability_conditions == ["a repeatable interaction exists"]
+        # evidence ids identical to the transcript path (D4 prov-tag intact)
+        assert set(s.evidence) == {f"m{i}" for i in range(1, 11)}
+        rec = [json.loads(x) for x in
+               (tmp_path / "a.jsonl").read_text().splitlines() if x.strip()]
+        assert len(rec) == 1 and rec[0]["fallback_used"] is False
+
+    def test_gate_off_is_byte_identical_transcript(self, monkeypatch):
+        # no A3_EXT / T2S_SKILL_MODE → unchanged pure path
+        monkeypatch.delenv("A3_EXT", raising=False)
+        monkeypatch.delenv("T2S_SKILL_MODE", raising=False)
+        sk = consolidate_from_level_clear(self._s47_stack(),
+                                          level_clear_memory_index=11)
+        assert len(sk) == 1
+        assert sk[0].summary.startswith("Skill for clearing level via")
+        assert "action=ACTION6; outcome=level 1 cleared" in sk[0].recipe
+
+    def test_stub_error_falls_back_to_transcript(self, monkeypatch, tmp_path):
+        import research_extensions.tools.skill_consolidator as sc
+
+        def _boom(prompt: str) -> str:
+            raise RuntimeError("boom")
+
+        monkeypatch.setenv("A3_EXT", "trace2skill")
+        monkeypatch.setenv("T2S_SKILL_MODE", "abstract")
+        monkeypatch.setenv("T2S_ABSTRACT_LOG_PATH", str(tmp_path / "b.jsonl"))
+        monkeypatch.setattr(sc, "_T2S_ABSTRACT_CLIENT_HOOK", _boom)
+        sk = consolidate_from_level_clear(self._s47_stack(),
+                                          level_clear_memory_index=11)
+        assert len(sk) == 1
+        assert sk[0].summary.startswith("Skill for clearing level via")
+        rec = [json.loads(x) for x in
+               (tmp_path / "b.jsonl").read_text().splitlines() if x.strip()]
+        assert rec[0]["fallback_used"] is True
+
+    def test_determinism_stable_prompt_sha(self, monkeypatch, tmp_path):
+        import research_extensions.tools.skill_consolidator as sc
+        monkeypatch.setenv("A3_EXT", "trace2skill")
+        monkeypatch.setenv("T2S_SKILL_MODE", "abstract")
+        monkeypatch.setenv("T2S_ABSTRACT_LOG_PATH", str(tmp_path / "c.jsonl"))
+        monkeypatch.setattr(sc, "_T2S_ABSTRACT_CLIENT_HOOK",
+                            lambda prompt: self._CANNED)
+        consolidate_from_level_clear(self._s47_stack(), level_clear_memory_index=11)
+        consolidate_from_level_clear(self._s47_stack(), level_clear_memory_index=11)
+        rec = [json.loads(x) for x in
+               (tmp_path / "c.jsonl").read_text().splitlines() if x.strip()]
+        assert len(rec) == 2
+        assert rec[0]["prompt_sha"] == rec[1]["prompt_sha"]

@@ -17,7 +17,30 @@ because soft_deadline censors action counts and the faithful agentica
 orchestrator M3-stalls ~most runs independent of the skill. This is NOT a claim
 of unconstrained capability and NOT a rev4 clean WIN.
 
-### Evidence, tiered (codex-mandated separation)
+### Estimand v2 (abstract mode)
+
+The estimand is reframed to **"trace-derived abstract skill induction +
+read-only reuse"** — distinct from the v1 transcript estimand (*"max level
+reached within wall-capped faithful ft09 runs"* on a verbatim per-level
+action transcript), which is **retained as the ablation arm** (the v1 text
+above and below is NOT deleted). v2 holds ONLY under
+`A3_EXT=trace2skill AND T2S_SKILL_MODE=abstract`: each cleared level's
+`{action,outcome}` chain is sent out-of-band (one pinned `temperature=0`
+call to the proxy the frozen runner already booted, model from
+`S0_MODEL_PRESET`, default `gpt-5.5`; the LLM sees ONLY an ordered
+`{step,action,outcome}` list — no game/goal/task/future leakage) and the
+stored Skill's `summary` becomes an inferred game *mechanism* one-liner
+while `recipe` becomes *meta-reasoning* (what to observe / how to decide),
+no longer a verbatim transcript. Default (gate absent) is byte-identical to
+the v1 transcript path.
+
+The Tier-1 / Tier-2 tables below are the **transcript ABLATION arm**. The
+prior 5/5 ΔL>0 results are evidence ONLY for the v1 transcript estimand and
+are **non-evidential for the abstract-mode (v2) claim** — the abstract-mode
+claim must be re-run end-to-end under the dual env gate before any v2 ΔL
+can be reported.
+
+### Evidence, tiered (codex-mandated separation) — transcript ABLATION arm
 
 **Tier 1 — clean paired evidence (matched wall: both arms same soft_deadline budget):**
 | seed | none | trace2skill | ΔL |
@@ -59,6 +82,12 @@ The three earlier caveats were checked directly against the s47 trace
   level's **action transcript recorded verbatim by the deterministic
   level-boundary observer** — no LLM, no abstraction, no generalization. ("distill"
   is an over-claim; correct term: per-level action transcript.)
+  **Caveat amendment (abstract mode):** the verbatim-transcript
+  characterisation above applies to the DEFAULT / ablation arm only. Under
+  `T2S_SKILL_MODE=abstract` (with `A3_EXT=trace2skill`) the stored `recipe`
+  is **no longer a verbatim transcript** — it is LLM-inferred meta-reasoning
+  produced from a trace-only `{step,action,outcome}` view; that arm's
+  evidence has not yet been collected (see Estimand v2 above).
 - **(b) The distilled skill text verifiably RE-ENTERS the LLM input context
   after consolidation — input re-entry is trace-verified; causal reliance is
   NOT (codex objective gate, 2026-05-18, verdict OVER-CLAIM → narrowed to this

@@ -16,12 +16,50 @@ Public API:
       ``summary + " " + recipe`` token sets exceed ``threshold``, keeping
       the skill with the higher posterior margin and unioning evidence /
       parent-hypothesis ids.
+
+Two modes for :func:`consolidate_from_level_clear`
+--------------------------------------------------
+
+**Default path (no env gate) — deterministic transcript, byte-identical.**
+With the env gate absent, ``consolidate_from_level_clear`` returns exactly
+the per-level *action transcript* Skills it always has: ``summary`` =
+``"Skill for clearing level via <a -> b -> ...>"``, ``recipe`` = the
+numbered ``"i. action=...; outcome=..."`` log.  This is the codex-required
+ABLATION arm and the "NO LLM" contract holds for it unconditionally: no
+import, no network, no randomness, no time read.  Every existing
+``TestConsolidator`` case sets no env and therefore exercises this exact
+byte-identical path.
+
+**Abstract path (gated) — out-of-band, trace-only LLM abstraction.**
+ONLY when ``A3_EXT == "trace2skill"`` AND ``T2S_SKILL_MODE == "abstract"``,
+each cleared level's ``{action, outcome}`` chain is sent — out of band, in
+a single pinned HTTP call to the proxy the frozen runner already booted
+(model from ``S0_MODEL_PRESET``, default ``gpt-5.5``; ``temperature=0``) —
+to be ABSTRACTED into a Skill whose ``summary`` is the inferred game
+*mechanism* and whose ``recipe`` is the *meta-reasoning* a fresh agent
+should follow (what to observe / how to decide), NOT a verbatim action
+replay.  The estimand this serves is **"trace-derived abstract skill
+induction + read-only reuse"** — explicitly NOT "the agent merely
+accumulates its own experience verbatim" (that remains the v1 transcript
+estimand, retained as the ablation arm).  Trace-only contract: the LLM is
+given ONLY an ordered list of ``{step, action, outcome}`` — no game name,
+no goal, no task, no future / outcome leakage.  The whole abstract path is
+defensive: ANY ``BaseException`` is logged and falls back to the transcript
+Skills, and individual per-chain failures fall back per chain (no chain is
+ever dropped).  Frame / shape grounding is a deferred P2 and is NOT added
+here (P1 = trace-only).
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
+import logging
+import os
+import time
 import uuid
-from typing import Any, Iterable
+from pathlib import Path
+from typing import Any, Callable, Iterable
 
 from .skill_library import Skill
 
@@ -30,6 +68,56 @@ __all__ = [
     "consolidate_from_level_clear",
     "dedup_near_duplicate",
 ]
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# trace2skill abstract-mode constants / injectable seam
+# ---------------------------------------------------------------------------
+
+# Frozen prompt.  EXACTLY ONE interpolation slot: ``{trace_json}``.  Contains
+# NO game name / goal / task words — the model is told it is an *unknown*
+# grid game and must infer mechanism + meta-reasoning from the action->outcome
+# chain alone (trace-only contract, structurally enforced).
+_T2S_ABSTRACT_PROMPT = (
+    "You are given ONLY an ordered list of {{step,action,outcome}} from one "
+    "playthrough segment of an unknown grid game. You are NOT told the game, "
+    "the goal, or the task. Infer (a) the underlying MECHANISM the "
+    "action->outcome chain reveals, (b) the META-REASONING a fresh agent "
+    "should follow to reproduce the clear — what to observe and how to "
+    "decide, not a verbatim action list, (c) applicability_conditions, (d) "
+    "the expected_goal. Output STRICT JSON only: "
+    '{{"summary":str,"recipe":str,"applicability_conditions":[str],'
+    '"category":"mechanic"|"strategy","expected_goal":str}}\n\n'
+    "TRACE:\n{trace_json}"
+)
+
+# Injectable seam for tests / callers: if set to a callable ``(prompt:str)
+# -> str`` it is used as the LLM client (highest precedence).  Module-level
+# so monkeypatch can replace it without env or network.
+_T2S_ABSTRACT_CLIENT_HOOK: Callable[[str], str] | None = None
+
+# Deterministic built-in stub (env ``T2S_ABSTRACT_CLIENT=stub``): a fixed,
+# valid JSON string so the gated path is exercisable offline / in CI.
+_T2S_STUB_JSON = json.dumps(
+    {
+        "summary": "Toggling the target region then confirming advances the game",
+        "recipe": (
+            "Observe which region the cursor is over and whether it matches "
+            "the highlighted target; decide to toggle that region only when "
+            "it is the target, then issue the confirm input once the region "
+            "state changes."
+        ),
+        "applicability_conditions": [
+            "a distinct target region is visible",
+            "a confirm input is available",
+        ],
+        "category": "mechanic",
+        "expected_goal": "advance to the next level by confirming the target region",
+    },
+    ensure_ascii=True,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +258,262 @@ def consolidate_from_level_clear(
             category="mechanic",
         )
         skills.append(skill)
+
+    # --- gated, out-of-band, trace-only abstract mode (Option B) ----------
+    # Default (gate absent) returns the byte-identical transcript ``skills``
+    # built above; the abstract path is purely additive and ANY failure
+    # falls back to the transcript skills (never raises).
+    if (
+        os.environ.get("A3_EXT") == "trace2skill"
+        and os.environ.get("T2S_SKILL_MODE", "transcript") == "abstract"
+        and skills
+    ):
+        try:
+            abstracted = _abstract_skills_from_chains(chains, skills)
+            if abstracted:
+                return abstracted
+        except BaseException:  # noqa: BLE001 — never break the frozen runner
+            logger.exception(
+                "trace2skill abstract mode failed; transcript fallback"
+            )
     return skills
+
+
+# ---------------------------------------------------------------------------
+# trace2skill abstract mode — helpers (all lazy / defensive)
+# ---------------------------------------------------------------------------
+
+
+def _t2s_abstract_log_path() -> Path | None:
+    """Resolve the JSONL artifact path, or ``None`` if logging is disabled."""
+    explicit = os.environ.get("T2S_ABSTRACT_LOG_PATH")
+    if explicit:
+        return Path(explicit)
+    persistence = os.environ.get("S0_SKILL_PERSISTENCE_PATH", "")
+    if persistence:
+        return Path(persistence).with_suffix(".abstract.jsonl")
+    return None
+
+
+def _t2s_log_record(record: dict[str, Any]) -> None:
+    """Append one JSONL record.  Fully wrapped — logging never breaks a run."""
+    try:
+        path = _t2s_abstract_log_path()
+        if path is None:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(record, ensure_ascii=True, default=str)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except BaseException:  # noqa: BLE001 — artifact logging is best-effort
+        logger.debug("trace2skill abstract log write failed", exc_info=True)
+
+
+def _t2s_stub_client(prompt: str) -> str:
+    """Deterministic offline client — returns a fixed valid JSON string."""
+    return _T2S_STUB_JSON
+
+
+def _resolve_abstract_client() -> Callable[[str], str] | None:
+    """Resolve the LLM client for abstract mode.
+
+    Resolution order:
+      (i)   module ``_T2S_ABSTRACT_CLIENT_HOOK`` if callable (test/inject seam);
+      (ii)  ``T2S_ABSTRACT_CLIENT == "stub"`` → built-in deterministic stub;
+      (iii) live: ONE HTTP call to the proxy the frozen runner already booted
+            (NOT a new framework, NOT importing any handler / store / proposer).
+
+    Returns ``None`` only if no client can be resolved (caller then keeps the
+    transcript skill for that chain).
+    """
+    hook = _T2S_ABSTRACT_CLIENT_HOOK
+    if callable(hook):
+        return hook
+
+    if os.environ.get("T2S_ABSTRACT_CLIENT") == "stub":
+        return _t2s_stub_client
+
+    def _live_client(prompt: str) -> str:
+        import httpx  # lazy — no module-top network dependency
+
+        port = os.environ.get("A3_PROXY_PORT", "9093")
+        base = f"http://127.0.0.1:{port}/v1"
+        model = os.environ.get("S0_MODEL_PRESET", "gpt-5.5")
+        resp = httpx.post(
+            f"{base}/chat/completions",
+            json={
+                "model": model,
+                "temperature": 0,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=float(os.environ.get("T2S_ABSTRACT_TIMEOUT_S", "30")) + 5.0,
+        )
+        return resp.json()["choices"][0]["message"]["content"]
+
+    return _live_client
+
+
+def _t2s_validate_parsed(parsed: Any) -> dict[str, Any] | None:
+    """Schema-validate the parsed LLM JSON.  Returns a clean dict or ``None``.
+
+    Rejects (→ per-chain transcript fallback) when ``summary`` is
+    missing/empty OR is itself a transcript-marker string.
+    """
+    if not isinstance(parsed, dict):
+        return None
+    summary = parsed.get("summary")
+    if not isinstance(summary, str) or not summary.strip():
+        return None
+    if summary.startswith("Skill for clearing level via"):
+        return None
+    recipe = parsed.get("recipe")
+    if not isinstance(recipe, str) or not recipe.strip():
+        return None
+    raw_conditions = parsed.get("applicability_conditions", [])
+    if isinstance(raw_conditions, (list, tuple)):
+        conditions = [str(c) for c in raw_conditions if str(c).strip()]
+    elif raw_conditions:
+        conditions = [str(raw_conditions)]
+    else:
+        conditions = []
+    category = parsed.get("category", "mechanic")
+    if category not in ("mechanic", "strategy"):
+        category = "mechanic"
+    expected_goal = parsed.get("expected_goal", "")
+    expected_goal = str(expected_goal) if expected_goal else ""
+    return {
+        "summary": summary.strip(),
+        "recipe": recipe,
+        "applicability_conditions": conditions,
+        "category": category,
+        "expected_goal": expected_goal,
+    }
+
+
+def _abstract_skills_from_chains(
+    chains: list[list[tuple[int, Any]]],
+    transcript_skills: list[Skill],
+) -> list[Skill]:
+    """Abstract each action/outcome chain into a Skill (trace-only, gated).
+
+    1:1 with ``transcript_skills`` (same order).  On ANY per-chain failure
+    the ORIGINAL transcript skill is kept (no chain is ever dropped); the
+    returned list always has ``len(chains)`` entries.  Reads ONLY
+    ``.action`` / ``.outcome`` from each memory — never summary / details /
+    memory_id — so no game / goal / future information can leak.
+    """
+    if len(chains) != len(transcript_skills):
+        return []  # shape mismatch → full transcript fallback
+
+    timeout_s = float(os.environ.get("T2S_ABSTRACT_TIMEOUT_S", "30"))
+    model = os.environ.get("S0_MODEL_PRESET", "gpt-5.5")
+    client = _resolve_abstract_client()
+    out: list[Skill] = []
+
+    for ordinal, (chain, transcript_skill) in enumerate(
+        zip(chains, transcript_skills), start=1
+    ):
+        # TRACE-ONLY serialize: read ONLY .action / .outcome.
+        trace = [
+            {
+                "step": i,
+                "action": str(_memory_field(m, "action")),
+                "outcome": str(_memory_field(m, "outcome")),
+            }
+            for i, (idx, m) in enumerate(chain, 1)
+        ]
+        prompt = _T2S_ABSTRACT_PROMPT.format(
+            trace_json=json.dumps(trace, ensure_ascii=True)
+        )
+        prompt_sha = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+        raw: str | None = None
+        parsed_skill_dict: dict[str, Any] | None = None
+        fallback_used = True
+        fallback_reason: str | None = None
+
+        if client is None:
+            fallback_reason = "no_client_resolved"
+            out.append(transcript_skill)
+            _t2s_log_record(
+                {
+                    "ts": time.time(),
+                    "chain_ordinal": ordinal,
+                    "model": model,
+                    "temperature": 0,
+                    "prompt_sha": prompt_sha,
+                    "raw_response": None,
+                    "parsed_skill": None,
+                    "fallback_used": True,
+                    "fallback_reason": fallback_reason,
+                }
+            )
+            continue
+
+        try:
+            from research_extensions.abstraction_handler import (  # lazy
+                _invoke_with_timeout,
+            )
+            from research_extensions.abstraction import _parse_llm_json  # lazy
+
+            raw = _invoke_with_timeout(client, prompt, timeout_s=timeout_s)
+            parsed = _parse_llm_json(raw)
+            validated = _t2s_validate_parsed(parsed)
+            if validated is None:
+                fallback_reason = "schema_invalid_or_unparseable"
+                out.append(transcript_skill)
+            else:
+                expected_goal = validated["expected_goal"]
+                recipe = validated["recipe"]
+                if expected_goal:
+                    recipe = recipe + "\n\nEXPECTED GOAL: " + expected_goal
+                abstracted = Skill(
+                    skill_id=str(uuid.uuid4()),
+                    summary=validated["summary"][:200],
+                    recipe=recipe,
+                    # SAME evidence ids → runner t2s_prov:: tag + D4 guard
+                    # keep operating unchanged.
+                    evidence=list(transcript_skill.evidence),
+                    posterior=(0, 0),
+                    applicability_conditions=[
+                        str(c)
+                        for c in validated["applicability_conditions"]
+                        if str(c).strip()
+                    ],
+                    parent_hypothesis_ids=[],
+                    category=validated["category"],
+                )
+                parsed_skill_dict = {
+                    "skill_id": abstracted.skill_id,
+                    "summary": abstracted.summary,
+                    "recipe": abstracted.recipe,
+                    "applicability_conditions": list(
+                        abstracted.applicability_conditions
+                    ),
+                    "category": abstracted.category,
+                }
+                fallback_used = False
+                fallback_reason = None
+                out.append(abstracted)
+        except BaseException as exc:  # noqa: BLE001 — per-chain fallback
+            fallback_reason = f"{type(exc).__name__}: {exc}"
+            out.append(transcript_skill)
+
+        _t2s_log_record(
+            {
+                "ts": time.time(),
+                "chain_ordinal": ordinal,
+                "model": model,
+                "temperature": 0,
+                "prompt_sha": prompt_sha,
+                "raw_response": raw,
+                "parsed_skill": parsed_skill_dict,
+                "fallback_used": fallback_used,
+                "fallback_reason": fallback_reason,
+            }
+        )
+
+    return out
 
 
 # ---------------------------------------------------------------------------
