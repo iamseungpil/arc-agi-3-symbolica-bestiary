@@ -50,10 +50,10 @@ def main() -> int:
         print(__doc__)
         return 2
     rec_p, out_p = Path(sys.argv[1]), Path(sys.argv[2])
-    recorder_p = (
-        Path(sys.argv[3])
-        if len(sys.argv) > 3 and sys.argv[3].endswith(".jsonl")
-        else None
+    jargs = [a for a in sys.argv[3:] if a.endswith(".jsonl")]
+    proxy_p = next((Path(a) for a in jargs if ".proxy.jsonl" in a), None)
+    recorder_p = next(
+        (Path(a) for a in jargs if ".proxy.jsonl" not in a), None
     )
     title = (
         sys.argv[-1]
@@ -70,6 +70,41 @@ def main() -> int:
             if x.strip()
         ]
         actions = [str(r.get("action_name")) for r in rr]
+
+    # --- recover the agent's OWN natural-language reasoning: deduped
+    #     memories.add(summary, details) from the proxy tool-call code
+    #     (NOT encrypted; this is what the subagents actually concluded) ---
+    import re as _re
+    mems: list[tuple[str, str]] = []
+    if proxy_p and proxy_p.exists():
+        _seen: set[str] = set()
+        _pat = _re.compile(
+            r"memories\.add\(\s*(['\"])(.+?)\1\s*,\s*(['\"])(.+?)\3\s*\)",
+            _re.S,
+        )
+        for _ln in proxy_p.read_text().splitlines():
+            if not _ln.strip() or "memories.add" not in _ln:
+                continue
+            try:
+                _b = json.loads(_ln).get("body")
+            except Exception:
+                continue
+            if not isinstance(_b, dict):
+                continue
+            for _it in (_b.get("input") or []):
+                if (
+                    isinstance(_it, dict)
+                    and _it.get("type") == "custom_tool_call"
+                ):
+                    _c = _it.get("input")
+                    _c = _c if isinstance(_c, str) else json.dumps(_c)
+                    for _m in _pat.finditer(_c):
+                        s, d = _m.group(2).strip(), _m.group(4).strip()
+                        k = s[:60] + d[:80]
+                        if k in _seen:
+                            continue
+                        _seen.add(k)
+                        mems.append((s, d))
 
     steps = []
     prev = None
@@ -109,6 +144,29 @@ def main() -> int:
         f'<span class="lg"><i style="background:{c}"></i>{k}</span>'
         for k, c in enumerate(PALETTE)
     )
+    if mems:
+        mem_html = (
+            '<div class="na" style="margin-bottom:8px">The agent\'s '
+            "<b>own natural-language reasoning</b>, recovered verbatim from "
+            "its <code>memories.add(summary, details)</code> writes in the "
+            "(un-encrypted) tool-call code &mdash; what each subagent "
+            "actually concluded. (Raw model chain-of-thought stays "
+            "provider-encrypted; this is the readable functional "
+            "reasoning.)</div>"
+            + "".join(
+                '<div class="memo"><div class="memh">'
+                f"{html.escape(s)}</div><div class=\"memd\">"
+                f"{html.escape(d)}</div></div>"
+                for s, d in mems
+            )
+        )
+    else:
+        mem_html = (
+            '<div class="na"><b>No proxy supplied / no memories writes '
+            "found.</b> Raw model chain-of-thought is provider-encrypted; "
+            "pass the run’s <code>*.proxy.jsonl</code> to surface the "
+            "agent’s own <code>memories.add</code> reasoning.</div>"
+        )
 
     doc = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>{html.escape(title)}</title><style>
@@ -147,6 +205,11 @@ var(--bd);padding:4px 0;font-size:12px}}.fct b{{color:var(--fg)}}
 font-size:10px;color:var(--mut)}}.lg i{{width:11px;height:11px;
 display:inline-block;border:1px solid #0006}}
 .na{{color:var(--mut);font-size:11.5px;line-height:1.55}}
+.memwrap{{max-height:420px;overflow:auto}}
+.memo{{border:1px solid var(--bd);border-left:3px solid var(--grn);
+border-radius:5px;padding:7px 9px;margin:7px 0;background:#0a0e14}}
+.memh{{color:var(--grn);font-weight:700;font-size:11.5px;margin-bottom:3px}}
+.memd{{color:#9db4d0;font-size:11px;line-height:1.5;white-space:pre-wrap}}
 .lv{{color:var(--org);font-weight:700}}.win{{color:var(--grn);font-weight:700}}
 </style></head><body><div class="w">
 <h1>{html.escape(title)}</h1>
@@ -184,15 +247,8 @@ exact grids, actions, level transitions, and changed cells.</div>
  <div>
   <div class="card"><h2>This turn</h2><div id="facts"></div></div>
   <div class="card" style="margin-top:14px">
-   <h2>Per-module / reasoning breakdown</h2>
-   <div class="na"><b>Not recoverable (triple-verified).</b> The faithful
-   Symbolica agent has no M1-M4 modules. The recording stores
-   <code>action_input.reasoning = null</code> (no per-turn rationale). The
-   proxy capture has <b>114 reasoning items, all provider-encrypted</b>,
-   and <b>0 plaintext assistant messages</b> &mdash; so subagent reasoning
-   exists in NO recoverable form. It is omitted because the data is
-   encrypted/absent, NOT by choice; fabricating it would misrepresent the
-   agent. Everything shown left is the recording's real fields.</div></div>
+   <h2>Subagent reasoning (agent's own memories writes)</h2>
+   <div class="memwrap">{mem_html}</div></div>
  </div>
 </div>
 <script id="d" type="application/json">{data}</script><script>
