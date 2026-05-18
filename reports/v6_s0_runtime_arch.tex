@@ -55,34 +55,34 @@
 {\scriptsize\color{GrayA} infra (unchanged): LLM calls $\to$ agentica-server\,:2345
 $\to$ TRAPI proxy\,:9091 (Bearer$\to$AAD) $\to$ agl-dev\,/\,TRAPI gpt-5.5
 \;$\cdot$\; no M1--M4 modules \;$\cdot$\; per-turn CoT provider-encrypted}\\[0.6em]
-\resizebox{!}{0.52\textheight}{%
+\resizebox{!}{0.46\textheight}{%
 \begin{tikzpicture}
   \node[box, env]  (env)  at (0,0)    {\textbf{ft09 ENV}};
   \node[box, orch] (orch) at (5.0,0)
-       {\textbf{Orchestrator}\\[1pt]\scriptsize itself a spawned\\\scriptsize root agent};
-  % --- transient, variable-N subagent stack: 2 faded ghosts + 1 active ---
-  \node[subg] (s3) at (10.6,0.34) {};
-  \node[subg] (s2) at (10.45,0.17) {};
-  \node[box, sub] (sub) at (10.3,0)
-       {\textbf{subagent}\\[1pt]\scriptsize active only while\\\scriptsize delegated};
-  \node[glbl, align=center] at (10.5,-1.15)
-       {spawned \textbf{0..N on demand};\\transient --- absent until\\delegated, may retire};
-  \node[mem, minimum height=1.0cm] (mem) at (5.0,-2.75)
+       {\textbf{Orchestrator}\\[1pt]\scriptsize itself a spawned root};
+  % --- one solid active subagent + ONE subtle offset ghost (no text behind) ---
+  \node[subg] (s2) at (10.75,0.28) {};
+  \node[box, sub] (sub) at (10.5,0)
+       {\textbf{subagent}\\[1pt]\scriptsize active only\\\scriptsize while delegated};
+  \node[font=\scriptsize, text=GrayA, fill=white, inner sep=2pt,
+        align=center, below=0.75cm of sub, rounded corners=2pt]
+       (sublbl){spawned \textbf{0..$N$ on demand};\\transient $\cdot$ may retire $\cdot$ no fixed pipeline};
+  \node[mem, minimum height=1.0cm] (mem) at (5.0,-3.05)
        {shared \texttt{memories}\\(LLM free-text, r/w,\\whole episode)};
 
   \draw[arr] (env)  -- node[lbl,above]{initial frame} (orch);
-  \draw[arr] (orch) -- node[lbl,above,align=center]{\code{spawn\_agent}\\[-1pt]\scriptsize(on demand)} (sub);
-  \draw[arr2] (orch) -- node[lbl,right]{r/w} (mem);
-  \draw[arr2] (sub.south) to[out=-90,in=0] node[lbl,above right]{r/w} (mem.east);
-  \draw[arr] (sub.south) to[out=-90,in=-90,looseness=1.6]
+  \draw[arr] (orch) -- node[lbl,above,align=center]
+       {\code{spawn\_agent}\\[-1pt]\scriptsize(on demand)} (sub);
+  \draw[arr2] (orch) -- node[lbl,right,align=center]
+       {r/w\\[-1pt]\scriptsize all agents} (mem);
+  \draw[arr] (sub.south) to[out=-90,in=-90,looseness=1.5]
        node[lbl,below]{\code{submit\_action} (bounded)} (env.south);
 \end{tikzpicture}}
 
-\vspace{0.4em}
-{\footnotesize Byte-identical original Symbolica: one orchestrator (itself a
-spawned agent) dynamically spawns \emph{transient} subagents \emph{only when it
-delegates} --- $N$ varies, none always-running, \emph{no fixed pipeline} ---
-all sharing one \texttt{memories}, acting via bounded \code{submit\_action}.}
+\vspace{0.3em}
+{\footnotesize One orchestrator (itself a spawned agent) dynamically spawns
+\emph{transient} subagents \emph{only when it delegates} --- all sharing one
+\texttt{memories}, acting via bounded \code{submit\_action}.}
 \end{frame}
 
 % ===== PAGE 2: trace2skill additive overlay (transcript ablation vs abstract P1) =====
@@ -98,26 +98,25 @@ all sharing one \texttt{memories}, acting via bounded \code{submit\_action}.}
   \draw[garr] (orch) -- node[glbl,above]{\code{spawn\_agent} (on demand)} (sub);
 
   % ---- the ONLY addition: a fresh per-run read-only skill_library ----
-  \node[box, add] (cons) at (1.6,-3.3)
-       {\textbf{level-boundary observer}\\[1pt]\scriptsize fires once per cleared level};
-  \node[box, add] (lib)  at (8.9,-3.3)
-       {\textbf{\texttt{skill\_library}}\\[1pt]\scriptsize fresh per run, empty $\to$ grows};
+  \node[box, add, minimum width=3.3cm] (cons) at (1.3,-3.4)
+       {\textbf{level-boundary}\\\textbf{observer}};
+  \node[box, add, minimum width=3.3cm] (lib)  at (9.4,-3.4)
+       {\textbf{\texttt{skill\_library}}\\[1pt]\scriptsize fresh/run, empty$\to$grows};
 
-  \draw[arr, draw=GreenA] (cons) -- node[lbl,above,align=center]
-       {\scriptsize default: \textbf{transcript} (no LLM, ablation)\\[-1pt]
-        \scriptsize P1: \textbf{abstract} (gated, out-of-band\\[-1pt]
-        \scriptsize trace-only pinned LLM)} (lib);
+  \draw[arr, draw=GreenA] (cons) -- node[lbl,above]
+       {\scriptsize 1 entry / cleared level} (lib);
   \draw[darr, draw=GreenA] (lib) to[out=90,in=-90]
        node[lbl,left]{read-only} (sub.south);
 \end{tikzpicture}}
 
 \vspace{0.5em}
 {\footnotesize Sole change: a fresh per-run, \textbf{read-only}
-\texttt{skill\_library}. A level-boundary observer writes one entry per cleared
-level --- \textbf{default} = verbatim \emph{transcript} (deterministic, no LLM:
-the codex-required \emph{ablation} arm); \textbf{P1} = gated \emph{abstract}
-mode (out-of-band, trace-only, pinned LLM $\to$ mechanism/meta-reasoning skill).
-\code{none} runs zero of this; the agent only reads the directory.}
+\texttt{skill\_library}; a level-boundary observer writes one entry per cleared
+level. \textbf{Default} $=$ verbatim \emph{transcript} (deterministic, no LLM
+--- the codex-required \emph{ablation} arm). \textbf{P1} $=$ gated
+\emph{abstract} mode (out-of-band, trace-only, pinned LLM $\to$
+mechanism/meta-reasoning skill). \code{none} runs zero of this; the agent only
+\emph{reads} the directory.}
 \end{frame}
 
 % ===== PAGE 3: honest status =====
