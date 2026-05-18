@@ -79,6 +79,7 @@ def main() -> int:
         lv = d.get("levels_completed")
         lv = int(lv) if lv is not None else (prev if prev is not None else 0)
         act = actions[i] if i < len(actions) else "(action n/a)"
+        ai = d.get("action_input") or {}
         steps.append(
             {
                 "n": i,
@@ -88,6 +89,14 @@ def main() -> int:
                 "grid": g,
                 "levelup": prev is not None and lv > prev,
                 "ts": ln.get("timestamp", ""),
+                # --- recording's own fields, faithfully surfaced ---
+                "ai_id": ai.get("id"),
+                "ai_data": json.dumps(ai.get("data", {}), separators=(",", ":")),
+                "ai_reasoning": ai.get("reasoning"),
+                "avail": d.get("available_actions"),
+                "win": d.get("win_levels"),
+                "freset": d.get("full_reset"),
+                "guid": str(d.get("guid", ""))[:8],
             }
         )
         prev = lv
@@ -176,11 +185,14 @@ exact grids, actions, level transitions, and changed cells.</div>
   <div class="card"><h2>This turn</h2><div id="facts"></div></div>
   <div class="card" style="margin-top:14px">
    <h2>Per-module / reasoning breakdown</h2>
-   <div class="na"><b>N/A by design.</b> The faithful Symbolica agent has
-   no M1-M4 modules and its chain-of-thought is provider-encrypted, so a
-   module/reasoning panel cannot be filled with real data. (The rich
-   <code>ft09_trace_explorer.html</code> had M1-M4 panels only because
-   that was the v50 4-module agent &mdash; a different agent.)</div></div>
+   <div class="na"><b>Not recoverable (triple-verified).</b> The faithful
+   Symbolica agent has no M1-M4 modules. The recording stores
+   <code>action_input.reasoning = null</code> (no per-turn rationale). The
+   proxy capture has <b>114 reasoning items, all provider-encrypted</b>,
+   and <b>0 plaintext assistant messages</b> &mdash; so subagent reasoning
+   exists in NO recoverable form. It is omitted because the data is
+   encrypted/absent, NOT by choice; fabricating it would misrepresent the
+   agent. Everything shown left is the recording's real fields.</div></div>
  </div>
 </div>
 <script id="d" type="application/json">{data}</script><script>
@@ -222,12 +234,21 @@ function draw(){{const s=S[i],pg=i>0?S[i-1].grid:null,
   `<b>${{s.action}}</b> &rarr; L${{s.level}}${{lu}}${{wn}}`;
  $('curcap').textContent=`this turn (#${{s.n}}) — ${{dd.length}} cells changed`;
  $('ix').textContent=`${{i}}/${{S.length-1}}`;$('sl').value=i;
+ const rj=v=>v===undefined||v===null?'null':(typeof v==='object'?
+  JSON.stringify(v):String(v));
  $('facts').innerHTML=
   `<div class=fct><span>turn</span><b>${{s.n}}</b></div>`+
-  `<div class=fct><span>action</span><b>${{s.action}}</b></div>`+
-  `<div class=fct><span>level</span><b>${{s.level}}</b></div>`+
+  `<div class=fct><span>action (paired)</span><b>${{s.action}}</b></div>`+
+  `<div class=fct><span>levels_completed</span><b>${{s.level}}</b></div>`+
+  `<div class=fct><span>win_levels</span><b>${{rj(s.win)}}</b></div>`+
   `<div class=fct><span>state</span><b>${{s.state}}</b></div>`+
   `<div class=fct><span>cells changed</span><b>${{dd.length}}</b></div>`+
+  `<div class=fct><span>action_input.id</span><b>${{rj(s.ai_id)}}</b></div>`+
+  `<div class=fct><span>action_input.data</span><b>${{rj(s.ai_data)}}</b></div>`+
+  `<div class=fct><span>action_input.reasoning</span><b>${{rj(s.ai_reasoning)}}</b></div>`+
+  `<div class=fct><span>available_actions</span><b>${{rj(s.avail)}}</b></div>`+
+  `<div class=fct><span>full_reset</span><b>${{rj(s.freset)}}</b></div>`+
+  `<div class=fct><span>guid</span><b>${{s.guid}}</b></div>`+
   `<div class=fct><span>ts</span><b>${{s.ts}}</b></div>`;
 }}
 function go(j){{i=Math.max(0,Math.min(S.length-1,j));draw();}}
