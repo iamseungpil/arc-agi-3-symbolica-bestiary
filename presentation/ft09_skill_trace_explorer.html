@@ -1,0 +1,1394 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<title>FT09 Skill Trace Explorer — s47 trace2skill L6 WIN</title>
+<style>
+:root{--bg:#0d1117;--pan:#161b22;--bd:#30363d;--fg:#c9d1d9;--mut:#8b949e;
+--blu:#388bfd;--grn:#3fb950;--org:#d29922;--pur:#a371f7;--red:#f85149}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
+font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;color:var(--blu);
+border-bottom:1px solid var(--bd);padding-bottom:4px;margin:18px 0 10px}
+.wrap{max-width:1180px;margin:0 auto;padding:20px}
+.sub{color:var(--mut);font-size:12px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pan{background:var(--pan);border:1px solid var(--bd);border-radius:8px;padding:14px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border:1px solid var(--bd);padding:5px 8px;text-align:center}
+th{background:#1c2330;color:var(--mut)}
+.win{color:var(--grn);font-weight:700}.pos{color:var(--grn)}
+.tl{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.cell{width:30px;height:30px;border-radius:4px;display:flex;align-items:center;
+justify-content:center;font-size:9px;border:1px solid var(--bd);background:#1c2330;
+position:relative;cursor:default}
+.cell.lvlup{background:var(--grn);color:#06210f;font-weight:700;border-color:var(--grn)}
+.cell.reset{background:#21262d;color:var(--mut)}
+.cell:hover::after{content:attr(data-tip);position:absolute;bottom:34px;left:0;
+white-space:pre;background:#000;color:#fff;border:1px solid var(--bd);padding:6px;
+border-radius:4px;font-size:10px;z-index:9;min-width:160px}
+pre{background:#0a0e14;border:1px solid var(--bd);border-radius:6px;padding:12px;
+overflow:auto;font-size:11.5px;color:#d1d9e0;max-height:340px;white-space:pre-wrap;
+word-break:break-word}
+.rec{margin-top:10px}.rech{color:var(--org);font-size:11px;margin-bottom:3px}
+.recp{max-height:200px;margin:0}
+.kv{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0}
+.kv span{background:#1c2330;border:1px solid var(--bd);border-radius:4px;
+padding:3px 8px;font-size:12px}
+.badge{display:inline-block;background:var(--grn);color:#06210f;font-weight:700;
+border-radius:4px;padding:2px 8px;font-size:12px}
+.note{color:var(--mut);font-size:11px;margin-top:6px}
+.lvline{height:64px;display:flex;align-items:flex-end;gap:2px;margin-top:6px}
+.lvbar{width:7px;background:var(--blu);border-radius:2px 2px 0 0}
+.lvbar.up{background:var(--grn)}
+</style></head><body><div class="wrap">
+<h1>FT09 Skill Trace Explorer &mdash; <span class="badge">L6 WIN</span> seed&nbsp;47 &middot; A3_EXT=trace2skill</h1>
+<div class="sub">Original byte-faithful Symbolica + skill ONLY (single variable). Trace = the one clean L6 full win
+(<code>pilot_s47_trace2skill</code>, terminal <code>swarm_returned</code>, 101 actions). Built 2026-05-18 06:28Z from authoritative
+<code>reports/a3_calibration/</code> recorder telemetry + the verbatim instruction paragraph and the actual run-distilled store.
+Honest: recorder is per-action level/token telemetry (no ft09 grid frames) &mdash; timeline shows real level/skill progression, not a reconstructed pixel grid.</div>
+
+<div class="grid">
+<div class="pan"><h2>Run result (authoritative summary.json)</h2>
+<div class="kv" id="res"></div>
+<div class="note">levels_completed extracted from the agent's final frame at episode end (the scoring SSOT — not server-log).</div></div>
+<div class="pan"><h2>Skill vs no-skill &mdash; 5/5 same-seed (levels)</h2>
+<table id="pairs"><thead><tr><th>seed</th><th>none L (state)</th><th>trace2skill L (state)</th><th>&Delta;L</th></tr></thead><tbody></tbody></table>
+<div class="note">All &Delta;L &gt; 0. s47 = the clean L6 WIN shown left. (rev4 caveat: 8/9 non-s47 episodes soft_deadline = M3-censored speed dim; capability dim valid.)</div></div>
+</div>
+
+<div class="pan"><h2>s47 trace2skill &mdash; per-action level timeline (101 actions &rarr; L6)</h2>
+<div class="lvline" id="lvline"></div>
+<div class="tl" id="tl"></div>
+<div class="note">Green = a level was cleared on that action (<code>cleared_a_level</code>). Hover a cell for action / level / latency / prompt-tokens / t2s-consolidation-wall.</div></div>
+
+
+<div class="pan"><h2>What the LLM actually receives under A3_EXT=trace2skill</h2>
+<div class="note"><b>(1) The only injected instruction</b> &mdash; byte-exact
+<code>_T2S_TASK_PARAGRAPH</code> appended to the orchestrator initial task
+(<code>run_clean_upstream_ft09.py:1183</code>). The warm <code>state/skills_ft09.json</code>
+is <b>NEVER</b> read; the store starts as a fresh EMPTY per-run tempfile.</div>
+<pre>
+
+[Trace2Skill cross-level skill directory]
+A shared, read-only `skill_library` object is also in scope. It is a cross-level directory of skills that were inductively distilled from THIS run&#x27;s own earlier-level traces at each level-clear boundary (it starts empty and grows only as you clear levels). Persistable cross-level skill store of distilled prior-level skills. When you finish a level and brief subagents for the NEXT level, consult `skill_library` alongside `memories` so accumulated cross-level know-how is not re-derived from scratch. This directory is ADDITIVE: it does not replace `memories` or any existing tool — keep using all of them. Do NOT write to `skill_library` from inside a turn; it is maintained out-of-band by the runner.</pre>
+<div class="note" style="margin-top:14px"><b>(2) The actual run-distilled store</b>
+this s47 run produced (preserved verbatim:
+<code>reports/skill_pilot/20260517T161830Z/s47_distilled_store.json</code>,
+checksum <code>8b1f97c6b05ee108…</code>,
+5 entries). Each entry is a <b>VERBATIM per-level action
+transcript</b> recorded by the deterministic level-boundary observer &mdash;
+NO LLM, NO abstraction (<code>code=null, predicate=null, posterior=[0,0]</code>).</div>
+<div class="rec"><div class="rech">store[0] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=11 recs</div><pre class="recp">1. action=RESET; outcome=no level change (level 0)
+2. action=RESET; outcome=no level change (level 0)
+3. action=ACTION1; outcome=no level change (level 0)
+4. action=ACTION2; outcome=no level change (level 0)
+5. action=ACTION5; outcome=no level change (level 0)
+6. action=ACTION6; outcome=no level change (level 0)
+7. action=ACTION6; outcome=no level change (level 0)
+8. action=ACTION6; outcome=no level change (level 0)
+9. action=ACTION6; outcome=no level change (level 0)
+10. action=ACTION6; outcome=level 1 cleared</pre></div>
+<div class="rec"><div class="rech">store[1] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=8 recs</div><pre class="recp">1. action=ACTION6; outcome=no level change (level 1)
+2. action=ACTION6; outcome=no level change (level 1)
+3. action=ACTION6; outcome=no level change (level 1)
+4. action=ACTION6; outcome=no level change (level 1)
+5. action=ACTION6; outcome=no level change (level 1)
+6. action=ACTION6; outcome=no level change (level 1)
+7. action=ACTION6; outcome=level 2 cleared</pre></div>
+<div class="rec"><div class="rech">store[2] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=17 recs</div><pre class="recp">1. action=ACTION6; outcome=no level change (level 2)
+2. action=ACTION6; outcome=no level change (level 2)
+3. action=ACTION6; outcome=no level change (level 2)
+4. action=ACTION6; outcome=no level change (level 2)
+5. action=ACTION6; outcome=no level change (level 2)
+6. action=ACTION6; outcome=no level change (level 2)
+7. action=ACTION6; outcome=no level change (level 2)
+8. action=ACTION6; outcome=no level change (level 2)
+9. action=ACTION6; outcome=no level change (level 2)
+10. action=ACTION6; outcome=no level change (level 2)
+11. action=ACTION6; outcome=no level change (level 2)
+12. action=ACTION6; outcome=no level change (level 2)
+13. action=ACTION6; outcome=no level change (level 2)
+14. action=ACTION6; outcome=no level change (level 2)
+15. action=ACTION6; outcome=no level change (level 2)
+16. action=ACTION6; outcome=level 3 cleared</pre></div>
+<div class="rec"><div class="rech">store[3] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=25 recs</div><pre class="recp">1. action=ACTION6; outcome=no level change (level 3)
+2. action=ACTION6; outcome=no level change (level 3)
+3. action=ACTION6; outcome=no level change (level 3)
+4. action=ACTION6; outcome=no level change (level 3)
+5. action=ACTION6; outcome=no level change (level 3)
+6. action=ACTION6; outcome=no level change (level 3)
+7. action=ACTION6; outcome=no level change (level 3)
+8. action=ACTION6; outcome=no level change (level 3)
+9. action=ACTION6; outcome=no level change (level 3)
+10. action=ACTION6; outcome=no level change (level 3)
+11. action=ACTION6; outcome=no level change (level 3)
+12. action=ACTION6; outcome=no level change (level 3)
+13. action=ACTION6; outcome=no level change (level 3)
+14. action=ACTION6; outcome=no level change (level 3)
+15. action=ACTION6; outcome=no level change (level 3)
+16. action=ACTION6; outcome=no level change (level 3)
+17. action=ACTION6; outcome=no level change (level 3)
+18. action=ACTION6; outcome=no level change (level 3)
+19. action=ACTION6; outcome=no level change (level 3)
+20. action=ACTION6; outcome=no level change (level 3)
+21. action=ACTION6; outcome=no level change (level 3)
+22. action=ACTION6; outcome=no level change (level 3)
+23. action=ACTION6; outcome=no level change (level 3)
+24. action=ACTION6; outcome=level 4 cleared</pre></div>
+<div class="rec"><div class="rech">store[4] &mdash; category=mechanic  code=None  predicate=None  posterior=[0, 0]  evidence=27 recs</div><pre class="recp">1. action=ACTION6; outcome=no level change (level 4)
+2. action=ACTION6; outcome=no level change (level 4)
+3. action=ACTION6; outcome=no level change (level 4)
+4. action=ACTION6; outcome=no level change (level 4)
+5. action=ACTION6; outcome=no level change (level 4)
+6. action=ACTION6; outcome=no level change (level 4)
+7. action=ACTION6; outcome=no level change (level 4)
+8. action=ACTION6; outcome=no level change (level 4)
+9. action=ACTION6; outcome=no level change (level 4)
+10. action=ACTION6; outcome=no level change (level 4)
+11. action=ACTION6; outcome=no level change (level 4)
+12. action=ACTION6; outcome=no level change (level 4)
+13. action=ACTION6; outcome=no level change (level 4)
+14. action=ACTION6; outcome=no level change (level 4)
+15. action=ACTION6; outcome=no level change (level 4)
+16. action=ACTION6; outcome=no level change (level 4)
+17. action=ACTION6; outcome=no level change (level 4)
+18. action=ACTION6; outcome=no level change (level 4)
+19. action=ACTION6; outcome=no level change (level 4)
+20. action=ACTION6; outcome=no level change (level 4)
+21. action=ACTION6; outcome=no level change (level 4)
+22. action=ACTION6; outcome=no level change (level 4)
+23. action=ACTION6; outcome=no level change (level 4)
+24. action=ACTION6; outcome=no level change (level 4)
+25. action=ACTION6; outcome=no level change (level 4)
+26. action=ACTION6; outcome=level 5 cleared</pre></div>
+<div class="note" style="margin-top:14px"><b>(3) Input re-entry &mdash;
+trace-verified, recomputed here</b> from <code>pilot_s47_trace2skill_20260517T161830Z.proxy.jsonl</code> (codex
+objective gate 2026-05-18: assert input re-entry, NOT causal reliance). The
+consolidator-only marker <code>"Skill for clearing level via"</code> (the instruction paragraph
+cannot produce it) appears in <b>87/145</b>
+stream-request <code>body.input</code> (the upstream model input itself), of
+which <b>87</b> are after the first consolidation
+(0 before). The run also contains <b>&ge;16
+distinct</b> explicit <code>python</code> tool calls querying the object
+(e.g. <code>skill_library.library.summaries()</code>; parsed per-call &amp;
+deduped &mdash; an earlier 102/145 regex-window count was contaminated by
+replayed history and is retracted). <b>Proven:</b> the stored skill text was in
+the model input after each level-clear and the agent inspected the object.
+<b>NOT proven:</b> that the LLM relied on it, or that trace2skill caused the
+s47 level gain (presence &ne; causal use &mdash; that is the next experiment).
+</div></div>
+
+
+<script>
+const DATA = {
+  "trace_tag": "pilot_s47_trace2skill_20260517T161830Z",
+  "seed": 47,
+  "arm": "A3_EXT=trace2skill (original Symbolica + skill only)",
+  "result": {
+    "final_state": "WIN",
+    "levels_completed": 6,
+    "recorder_action_count": 101,
+    "request_count": 161,
+    "runtime_seconds": 2610.22,
+    "termination_reason": "swarm_returned"
+  },
+  "actions": [
+    {
+      "i": 1,
+      "name": "RESET",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 0,
+      "t2s": 0
+    },
+    {
+      "i": 2,
+      "name": "RESET",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 0,
+      "t2s": 0
+    },
+    {
+      "i": 3,
+      "name": "ACTION1",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 12448,
+      "t2s": 0
+    },
+    {
+      "i": 4,
+      "name": "ACTION2",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 13446,
+      "t2s": 0
+    },
+    {
+      "i": 5,
+      "name": "ACTION5",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 13756,
+      "t2s": 0
+    },
+    {
+      "i": 6,
+      "name": "ACTION6",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 13972,
+      "t2s": 0
+    },
+    {
+      "i": 7,
+      "name": "ACTION6",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 16779,
+      "t2s": 0
+    },
+    {
+      "i": 8,
+      "name": "ACTION6",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 16779,
+      "t2s": 0
+    },
+    {
+      "i": 9,
+      "name": "ACTION6",
+      "lb": 0,
+      "la": 0,
+      "lc": false,
+      "lvls": 0,
+      "lat": 0.0,
+      "ptok": 16779,
+      "t2s": 0
+    },
+    {
+      "i": 10,
+      "name": "ACTION6",
+      "lb": 0,
+      "la": 1,
+      "lc": true,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 24887,
+      "t2s": 0.008
+    },
+    {
+      "i": 11,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 12,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 13,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 14,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 15,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 16,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 1,
+      "lc": false,
+      "lvls": 1,
+      "lat": 0.0,
+      "ptok": 25822,
+      "t2s": 0
+    },
+    {
+      "i": 17,
+      "name": "ACTION6",
+      "lb": 1,
+      "la": 2,
+      "lc": true,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 31601,
+      "t2s": 0.008
+    },
+    {
+      "i": 18,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 19,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 20,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 21,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 22,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 23,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 24,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 25,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 26,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 27,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 28,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 29,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 30,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 31,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 32,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 2,
+      "lc": false,
+      "lvls": 2,
+      "lat": 0.0,
+      "ptok": 35457,
+      "t2s": 0
+    },
+    {
+      "i": 33,
+      "name": "ACTION6",
+      "lb": 2,
+      "la": 3,
+      "lc": true,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 40708,
+      "t2s": 0.01
+    },
+    {
+      "i": 34,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 40708,
+      "t2s": 0
+    },
+    {
+      "i": 35,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 36,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 37,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 38,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 39,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 40,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 41,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 42,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 43,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 44,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 45,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 46,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 47,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 48,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 49,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 50,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 51,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 52,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 53,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 54,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 55,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 56,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 3,
+      "lc": false,
+      "lvls": 3,
+      "lat": 0.0,
+      "ptok": 45552,
+      "t2s": 0
+    },
+    {
+      "i": 57,
+      "name": "ACTION6",
+      "lb": 3,
+      "la": 4,
+      "lc": true,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 51943,
+      "t2s": 0.01
+    },
+    {
+      "i": 58,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 51943,
+      "t2s": 0
+    },
+    {
+      "i": 59,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 51943,
+      "t2s": 0
+    },
+    {
+      "i": 60,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 51943,
+      "t2s": 0
+    },
+    {
+      "i": 61,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 62,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 63,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 64,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 65,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 66,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 67,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 68,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 69,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 59174,
+      "t2s": 0
+    },
+    {
+      "i": 70,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 64576,
+      "t2s": 0
+    },
+    {
+      "i": 71,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 65201,
+      "t2s": 0
+    },
+    {
+      "i": 72,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 73124,
+      "t2s": 0
+    },
+    {
+      "i": 73,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 74273,
+      "t2s": 0
+    },
+    {
+      "i": 74,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 75,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 76,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 77,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 78,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 79,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 80,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 81,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 82,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 4,
+      "lc": false,
+      "lvls": 4,
+      "lat": 0.0,
+      "ptok": 75363,
+      "t2s": 0
+    },
+    {
+      "i": 83,
+      "name": "ACTION6",
+      "lb": 4,
+      "la": 5,
+      "lc": true,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 74294,
+      "t2s": 0.01
+    },
+    {
+      "i": 84,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 85,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 86,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 87,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 88,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 89,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 90,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 91,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 92,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 93,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 94,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 77009,
+      "t2s": 0
+    },
+    {
+      "i": 95,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 96,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 97,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 98,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 99,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 100,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    },
+    {
+      "i": 101,
+      "name": "ACTION6",
+      "lb": 5,
+      "la": 5,
+      "lc": false,
+      "lvls": 5,
+      "lat": 0.0,
+      "ptok": 81300,
+      "t2s": 0
+    }
+  ],
+  "pairs": [
+    {
+      "seed": 43,
+      "none_L": 2,
+      "none_state": "NOT_FINISHED",
+      "none_act": 34,
+      "t2s_L": 4,
+      "t2s_state": "NOT_FINISHED",
+      "t2s_act": 69,
+      "dL": 2
+    },
+    {
+      "seed": 47,
+      "none_L": 4,
+      "none_state": "NOT_FINISHED",
+      "none_act": 88,
+      "t2s_L": 6,
+      "t2s_state": "WIN",
+      "t2s_act": 101,
+      "dL": 2
+    },
+    {
+      "seed": 48,
+      "none_L": 0,
+      "none_state": "GAME_OVER",
+      "none_act": 184,
+      "t2s_L": 3,
+      "t2s_state": "NOT_FINISHED",
+      "t2s_act": 37,
+      "dL": 3
+    },
+    {
+      "seed": 49,
+      "none_L": 3,
+      "none_state": "NOT_FINISHED",
+      "none_act": 50,
+      "t2s_L": 5,
+      "t2s_state": "ACTION_BUDGET_FUSE",
+      "t2s_act": 115,
+      "dL": 2
+    },
+    {
+      "seed": 50,
+      "none_L": 0,
+      "none_state": "NOT_FINISHED",
+      "none_act": 9,
+      "t2s_L": 5,
+      "t2s_state": "NOT_FINISHED",
+      "t2s_act": 80,
+      "dL": 5
+    }
+  ],
+  "consume": {
+    "n_requests": 145,
+    "marker_in_input": 87,
+    "marker_after_cons": 87,
+    "distinct_skill_tool_calls": 16
+  },
+  "store_meta": {
+    "checksum": "8b1f97c6b05ee1089fc6eec753052e662cd3652332cebf1c0cf3767637a4cb9f",
+    "schema_version": "1",
+    "n_skills": 5
+  }
+};
+const R=DATA.result, res=document.getElementById('res');
+for(const[k,v] of Object.entries(R)){const s=document.createElement('span');
+s.innerHTML='<b>'+k+'</b>: '+(k==='final_state'&&v==='WIN'?'<span class=win>'+v+'</span>':v);res.appendChild(s);}
+const pb=document.querySelector('#pairs tbody');
+DATA.pairs.forEach(p=>{const tr=document.createElement('tr');
+tr.innerHTML=`<td>${p.seed}</td><td>L${p.none_L} (${p.none_state})</td>`+
+`<td>${p.seed===47?'<span class=win>L'+p.t2s_L+' '+p.t2s_state+'</span>':'L'+p.t2s_L+' ('+p.t2s_state+')'}</td>`+
+`<td class=pos>+${p.dL}</td>`;pb.appendChild(tr);});
+const tl=document.getElementById('tl'), lv=document.getElementById('lvline');
+const maxL=Math.max(...DATA.actions.map(a=>a.lvls||0),1);
+DATA.actions.forEach(a=>{
+ const c=document.createElement('div');
+ c.className='cell'+(a.lc?' lvlup':'')+(a.name==='RESET'?' reset':'');
+ c.textContent=a.lc?('L'+a.la):a.i;
+ c.dataset.tip=`#${a.i} ${a.name}
+level ${a.lb}→${a.la}  (done:${a.lvls})
+lat ${a.lat}s  ptok ${a.ptok}
+t2s_wall ${a.t2s}s`;
+ tl.appendChild(c);
+ const b=document.createElement('div');b.className='lvbar'+(a.lc?' up':'');
+ b.style.height=(8+54*((a.lvls||0)/maxL))+'px';
+ b.title=`#${a.i}: levels_completed=${a.lvls}`;lv.appendChild(b);
+});
+</script>
+</div></body></html>
